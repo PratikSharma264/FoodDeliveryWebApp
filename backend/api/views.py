@@ -1,14 +1,15 @@
 from django.shortcuts import render
 
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
 
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
 def api_overview(request):
     api_urls = {
-        'Topic': "This is your api Overview",
+        'API': {
+            'API overview': "/api/",
+            'API token': "/api/token/",
+            'API token refresh': "/api/token/refresh",
+        },
+        'Merchant': {
+            'Register Merchant': "/api/merchant/register/",
+        }
     }
-    return Response(api_urls)
+    return render(request, 'api/api_overview.html', {'api_urls': api_urls})
