@@ -28,3 +28,7 @@ pip install -r requirements.txt
 5. **Code in backend directory by changing directory to backend i.e cd backend or code in frontend instead!**
 
 6. **Enjoy contributing in this repository!** 💻✨
+
+7.**The Sqlite Database has superuser with credentials as follows:**
+      Username: admin
+      Password: grubmate
