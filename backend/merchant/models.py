@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
+import datetime
 
 
 class Merchant(models.Model):
@@ -40,6 +41,7 @@ class Restaurant:
             info += f", Location: ({self.latitude}, {self.longitude})"
         return info
 
+
 class FoodItem:
     def __init__(self, item_id, name, description, price, restaurant_id):
         self.item_id = item_id
@@ -50,6 +52,7 @@ class FoodItem:
 
     def __str__(self):
         return f"Item ID: {self.item_id}, Name: {self.name}, Price: Rs. {self.price:.2f} (Restaurant ID: {self.restaurant_id})"
+
 
 class Order:
     STATUS_CHOICES = [
@@ -78,11 +81,13 @@ class Order:
         return total
 
     def __str__(self):
-        item_details = "\n  - ".join([f"{item['item'].name} (x{item['quantity']})" for item in self.items])
+        item_details = "\n  - ".join(
+            [f"{item['item'].name} (x{item['quantity']})" for item in self.items])
         return (f"Order ID: {self.order_id}, User ID: {self.user_id}, Restaurant ID: {self.restaurant_id}, "
                 f"Date: {self.order_date.strftime('%Y-%m-%d %H:%M:%S')}, Status: {self.status}\n"
                 f"Items:\n  - {item_details}\n"
                 f"Total: Rs. {self.calculate_total():.2f}")
+
 
 class DeliveryPersonnel:
     def __init__(self, personnel_id, name, phone_number, vehicle_type, latitude=None, longitude=None, current_order_id=None):
@@ -105,6 +110,7 @@ class DeliveryPersonnel:
         location_str = f"Location: ({self.latitude}, {self.longitude})" if self.latitude is not None and self.longitude is not None else "Location: (Not Available)"
         return f"Personnel ID: {self.personnel_id}, Name: {self.name}, {location_str}, Status: {status}"
 
+
 class Delivery:
     STATUS_CHOICES = [
         ('ASSIGNED', 'Assigned'),
@@ -123,7 +129,6 @@ class Delivery:
         self.status = status
         self.delivery_time = None
 
-
     def mark_as_picked_up(self):
         self.status = 'PICKED_UP'
 
@@ -139,7 +144,8 @@ class Delivery:
         self.delivery_time = datetime.now()
 
     def __str__(self):
-        delivery_time_str = self.delivery_time.strftime('%Y-%m-%d %H:%M:%S') if self.delivery_time else 'Not yet delivered'
+        delivery_time_str = self.delivery_time.strftime(
+            '%Y-%m-%d %H:%M:%S') if self.delivery_time else 'Not yet delivered'
         return (f"Delivery ID: {self.delivery_id}, Order ID: {self.order_id}, Personnel ID: {self.personnel_id}, "
                 f"Delivery Address: {self.delivery_address}, Assigned Time: {self.assigned_time.strftime('%Y-%m-%d %H:%M:%S')}, "
                 f"Status: {self.status}, Delivery Time: {delivery_time_str}")
