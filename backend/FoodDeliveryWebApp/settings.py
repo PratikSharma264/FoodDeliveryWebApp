@@ -140,6 +140,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -149,21 +150,46 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
 
-#Add the immages and remove the fields that are not needed
 JAZZMIN_SETTINGS = {
-    "site_title": "Food Delivery Admin",
-    "site_header": "Food Delivery Admin",
-    "site_brand": "Food Delivery",
+    "site_title": "GrubMate Admin",
+    "site_header": "GrubMate Admin",
+    "site_brand": "GrubMate",
     "site_logo": "images/logo.png",
-    "login_logo": "images/logo.png",
-    "login_logo_dark": "images/logo.png",
-    "welcome_sign": "Welcome to the Food Delivery Admin",
-    "copyright": "Food Delivery",
+    "login_logo": "images/logo_small.png",
+    "site_logo_classes": "img-fluid",  # Optional: You can use a Bootstrap class
+    "login_logo_classes": "img-fluid",
+    "welcome_sign": "Welcome to the GrubMate Admin",
+    "copyright": "© 2025 GrubMate",
     "search_model": "model.Merchant",
-    "user_avatar": "images/logo.png",
+    "user_avatar": None,
     "show_sidebar": True,
     "show_navigation": True,
     "show_ui_builder": True,
     "show_settings": True,
     "show_app_icons": True,
+    "custom_footer": None,
+
+}
+JAZZMIN_UI_TWEAKS = {
+    "theme": "superhero",
+    "dark_theme": "superhero",
+    "navbar_fixed": True,
+    "sidebar_fixed": True,
+    "sidebar_light": False,
+    "navbar_small_text": False,
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "navbar_variant": "navbar-dark bg-dark",
+    "sidebar_nav_compact_style": False,
+    "body_small_text": False,
+    "button_classes": {
+        "primary": "btn btn-outline-success btn-lg rounded-pill shadow-sm",
+        "secondary": "btn btn-outline-secondary btn-lg rounded-pill shadow-sm",
+        "info": "btn btn-outline-info btn-lg rounded-pill shadow-sm",
+        "warning": "btn btn-outline-warning btn-lg rounded-pill shadow-sm",
+        "danger": "btn btn-outline-danger btn-lg rounded-pill shadow-sm",
+        "success": "btn btn-outline-success btn-lg rounded-pill shadow-sm",
+    },
+
 }
