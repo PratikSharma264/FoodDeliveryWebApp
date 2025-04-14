@@ -49,6 +49,7 @@ SIMPLE_JWT = {
 # Application definition
 
 INSTALLED_APPS = [
+    "jazzmin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -147,3 +148,22 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWS_CREDENTIALS = True
+
+#Add the immages and remove the fields that are not needed
+JAZZMIN_SETTINGS = {
+    "site_title": "Food Delivery Admin",
+    "site_header": "Food Delivery Admin",
+    "site_brand": "Food Delivery",
+    "site_logo": "images/logo.png",
+    "login_logo": "images/logo.png",
+    "login_logo_dark": "images/logo.png",
+    "welcome_sign": "Welcome to the Food Delivery Admin",
+    "copyright": "Food Delivery",
+    "search_model": "model.Merchant",
+    "user_avatar": "images/logo.png",
+    "show_sidebar": True,
+    "show_navigation": True,
+    "show_ui_builder": True,
+    "show_settings": True,
+    "show_app_icons": True,
+}
