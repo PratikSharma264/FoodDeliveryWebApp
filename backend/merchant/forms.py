@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import Merchant
+from .models import Merchant, Restaurant
 
 
 class MerchantSignUpForm(UserCreationForm):
@@ -59,3 +59,30 @@ class MerchantSignUpForm(UserCreationForm):
                 phone_number=self.cleaned_data['phone_number']
             )
         return user
+
+
+class RestaurantForm(forms.ModelForm):
+    class Meta:
+        model = Restaurant
+        fields = [
+            'restaurant_name',
+            'restaurant_contact_name',
+            'contact_number',
+            'secondary_contact_number',
+            'city',
+            'restaurant_address',
+            'cuisine',
+            'latitude',
+            'longitude',
+        ]
+        widgets = {
+            'restaurant_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'restaurant_contact_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'secondary_contact_number': forms.TextInput(attrs={'class': 'form-control'}),
+            'city': forms.TextInput(attrs={'class': 'form-control'}),
+            'restaurant_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'cuisine': forms.Select(attrs={'class': 'form-control'}),
+            'latitude': forms.NumberInput(attrs={'class': 'form-control'}),
+            'longitude': forms.NumberInput(attrs={'class': 'form-control'}),
+        }

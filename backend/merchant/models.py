@@ -30,21 +30,29 @@ class AppUser(models.Model):
         return f"{self.name} ({self.phone_number})"
 
 
+class Cuisine(models.Model):
+    cuisine_name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.cuisine_name
+
+
 class Restaurant(models.Model):
-    store_name = models.CharField(max_length=255, null=True)
-    store_contact_name = models.CharField(max_length=255, null=True)
+    restaurant_name = models.CharField(max_length=255, null=True)
+    restaurant_contact_name = models.CharField(max_length=255, null=True)
     contact_number = models.CharField(
         max_length=15, validators=[phone_validator])
     secondary_contact_number = models.CharField(
         max_length=15, validators=[phone_validator], blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
-    store_address = models.TextField(blank=True, null=True)
-    cuisine = models.CharField(max_length=100, blank=True, null=True)
+    restaurant_address = models.TextField(blank=True, null=True)
+    cuisine = models.ForeignKey(
+        Cuisine, on_delete=models.CASCADE, related_name='cuisine', default="Nepali")
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.store_name} - {self.city or 'No city'}"
+        return f"{self.restaurant_name} - {self.city or 'No city'}"
 
 
 class FoodItem(models.Model):

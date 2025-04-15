@@ -184,12 +184,12 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_compact_style": False,
     "body_small_text": False,
     "button_classes": {
-        "primary": "btn btn-outline-success btn-lg rounded-pill shadow-sm",
-        "secondary": "btn btn-outline-secondary btn-lg rounded-pill shadow-sm",
-        "info": "btn btn-outline-info btn-lg rounded-pill shadow-sm",
-        "warning": "btn btn-outline-warning btn-lg rounded-pill shadow-sm",
-        "danger": "btn btn-outline-danger btn-lg rounded-pill shadow-sm",
-        "success": "btn btn-outline-success btn-lg rounded-pill shadow-sm",
+        "primary": "btn btn-outline-success btn-md rounded-pill shadow-sm",
+        "secondary": "btn btn-outline-secondary btn-md rounded-pill shadow-sm",
+        "info": "btn btn-outline-info btn-md rounded-pill shadow-sm",
+        "warning": "btn btn-outline-warning btn-md rounded-pill shadow-sm",
+        "danger": "btn btn-outline-danger btn-md rounded-pill shadow-sm",
+        "success": "btn btn-outline-success btn-md rounded-pill shadow-sm",
     },
 
 }

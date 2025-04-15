@@ -3,9 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>Dashboard</title>
   </head>
   <body>
-    <h1>Welcome. This is merchant dashboard</h1>
+    <div class="container mt-4">
+      <h2>Complete the form</h2>
+      <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Next ></button>
+      </form>
+    </div>
   </body>
 </html>

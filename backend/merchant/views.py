@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from django.contrib.auth import login
-from .forms import MerchantSignUpForm
+from .forms import MerchantSignUpForm, RestaurantForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 
@@ -39,7 +39,8 @@ def merchant_login_view(request):
 
 @login_required
 def merchant_dashboard(request):
-    return render(request, "merchant/merchant_dashboard.html")
+    form = RestaurantForm()
+    return render(request, "merchant/merchant_dashboard.html", {"form": form})
 
 
 def merchant_logout_view(request):
