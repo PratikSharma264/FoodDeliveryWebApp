@@ -10,19 +10,6 @@ def merchant_home_view(request):
     return render(request, "merchant/m_home.html")
 
 
-def dummyview(request):
-    if request.method == 'POST':
-        form = MerchantSignUpForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect('home')
-    else:
-        form = MerchantSignUpForm()
-
-    return render(request, 'dummy.html', {'form': form})
-
-
 def merchant_login_view(request):
     show_signup = False
     signup_form = MerchantSignUpForm()

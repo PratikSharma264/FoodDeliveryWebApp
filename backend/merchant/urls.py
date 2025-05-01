@@ -14,7 +14,6 @@ urlpatterns = [
     path("formlogin/", views.merchant_form_login, name='form_login'),
     path("formresreg/", views.merchant_form_res_reg, name='form_res_reg'),
     path("formdelreg/", views.merchant_form_del_reg, name='form_del_reg'),
-    path("dummy/", views.dummyview),
     path("register-deliveryman/", views.deliveryman_register_view,
          name='deliveryman_register'),
     path("register-restaurant/", views.merchant_res_reg_view,
