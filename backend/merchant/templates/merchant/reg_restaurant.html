@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grubmate-restrument-registration</title>
-    <link rel="stylesheet" href="../css/reg_resturant.css" />
+    <link rel="stylesheet" href="{% static 'css/reg_resturant.css' %}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link
       rel="stylesheet"
@@ -288,13 +288,13 @@
           </div>
           <div class="btn">
             <button id="nextbtn">
-              <i class="fa-solid fa-forward"></i> <span>click me</span>
+              <i class="fa-solid fa-forward"></i> <span>Next</span>
             </button>
           </div>
         </form>
       </div>
     </section>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="{% static 'merchant/scripts/reg_resturant.js' %}" defer></script>
+    <script src="{% static 'scripts/reg_resturant.js' %}" defer></script>
   </body>
 </html>

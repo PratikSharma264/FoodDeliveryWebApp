@@ -1,7 +1,16 @@
 const signUpButton = document.getElementById("signUp");
 const logInButton = document.getElementById("logIn");
 const container = document.getElementById("container");
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("container");
+  const showSignup = container.dataset.showSignup === "true";
 
+  if (showSignup) {
+    container.classList.add("right-panel-active");
+  } else {
+    container.classList.remove("right-panel-active");
+  }
+});
 signUpButton.addEventListener("click", () => {
   container.classList.add("right-panel-active");
   document.body.classList.add("bg-shift-right");

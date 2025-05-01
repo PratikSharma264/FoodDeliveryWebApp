@@ -5,11 +5,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grubmate</title>
-    <link rel="stylesheet" href="{% static 'merchant/css/m_home.css' %}" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="{% static 'css/m_home.css' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   </head>
   <body>
     <header>
@@ -23,9 +20,11 @@
       </div>
       <div class="header-link">
         <ul>
-          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="home">
+            <a href="{% url 'home' %}">Home</a>
+          </li>
           <li id="signlog" class="navbtn">
-            <a  href="{% url 'signup_login' %}">SignUp/LogIn</a>
+            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
           </li>
           <li id="join" class="navbtn">
             <a id="mainjoin" href="javascript:void(0);">Join Us</a>
@@ -33,7 +32,9 @@
               <li>
                 <a href="{% url 'restaurant_register' %}">Join as Restaurant</a>
               </li>
-              <li><a  href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
+              <li>
+                <a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a>
+              </li>
             </ul>
           </li>
         </ul>
@@ -41,15 +42,9 @@
     </header>
     <div id="main-container">
       <div id="intro">
-        <img src="{% static 'merchant/images/Vector2.png' %}" alt="vctr" id="vctr" />
-        <img
-          src="{% static 'merchant/images/Group3.png' %}"
-          alt="grp3"
-          height="120"
-          width="200"
-          id="rev"
-        />
-        <img src="{% static 'merchant/images/loveicon.png' %}" alt="loveicon" id="loveicon" />
+        <img src="{% static 'images/Vector2.png' %}" alt="vctr" id="vctr" />
+        <img src="{% static 'images/Group3.png' %}" alt="grp3" height="120" width="200" id="rev" />
+        <img src="{% static 'images/loveicon.png' %}" alt="loveicon" id="loveicon" />
         <i class="fa-solid fa-truck-monster"></i>
         <h2>Nepal's Premium Online <br />Food Delivery Platform</h2>
         <h1>Grubmate</h1>
@@ -59,7 +54,7 @@
         </h3>
       </div>
       <div id="intro-image">
-        <img src="{% static 'merchant/images/Burger.png' %}" alt="burger1" />
+        <img src="{% static 'images/Burger.png' %}" alt="burger1" />
       </div>
     </div>
     <div id="features">
@@ -112,6 +107,6 @@
         <span><i class="fa-solid fa-truck-fast"></i></span>
       </p>
     </footer>
-    <script src="{% static 'merchant/scripts/m_home.js' %}"></script>
+    <script src="{% static 'scripts/m_home.js' %}"></script>
   </body>
 </html>

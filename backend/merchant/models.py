@@ -15,9 +15,10 @@ class Merchant(models.Model):
         User, on_delete=models.CASCADE, related_name='merchant_profile')
     phone_number = models.CharField(
         max_length=15, validators=[phone_validator])
+    name = models.CharField(max_length=250, null=True)
 
     def __str__(self):
-        return f"{self.company_name} ({self.user.username})"
+        return f"{self.name} ({self.user.username})"
 
 
 class AppUser(models.Model):

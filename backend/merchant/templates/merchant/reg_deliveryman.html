@@ -6,7 +6,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DeliveryBoy registration</title>
-    <link rel="stylesheet" href="../css/reg_deliveryman.css" />
+    <link rel="stylesheet" href="{% static 'css/reg_deliveryman.css' %}" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
@@ -47,15 +47,15 @@
           <h2>Deliveryman Application</h2>
         </div>
       </div>
-      <div id="form-img1">
-        <img  src="{% static 'merchant/images/person.png' %}" alt="person" />
+      {% comment %} <div id="form-img1">
+        <img  src="{% static 'images/person.jpg' %}" alt="person" />
       </div>
       <div id="form-img2">
-        <img src="{% static 'merchant/images/burger.png' %}" alt="burger" />
+        <img src="{% static 'images/burger.png' %}" alt="burger" />
       </div>
       <div id="pointing">
-        <img src="{% static 'merchant/images/pointingdownward.png' %}" alt="point" />
-      </div>
+        <img src="{% static 'images/pointingdownward.jpg' %}" alt="point" />
+      </div> {% endcomment %}
       <form id="form-body" action="{% url 'form_del_reg' %}" method="post">
         {% csrf_token %}
         <div id="main-info">
@@ -148,7 +148,7 @@
             </div>
           </div>
         </div>
-        <div id="additional-info">
+        <div id="main-info">
           <div>
             <i class="fa-solid fa-cross"></i>
             <h4>Additional Info</h4>
@@ -212,6 +212,6 @@
         </div>
       </form>
     </div>
-    <script src="{% static 'merchant/scripts/reg_deliveryman.js' %}"></script>
+    <script src="{% static 'scripts/reg_deliveryman.js' %}"></script>
   </body>
 </html>
