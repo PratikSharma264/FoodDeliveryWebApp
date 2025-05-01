@@ -1,0 +1,217 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DeliveryBoy registration</title>
+    <link rel="stylesheet" href="../css/reg_deliveryman.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <div id="drop-btn">
+        <i class="fa-solid fa-bars" id="bar"></i>
+        <i class="fa-solid fa-xmark" id="xmark"></i>
+        <div id="logo-brand">
+          <i class="fa-solid fa-truck-fast"></i>
+          <h3>Grubmate-deliveryman-registration</h3>
+        </div>
+      </div>
+      <div class="header-link">
+        <ul>
+          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="signlog" class="navbtn">
+            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
+          </li>
+          <li id="join" class="navbtn">
+            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
+            <ul class="dropdown">
+              <li>
+                <a  href="{% url 'restaurant_register' %}">Join as Restaurant</a>
+              </li>
+              <li><a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </header>
+    <div id="form-container">
+      <div id="form-head">
+        <div><i class="fa-solid fa-user-tie"></i></div>
+        <div>
+          <h2>Deliveryman Application</h2>
+        </div>
+      </div>
+      <div id="form-img1">
+        <img  src="{% static 'merchant/images/person.png' %}" alt="person" />
+      </div>
+      <div id="form-img2">
+        <img src="{% static 'merchant/images/burger.png' %}" alt="burger" />
+      </div>
+      <div id="pointing">
+        <img src="{% static 'merchant/images/pointingdownward.png' %}" alt="point" />
+      </div>
+      <form id="form-body" action="{% url 'form_del_reg' %}" method="post">
+        {% csrf_token %}
+        <div id="main-info">
+          <div>
+            <i class="fa-solid fa-circle-question"></i>
+            <h4>Deliveryman Info</h4>
+          </div>
+          <div id="main-info-container">
+            <div id="fname">
+              <label for="firstname">First Name</label>
+              <input
+                type="text"
+                name="firstname"
+                id="firstname"
+                placeholder="Firstname"
+                required
+              />
+            </div>
+            <div id="lname">
+              <label for="lastname">Last Name</label>
+              <input
+                type="text"
+                name="lastname"
+                id="lastname"
+                placeholder="Lastname"
+                required
+              />
+            </div>
+            <div id="Email">
+              <label for="email">Email</label>
+              <input
+                type="email"
+                name="email"
+                id="email"
+                placeholder="abc@gmail.com"
+                required
+              />
+            </div>
+            <div id="deltype">
+              <label for="deliverytype">Delivery Type</label>
+              <select name="deliverytype" id="deliverytype">
+                <option value="" disabled selected hidden>
+                  Select Delivery Type
+                </option>
+                <option value="Freelance">Freelancer</option>
+                <option value="Salarybased">Salarybased</option>
+              </select>
+            </div>
+            <div id="deliveryzone">
+              <label for="zone">Zone</label>
+              <select name="zone" id="zone">
+                <option value="" disabled selected hidden>
+                  Select Delivery Zone
+                </option>
+                <option value="Kathmandu">Kathmandu</option>
+                <option value="Bhaktapur">Bhaktapur</option>
+              </select>
+            </div>
+            <div id="delvehicle">
+              <label for="vehicle">Vehicle</label>
+              <select name="vehicle" id="vehicle">
+                <option value="" disabled selected hidden>
+                  Select Vehicle
+                </option>
+                <option value="Scooter">Scooter</option>
+                <option value="Bike">Bike</option>
+              </select>
+            </div>
+            <div id="verify">
+              <label for="identity">Vehicle</label>
+              <select name="identity" id="identity">
+                <option value="Passport">Passport</option>
+                <option value="Citizenship">Citizenship</option>
+                <option value="Driving License">Driving License</option>
+              </select>
+            </div>
+            <div id="identitynum">
+              <label for="identitynumber">Identity Number</label>
+              <input type="text" name="identitynumber" id="identitynumber" />
+            </div>
+            <div id="identityimg">
+              <label for="identityimage">Identity Image</label>
+              <input
+                type="file"
+                id="identityimage"
+                name="identityimage"
+                accept="image/*"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        <div id="additional-info">
+          <div>
+            <i class="fa-solid fa-cross"></i>
+            <h4>Additional Info</h4>
+          </div>
+          <div id="additional-info-container">
+            <div id="pannum">
+              <label for="panNumber">Pan Number</label>
+              <input
+                type="text"
+                name="panNumber"
+                id="panNumber"
+                pattern="\d{9}"
+                placeholder="9 digit pan number(123456789)"
+              />
+            </div>
+            <div id="billbook">
+              <label for="billBook">BillBook Scan Copy</label>
+              <input
+                type="file"
+                name="billBook"
+                id="billBook"
+                accept="image/*,application/pdf"
+                required
+              />
+            </div>
+            <div id="dutytime">
+              <label for="dutyTime">Duty Time</label>
+              <select name="dutyTime" id="dutyTime">
+                <option value="day">Day(10AM-6PM)</option>
+                <option value="night">Night(6PM-2AM)</option>
+              </select>
+            </div>
+            <div id="vehiclenum">
+              <label for="vehicleNumber">Vehicle Number</label>
+              <input
+                type="text"
+                name="vehicleNumber"
+                id="vehicleNumber"
+                placeholder="BA-01-PA-1234"
+                required
+              />
+            </div>
+            <div id="dateofbirth">
+              <label for="dob">Date Of Birth</label>
+              <input type="date" name="dob" id="dob" required />
+            </div>
+            <div id="userimage">
+              <label for="userImage">Deliveryman Image</label>
+              <input
+                type="file"
+                name="userImage"
+                id="userImage"
+                accept="image/*"
+                required
+              />
+            </div>
+          </div>
+        </div>
+        <div id="submit">
+          <button type="submit">Submit</button>
+        </div>
+      </form>
+    </div>
+    <script src="{% static 'merchant/scripts/reg_deliveryman.js' %}"></script>
+  </body>
+</html>

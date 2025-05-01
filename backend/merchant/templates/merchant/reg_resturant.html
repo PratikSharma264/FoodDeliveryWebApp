@@ -1,0 +1,300 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grubmate-restrument-registration</title>
+    <link rel="stylesheet" href="../css/reg_resturant.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <div id="drop-btn">
+        <i class="fa-solid fa-bars" id="bar"></i>
+        <i class="fa-solid fa-xmark" id="xmark"></i>
+        <div id="logo-brand">
+          <i class="fa-solid fa-truck-fast"></i>
+          <h3>Grubmate</h3>
+        </div>
+      </div>
+      <div class="header-link">
+        <ul>
+          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="signlog" class="navbtn">
+            <a  href="{% url 'signup_login' %}">SignUp/LogIn</a>
+          </li>
+          <li id="join" class="navbtn">
+            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
+            <ul class="dropdown">
+              <li><a href="{% url 'restaurant_register' %}">Join as Restaurant</a></li>
+              <li><a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </header>
+    <section>
+      <div class="container">
+        <!-- Page Header -->
+        <div class="progress-header">
+          <div id="topicon"><i class="fa-solid fa-utensils"></i></div>
+          <h4 class="title">Restaurant Registration Application</h4>
+          <div class="progress-wrapper">
+            <div id="progress1" class="step current">
+              <div class="circle">1</div>
+              <p>General Information</p>
+            </div>
+            <div class="line"></div>
+            <div id="progress2" class="step">
+              <div class="circle">2</div>
+              <p>Business Plan</p>
+            </div>
+            <div class="line"></div>
+            <div id="progress3" class="step">
+              <div class="circle">3</div>
+              <p>Complete</p>
+            </div>
+          </div>
+        </div>
+        <!-- End Page Header -->
+      </div>
+      <div class="form-container">
+        <form id="main-form" action="{% url 'form_res_reg' %}" method="post">
+          {% csrf_token %}
+          <div class="form-step" id="step-1">
+            <div class="info">
+              <div class="head">
+                <div>
+                  <i class="fa-solid fa-circle-question"></i>
+                  <h3>General Information</h3>
+                </div>
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-house"></i>
+                  <label for="restaurantname">Restaurant Name </label>
+                </div>
+                <input
+                  type="text"
+                  name="restaurantname"
+                  id="restaurantname"
+                  placeholder="Ex: ABC Company"
+                  required
+                />
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-money-check-dollar"></i
+                  ><label for="vatandtax"> Vat/Tax(%)</label>
+                </div>
+                <input
+                  type="text"
+                  name="vatandtax"
+                  id="vatandtax"
+                  placeholder="Ex: ABC Company"
+                  required
+                />
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-location-dot"></i>
+                  <label for="restaurantaddress">Restaurant Address</label>
+                </div>
+                <input
+                  type="text"
+                  name="restaurantaddress"
+                  id="restaurantaddress"
+                  placeholder="Ex: ABC Company"
+                  required
+                />
+              </div>
+              <div class="ip mapcontainer">
+                <div>
+                  <i class="fa-solid fa-location-arrow"></i>
+                  <label>Select Location on Map</label>
+                </div>
+                <div id="map"></div>
+                <div class="coord-inputs">
+                  <input type="text" id="lat" name="latitude" readonly />
+                  <input type="text" id="lng" name="longitude" readonly />
+                </div>
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-bowl-food"></i>
+                  <label for="cuisine">Cuisine Type</label>
+                </div>
+                <input
+                  type="text"
+                  id="cuisine"
+                  name="cuisine"
+                  list="cuisine-options"
+                  placeholder="Select or type a cuisine"
+                  required
+                />
+                <datalist id="cuisine-options">
+                  <option value="Italian"></option>
+                  <option value="Chinese"></option>
+                  <option value="Indian"></option>
+                  <option value="Mexican"></option>
+                  <option value="Nepali"></option>
+                  <option value="Japanese"></option>
+                </datalist>
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-camera"></i>
+                  <label for="profile-pic">Restaurant Profile Picture</label>
+                </div>
+                <input
+                  type="file"
+                  id="profile-pic"
+                  name="profile-pic"
+                  accept="image/*"
+                />
+                <img
+                  id="profile-preview"
+                  class="image-preview"
+                  src="#"
+                  alt="Profile Preview"
+                  style="display: none"
+                />
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-images"></i>
+                  <label for="cover-photo">Restaurant Cover Photo</label>
+                </div>
+                <input
+                  type="file"
+                  id="cover-photo"
+                  name="cover-photo"
+                  accept="image/*"
+                />
+                <img
+                  id="cover-preview"
+                  class="image-preview"
+                  src="#"
+                  alt="Cover Preview"
+                  style="display: none"
+                />
+              </div>
+            </div>
+            <div class="info">
+              <div class="head">
+                <div>
+                  <i class="fa-solid fa-circle-user"></i>
+                  <h3>Owner Information</h3>
+                </div>
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-user"></i>
+                  <label for="owner-name">Full Name</label>
+                </div>
+                <input
+                  type="text"
+                  name="owner-name"
+                  id="owner-name"
+                  placeholder=""
+                  required
+                />
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-phone"></i>
+                  <label for="owner-contact">Contact Number </label>
+                </div>
+                <input
+                  type="tel"
+                  name="owner-contact"
+                  id="owner-contact"
+                  placeholder="+977xxxxxxxxxx"
+                  pattern="^\+977\d{9}$"
+                  required
+                />
+              </div>
+            </div>
+            <div class="info">
+              <div class="head">
+                <div>
+                  <i class="fa-solid fa-plus"></i>
+                  <h3>Additional Information</h3>
+                </div>
+              </div>
+              <div class="ip">
+                <div>
+                  <i class="fa-solid fa-file-import"></i>
+                  <label for="menu">Upload Menu (PNG, JPG, or PDF)</label>
+                </div>
+                <input
+                  type="file"
+                  id="menu"
+                  name="menu"
+                  accept=".png, .jpg, .jpeg, .pdf"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          <div class="form-step" id="step-2">
+            <div id="business-plan-header">
+              <h3>Business Plans</h3>
+              <h4>Choose Your Business Plan</h4>
+            </div>
+            <div id="business-plan-body">
+              <label class="plan-option">
+                <div class="icon"><i class="fa-solid fa-snowflake"></i></i></div>
+                <input
+                  type="radio"
+                  name="businessPlan"
+                  value="commission"
+                  required
+                />
+                <div class="plan-box">
+                  <h4>Commission Base</h4>
+                  <p>
+                    Restaurant will pay 20% Commission to Grubmate from each
+                    order. You will get access to all features and options in
+                    the restaurant panel, app, and user interaction.
+                  </p>
+                </div>
+              </label>
+
+              <label class="plan-option">
+                <div class="icon"><i class="fa-solid fa-globe"></i></div>
+                <input
+                  type="radio"
+                  name="businessPlan"
+                  value="subscription"
+                  required
+                />
+                <div class="plan-box">
+                  <h4>Subscription Base</h4>
+                  <p>
+                    Run restaurant by purchasing subscription packages. You will
+                    have access to features in the restaurant panel, app, and
+                    user interaction according to the package.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div class="btn">
+            <button id="nextbtn">
+              <i class="fa-solid fa-forward"></i> <span>click me</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="{% static 'merchant/scripts/reg_resturant.js' %}" defer></script>
+  </body>
+</html>

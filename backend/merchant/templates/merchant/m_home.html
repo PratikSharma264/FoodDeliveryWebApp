@@ -1,0 +1,117 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grubmate</title>
+    <link rel="stylesheet" href="{% static 'merchant/css/m_home.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <header>
+      <div id="drop-btn">
+        <i class="fa-solid fa-bars" id="bar"></i>
+        <i class="fa-solid fa-xmark" id="xmark"></i>
+        <div id="logo-brand">
+          <i class="fa-solid fa-truck-fast"></i>
+          <h3>Grubmate</h3>
+        </div>
+      </div>
+      <div class="header-link">
+        <ul>
+          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="signlog" class="navbtn">
+            <a  href="{% url 'signup_login' %}">SignUp/LogIn</a>
+          </li>
+          <li id="join" class="navbtn">
+            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
+            <ul class="dropdown">
+              <li>
+                <a href="{% url 'restaurant_register' %}">Join as Restaurant</a>
+              </li>
+              <li><a  href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </header>
+    <div id="main-container">
+      <div id="intro">
+        <img src="{% static 'merchant/images/Vector2.png' %}" alt="vctr" id="vctr" />
+        <img
+          src="{% static 'merchant/images/Group3.png' %}"
+          alt="grp3"
+          height="120"
+          width="200"
+          id="rev"
+        />
+        <img src="{% static 'merchant/images/loveicon.png' %}" alt="loveicon" id="loveicon" />
+        <i class="fa-solid fa-truck-monster"></i>
+        <h2>Nepal's Premium Online <br />Food Delivery Platform</h2>
+        <h1>Grubmate</h1>
+        <h3>
+          Grubmate stands as Nepal's premium online
+          <br />food delivery platform, redefining culinary experiences.
+        </h3>
+      </div>
+      <div id="intro-image">
+        <img src="{% static 'merchant/images/Burger.png' %}" alt="burger1" />
+      </div>
+    </div>
+    <div id="features">
+      <div id="feature-header">
+        <h2>Stunning Features</h2>
+        <h3>Remarkable Features that You Can Count!</h3>
+      </div>
+      <div id="feature-container">
+        <div class="featurebox">
+          <div class="boxicon">
+            <i class="fa-solid fa-money-bill-wave"></i>
+          </div>
+          <div class="boxtext">
+            <h4>Reasonable Price</h4>
+            <p>Start your business in cheap cost. In your budget.</p>
+          </div>
+        </div>
+        <div class="featurebox">
+          <div class="boxicon">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <div class="boxtext">
+            <h4>Fast Delivery</h4>
+            <p>Start your business in cheap cost. In your budget.</p>
+          </div>
+        </div>
+        <div class="featurebox">
+          <div class="boxicon">
+            <i class="fa-solid fa-credit-card"></i>
+          </div>
+          <div class="boxtext">
+            <h4>Easy Payment</h4>
+            <p>Smart and easy payment system to maintain your business.</p>
+          </div>
+        </div>
+        <div class="featurebox">
+          <div class="boxicon">
+            <i class="fa-solid fa-envelope"></i>
+          </div>
+          <div class="boxtext">
+            <h4>24h Support</h4>
+            <p>24/7 customer support service to support you.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>
+      <p>
+        <i class="fa fa-heart"></i> Grubmate
+        <span><i class="fa-solid fa-truck-fast"></i></span>
+      </p>
+    </footer>
+    <script src="{% static 'merchant/scripts/m_home.js' %}"></script>
+  </body>
+</html>

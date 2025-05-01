@@ -1,0 +1,112 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" src="{% static 'merchant/css/m_sign_log.css' %}" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+
+    <script
+      src="https://kit.fontawesome.com/your_kit_code.js"
+      crossorigin="anonymous"
+      defer
+    ></script>
+    <script src="{% static 'merchant/scripts/m_sign_log.js' %}" defer></script>
+    <title>Grubmate-LoginSignup</title>
+  </head>
+  <body>
+    <header>
+      <div id="drop-btn">
+        <i class="fa-solid fa-bars" id="bar"></i>
+        <i class="fa-solid fa-xmark" id="xmark"></i>
+        <div id="logo-brand">
+          <i class="fa-solid fa-truck-fast"></i>
+          <h3>Grubmate</h3>
+        </div>
+      </div>
+      <div class="header-link">
+        <ul>
+          <li id="home"><a  href="{% url 'home' %}">Home</a></li>
+          <li id="signlog" class="navbtn">
+            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
+          </li>
+          <li id="join" class="navbtn">
+            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
+            <ul class="dropdown">
+              <li>
+                <a href="{% url 'restaurant_register' %}">Join as Restaurant</a>
+              </li>
+              <li><a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </header>
+
+    <div class="container" id="container">
+      <div class="form-container sign-up-container">
+        <form action="{% url 'form_signup' %}" method="post">
+          {% csrf_token %}
+          <h1>Create Account</h1>
+          <input type="text" name="fullname" placeholder="Name" />
+          <input type="email" name="email" placeholder="Email" />
+          <input
+            type="tel"
+            name="phonenumber"
+            id="phonenumber"
+            placeholder="Phone number"
+          />
+          <input type="password" name="password" placeholder="Password" />
+          <input
+            type="password"
+            name="confirmpassword"
+            placeholder="Confirm Password"
+          />
+          <button class="inputbtn">Sign Up</button>
+        </form>
+      </div>
+      <div class="form-container sign-in-container">
+        <form action="{% url 'form_login' %}" method="post">
+          {% csrf_token %}
+          <h1>Log in</h1>
+          <input type="email" placeholder="Email" />
+          <input type="password" placeholder="Password" />
+          <a href="{% url 'forget_password' %}">Forgot your password?</a>
+          <button class="inputbtn">Log In</button>
+        </form>
+      </div>
+      <div id="signup" class="overlay-container">
+        <div class="overlay">
+          <div class="overlay-panel overlay-left">
+            <h1>Sign Up!</h1>
+            <p>
+              To keep connected with us please signup with your personal info
+            </p>
+            <button class="ghost" id="logIn">Log In</button>
+          </div>
+          <div class="overlay-panel overlay-right">
+            <h1>Hello, Merchant!</h1>
+            <p>Enter your login info and start journey with us</p>
+            <button class="ghost" id="signUp">Sign Up</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <p>
+        <i class="fa fa-heart"></i> Grubmate
+        <span><i class="fa-solid fa-truck-fast"></i></span>
+      </p>
+    </footer>
+  </body>
+</html>
