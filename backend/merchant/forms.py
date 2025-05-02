@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import Merchant, Restaurant,Deliveryman
+from .models import Merchant, Restaurant
 
 phone_validator = RegexValidator(
     regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
@@ -97,23 +97,9 @@ class RestaurantForm(forms.ModelForm):
             'longitude': forms.NumberInput(attrs={'class': 'form-control'}),
         }
 
-class DeliverymanForm(forms.ModelForm):
-    class Meta:
-        model = Deliveryman
-        fields = [
-            'Firstname',
-            'Lastname',
-            'Email',
-            'DeliveryType',
-            'Zone',
-            'Vehicle',
-            'IdentityNumber',
-            'IdentityImage',
-            'PanNumber',
-            'DutyTime',
-            'DateofBirth',
-            'UserImage',
-        ]
 
-    def __init__(self, *args, **kwargs):
-        super(DeliverymanForm, self).__init__(*args, **kwargs)
+class MerchantForgotPasswordForm(forms.Form):
+    email = forms.EmailField(
+        label='Email',
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'})
+    )
