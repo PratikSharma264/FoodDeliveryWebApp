@@ -1,10 +1,18 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from .forms import MerchantSignUpForm, RestaurantForm
+from .forms import MerchantSignUpForm, RestaurantForm, MerchantForgotPasswordForm
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
-
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_user_model
+from .utils import account_activation_token
+from django.contrib.auth.models import User
+from django.template.loader import render_to_string
+from django.contrib.sites.shortcuts import get_current_site
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import EmailMessage
+from django.contrib.auth.tokens import default_token_generator
+from .models import Merchant
+from django.contrib.auth.forms import SetPasswordForm
 
 def merchant_home_view(request):
     return render(request, "merchant/m_home.html")
@@ -80,9 +88,6 @@ def merchant_signuplogin_view(request):
     pass
 
 
-def merchant_forgetpassword_view(request):
-    pass
-
 
 def merchant_res_reg_view(request):
     return render(request, "merchant/reg_restaurant.html")
@@ -90,3 +95,74 @@ def merchant_res_reg_view(request):
 
 def merchant_del_reg_view(request):
     pass
+
+
+def merchant_forgetpassword_view(request):
+    if request.method == 'POST':
+        form = MerchantForgotPasswordForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data.get('email')
+            
+            try:
+                user = User.objects.get(email=email)
+                
+                try:
+                    merchant = Merchant.objects.get(user=user)
+                    
+                    current_site = get_current_site(request)
+                    mail_subject = 'Reset your merchant password'
+                    message = render_to_string('merchant/password_reset_email.html', {
+                        'user': user,
+                        'merchant': merchant,
+                        'domain': current_site.domain,
+                        'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                        'token': account_activation_token.make_token(user),
+                        'protocol': 'https' if request.is_secure() else 'http',
+                    })
+
+                    email_message = EmailMessage(mail_subject, message, to=[email])
+
+                    try:
+                        email_message.send()
+                        messages.success(request, 'Password reset email has been sent. Please check your inbox.')
+                        return redirect('m_sign_log.html')
+                    except Exception as e:
+                        messages.error(request, 'Failed to send email. Please try again later.')
+
+                except Merchant.DoesNotExist:
+                    messages.error(request, 'This email is not associated with any merchant account.')
+            except User.DoesNotExist:
+                messages.error(request, 'No account found with that email address.')
+    else:
+        form = MerchantForgotPasswordForm()
+    
+    return render(request, 'merchant/forget_password.html', {'form': form})
+
+
+def merchant_reset_password_view(request, uidb64, token):
+    try:
+        # Decoding the UID
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = get_user_model().objects.get(pk=uid)
+        
+        # Verifying that this user has a merchant profile
+        merchant = Merchant.objects.get(user=user)
+    except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist, Merchant.DoesNotExist):
+        user = None
+        merchant = None
+    
+
+    if user is not None and merchant is not None and account_activation_token.check_token(user, token):
+        if request.method == 'POST':
+            form = SetPasswordForm(user, request.POST)
+            if form.is_valid():
+                form.save()
+                update_session_auth_hash(request, form.user)
+                messages.success(request, 'Your merchant password has been reset successfully.')
+                return redirect('signup_login')
+            form = SetPasswordForm(user)
+        
+        return render(request, 'merchant/reset_password.html', {'form': form, 'merchant': merchant})
+    else:
+        messages.error(request, 'Password reset link is invalid or has expired.')
+        return redirect('signup_login')  
