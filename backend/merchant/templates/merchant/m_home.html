@@ -23,9 +23,15 @@
           <li id="home">
             <a href="{% url 'home' %}">Home</a>
           </li>
-          <li id="signlog" class="navbtn">
-            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
-          </li>
+          {% if user.is_authenticated %}
+            <li id="signlog" class="navbtn">
+              <a href="{% url 'merchant-logout' %}">LogOut</a>
+            </li>
+          {% else %}
+            <li id="signlog" class="navbtn">
+              <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
+            </li>
+          {% endif %}
           <li id="join" class="navbtn">
             <a id="mainjoin" href="javascript:void(0);">Join Us</a>
             <ul class="dropdown">

@@ -195,6 +195,7 @@ JAZZMIN_UI_TWEAKS = {
 
 }
 
+LOGIN_URL = 'signup_login'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST')

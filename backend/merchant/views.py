@@ -16,13 +16,17 @@ from django.contrib.auth.forms import SetPasswordForm
 
 
 def merchant_home_view(request):
-    print(request.user)
     return render(request, "merchant/m_home.html")
 
 
 def merchant_login_view(request):
     show_signup = False
     signup_form = MerchantSignUpForm()
+
+    next_url = request.GET.get('next', None)
+    print(next_url)
+    if next_url:
+        request.session['next_url'] = next_url
 
     if request.method == "POST":
         form_type = request.POST.get('form_type')
@@ -31,7 +35,7 @@ def merchant_login_view(request):
             if signup_form.is_valid():
                 user = signup_form.save()
                 login(request, user)
-                return redirect('home')
+                return redirect(request.session.get('next_url', 'home'))
             else:
                 show_signup = True
 
@@ -43,7 +47,7 @@ def merchant_login_view(request):
             if user is not None:
                 login(request, user)
                 messages.success(request, "You have successfully logged in!")
-                return redirect('home')
+                return redirect(request.session.get('next_url', 'home'))
             else:
                 messages.warning(request, "Invalid login credentials.")
                 show_signup = False
@@ -60,12 +64,14 @@ def merchant_dashboard(request):
     return render(request, "merchant/merchant_dashboard.html", {"form": form})
 
 
+@login_required
 def merchant_logout_view(request):
     logout(request)
     messages.success(request, ("You are successfully logged out"))
     return redirect('signup_login')
 
 
+@login_required
 def deliveryman_register_view(request):
     return render(request, "merchant/reg_deliveryman.html")
 
@@ -90,6 +96,7 @@ def merchant_signuplogin_view(request):
     pass
 
 
+@login_required
 def merchant_res_reg_view(request):
     return render(request, "merchant/reg_restaurant.html")
 
