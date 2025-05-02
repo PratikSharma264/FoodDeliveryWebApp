@@ -14,7 +14,9 @@ from django.contrib.auth.tokens import default_token_generator
 from .models import Merchant
 from django.contrib.auth.forms import SetPasswordForm
 
+
 def merchant_home_view(request):
+    print(request.user)
     return render(request, "merchant/m_home.html")
 
 
@@ -61,7 +63,7 @@ def merchant_dashboard(request):
 def merchant_logout_view(request):
     logout(request)
     messages.success(request, ("You are successfully logged out"))
-    return redirect('merchant-login')
+    return redirect('signup_login')
 
 
 def deliveryman_register_view(request):
@@ -88,7 +90,6 @@ def merchant_signuplogin_view(request):
     pass
 
 
-
 def merchant_res_reg_view(request):
     return render(request, "merchant/reg_restaurant.html")
 
@@ -102,13 +103,13 @@ def merchant_forgetpassword_view(request):
         form = MerchantForgotPasswordForm(request.POST)
         if form.is_valid():
             email = form.cleaned_data.get('email')
-            
+
             try:
                 user = User.objects.get(email=email)
-                
+
                 try:
                     merchant = Merchant.objects.get(user=user)
-                    
+
                     current_site = get_current_site(request)
                     mail_subject = 'Reset your merchant password'
                     message = render_to_string('merchant/password_reset_email.html', {
@@ -120,37 +121,39 @@ def merchant_forgetpassword_view(request):
                         'protocol': 'https' if request.is_secure() else 'http',
                     })
 
-                    email_message = EmailMessage(mail_subject, message, to=[email])
+                    email_message = EmailMessage(
+                        mail_subject, message, to=[email])
+                    email_message.content_subtype = "html"
 
                     try:
                         email_message.send()
-                        messages.success(request, 'Password reset email has been sent. Please check your inbox.')
-                        return redirect('m_sign_log.html')
+                        messages.success(
+                            request, 'Password reset email has been sent. Please check your inbox.')
+                        return redirect('email-sent')
                     except Exception as e:
-                        messages.error(request, 'Failed to send email. Please try again later.')
+                        messages.error(
+                            request, 'Failed to send email. Please try again later.')
 
                 except Merchant.DoesNotExist:
-                    messages.error(request, 'This email is not associated with any merchant account.')
+                    messages.error(
+                        request, 'This email is not associated with any merchant account.')
             except User.DoesNotExist:
-                messages.error(request, 'No account found with that email address.')
+                messages.error(
+                    request, 'No account found with that email address.')
     else:
         form = MerchantForgotPasswordForm()
-    
+
     return render(request, 'merchant/forget_password.html', {'form': form})
 
 
 def merchant_reset_password_view(request, uidb64, token):
     try:
-        # Decoding the UID
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = get_user_model().objects.get(pk=uid)
-        
-        # Verifying that this user has a merchant profile
         merchant = Merchant.objects.get(user=user)
     except (TypeError, ValueError, OverflowError, get_user_model().DoesNotExist, Merchant.DoesNotExist):
         user = None
         merchant = None
-    
 
     if user is not None and merchant is not None and account_activation_token.check_token(user, token):
         if request.method == 'POST':
@@ -158,11 +161,18 @@ def merchant_reset_password_view(request, uidb64, token):
             if form.is_valid():
                 form.save()
                 update_session_auth_hash(request, form.user)
-                messages.success(request, 'Your merchant password has been reset successfully.')
+                messages.success(
+                    request, 'Your merchant password has been reset successfully.')
                 return redirect('signup_login')
+        else:
             form = SetPasswordForm(user)
-        
+
         return render(request, 'merchant/reset_password.html', {'form': form, 'merchant': merchant})
     else:
-        messages.error(request, 'Password reset link is invalid or has expired.')
-        return redirect('signup_login')  
+        messages.error(
+            request, 'Password reset link is invalid or has expired.')
+        return redirect('signup_login')
+
+
+def email_sent_view(request):
+    return render(request, "merchant/email_sent.html")

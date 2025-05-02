@@ -140,7 +140,8 @@ class Delivery(models.Model):
 
     class Meta:
         verbose_name_plural = "Deliveries"
-        
+
+
 class DeliveryVehicle(models.Model):
     VEHICLE_CHOICES = [
         ('Scooter', 'Scooter'),
@@ -151,33 +152,38 @@ class DeliveryVehicle(models.Model):
         ('Citizenship', 'Citizenship'),
         ('Driving License', 'Driving License'),
     ]
-    Vehicletype=models.CharField(choices=VEHICLE_CHOICES)
-    VehicleDocuments=models.CharField(choices=IDENTITY_CHOICES)
-    VehicleNumberplate=models.CharField(max_length=13)
+    Vehicletype = models.CharField(choices=VEHICLE_CHOICES)
+    VehicleDocuments = models.CharField(choices=IDENTITY_CHOICES)
+    VehicleNumberplate = models.CharField(max_length=13)
+
 
 class Deliveryman(models.Model):
-    DeliveryType_choice=[
-        { ('Freelance', 'Freelancer'),
-        ('Salarybased', 'Salarybased'),}
+    DELIVERY_TYPE_CHOICES = [
+        ('Freelance', 'Freelancer'),
+        ('Salarybased', 'Salarybased'),
     ]
-    Zone_choice=[
+    ZONE_CHOICES = [
         ('Kathmandu', 'Kathmandu'),
         ('Bhaktapur', 'Bhaktapur'),
     ]
-    Dutytime_choices = [
-        ('day', 'Day(10AM-6PM)'),
-        ('night', 'Night(6PM-2AM)'),
+    DUTYTIME_CHOICES = [
+        ('day', 'Day (10AM-6PM)'),
+        ('night', 'Night (6PM-2AM)'),
     ]
-    Firstname=models.CharField(max_length=100)
-    Lastname=models.CharField(max_length=100)
-    Email=models.EmailField()
-    DeliveryType=models.CharField(choices=DeliveryType_choice)
-    Zone=models.CharField(choices=Zone_choice)
-    Vehicle=models.ForeignKey(DeliveryVehicle)
-    IdentityNumber=models.IntegerField(max_length=10,blank=False)
-    IdentityImage=models.ImageField()
-    PanNumber=models.IntegerField(max_length=9)
-    DutyTime=models.CharField(choices=Dutytime_choices)
-    DateofBirth=models.DateField()
-    UserImage=models.ImageField()
 
+    Firstname = models.CharField(max_length=100)
+    Lastname = models.CharField(max_length=100)
+    Email = models.EmailField()
+    DeliveryType = models.CharField(
+        max_length=20, choices=DELIVERY_TYPE_CHOICES)
+    Zone = models.CharField(max_length=20, choices=ZONE_CHOICES)
+    Vehicle = models.ForeignKey('DeliveryVehicle', on_delete=models.CASCADE)
+    IdentityNumber = models.IntegerField(blank=False)
+    IdentityImage = models.ImageField(upload_to='identity_images/')
+    PanNumber = models.IntegerField()
+    DutyTime = models.CharField(max_length=10, choices=DUTYTIME_CHOICES)
+    DateofBirth = models.DateField()
+    UserImage = models.ImageField(upload_to='user_images/')
+
+    def __str__(self):
+        return f'{self.Firstname} {self.Lastname}'

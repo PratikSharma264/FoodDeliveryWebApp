@@ -1,3 +1,4 @@
+pip>=25.1
 asgiref==3.8.1
 Django==5.2
 django-cors-headers==4.7.0
@@ -12,3 +13,6 @@ sqlparse==0.5.3
 tzdata==2025.2
 six==1.17.0
 python-decouple==3.5
+setuptools==80.1.0
+wheel==0.45.1
+pillow==11.2.1
