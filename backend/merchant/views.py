@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from .forms import MerchantSignUpForm, RestaurantForm, MerchantForgotPasswordForm
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import MerchantSignUpForm, RestaurantForm, MerchantForgotPasswordForm, DeliverymanForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_user_model
 from .utils import account_activation_token
@@ -11,7 +11,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
-from .models import Merchant
+from .models import Merchant, Deliveryman
 from django.contrib.auth.forms import SetPasswordForm
 
 
@@ -60,8 +60,10 @@ def merchant_login_view(request):
 
 @login_required
 def merchant_dashboard(request):
-    form = RestaurantForm()
-    return render(request, "merchant/merchant_dashboard.html", {"form": form})
+    profile = get_object_or_404(Deliveryman, user=request.user)
+    return render(request, "merchant/merchant_dashboard.html", {
+        'deliveryman': profile,
+    })
 
 
 @login_required
@@ -73,7 +75,23 @@ def merchant_logout_view(request):
 
 @login_required
 def deliveryman_register_view(request):
-    return render(request, "merchant/reg_deliveryman.html")
+    if request.method == "POST":
+        form = DeliverymanForm(request.POST, request.FILES)
+        if form.is_valid():
+            deliveryman = form.save(commit=False)
+            deliveryman.user = request.user
+            form.save()
+            messages.success(
+                request, "Your registration has been successfully completed. Welcome aboard.")
+            return redirect('merchant-dashboard')
+        else:
+            print(f"\033[91mform_error: {form.errors}\033[0m")
+    else:
+        form = DeliverymanForm(initial={
+            'Email': request.user.email
+        })
+
+    return render(request, "merchant/reg_deliveryman.html", {"form": form})
 
 
 def merchant_form_signup(request):

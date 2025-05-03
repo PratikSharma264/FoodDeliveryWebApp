@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
-from .models import Merchant, Restaurant
+from .models import Merchant, Restaurant, Deliveryman
 
 phone_validator = RegexValidator(
     regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
@@ -101,5 +101,79 @@ class RestaurantForm(forms.ModelForm):
 class MerchantForgotPasswordForm(forms.Form):
     email = forms.EmailField(
         label='Email',
-        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Enter your email'})
+        widget=forms.EmailInput(
+            attrs={'class': 'form-control', 'placeholder': 'Enter your email'})
     )
+
+
+class DeliverymanForm(forms.ModelForm):
+    Firstname = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'Firstname'})
+    )
+    Lastname = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'Lastname'})
+    )
+    Email = forms.EmailField(
+        required=True,
+        widget=forms.EmailInput(attrs={'placeholder': 'abc@gmail.com'})
+    )
+    DeliveryType = forms.ChoiceField(
+        required=True,
+        choices=Deliveryman.DELIVERY_TYPE_CHOICES,
+        widget=forms.Select()
+    )
+    Zone = forms.ChoiceField(
+        required=True,
+        choices=Deliveryman.ZONE_CHOICES,
+        widget=forms.Select()
+    )
+    Vehicle = forms.ChoiceField(
+        required=True,
+        choices=Deliveryman.VEHICLE_CHOICES,
+        widget=forms.Select()
+    )
+    IdentityType = forms.ChoiceField(
+        required=True,
+        choices=Deliveryman.IDENTITY_CHOICES,
+        widget=forms.Select()
+    )
+    IdentityNumber = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'ID number'})
+    )
+    IdentityImage = forms.ImageField(required=True)
+    PanNumber = forms.CharField(
+        required=True,
+        widget=forms.TextInput(
+            attrs={'placeholder': '9 digit pan number (123456789)', 'pattern': r'\d{9}'})
+    )
+    BillBookScanCopy = forms.ImageField(required=True)
+    DutyTime = forms.ChoiceField(
+        required=True,
+        choices=Deliveryman.DUTYTIME_CHOICES,
+        widget=forms.Select()
+    )
+    VehicleNumber = forms.CharField(
+        required=True,
+        widget=forms.TextInput(
+            attrs={'placeholder': 'BA 01 PA 1234 / 03-01-Pa-1234'})
+    )
+    DateofBirth = forms.DateField(
+        required=True,
+        widget=forms.DateInput(
+            attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'})
+    )
+    UserImage = forms.ImageField(required=True)
+
+    class Meta:
+        model = Deliveryman
+        fields = '__all__'
+        exclude = ['user']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for fname in ['DeliveryType', 'Zone', 'Vehicle', 'IdentityType', 'DutyTime']:
+            self.fields[fname].choices = [
+                (v, l) for v, l in self.fields[fname].choices if v != '']
