@@ -5,8 +5,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grubmate-restrument-registration</title>
-    <link rel="stylesheet" href="{% static 'css/reg_resturant.css' %}">
+    <title>Grubmate–Restaurant Registration</title>
+    <link rel="stylesheet" href="{% static 'css/reg_resturant.css' %}" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link
       rel="stylesheet"
@@ -27,7 +27,7 @@
         <ul>
           <li id="home"><a href="{% url 'home' %}">Home</a></li>
           <li id="signlog" class="navbtn">
-            <a  href="{% url 'signup_login' %}">SignUp/LogIn</a>
+            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
           </li>
           <li id="join" class="navbtn">
             <a id="mainjoin" href="javascript:void(0);">Join Us</a>
@@ -46,12 +46,12 @@
           <div id="topicon"><i class="fa-solid fa-utensils"></i></div>
           <h4 class="title">Restaurant Registration Application</h4>
           <div class="progress-wrapper">
-            <div id="progress1" class="step current">
+            <div id="progress1" class="step {% if not form.business_plan %}current{% endif %}">
               <div class="circle">1</div>
               <p>General Information</p>
             </div>
             <div class="line"></div>
-            <div id="progress2" class="step">
+            <div id="progress2" class="step {% if form.business_plan %}current{% endif %}">
               <div class="circle">2</div>
               <p>Business Plan</p>
             </div>
@@ -65,8 +65,25 @@
         <!-- End Page Header -->
       </div>
       <div class="form-container">
-        <form id="main-form" action="{% url 'form_res_reg' %}" method="post">
+        <form id="main-form" action="{% url 'restaurant_register' %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}
+   {% if form.errors %}
+    <div class="error-container">
+      <ul>
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    
+          {# Step 1: General Information #}
+          {% if not form.business_plan %}
           <div class="form-step" id="step-1">
             <div class="info">
               <div class="head">
@@ -76,68 +93,38 @@
                 </div>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-house"></i>
-                  <label for="restaurantname">Restaurant Name </label>
+                <div><i class="fa-solid fa-house"></i>
+                  <label for="id_restaurant_name">Restaurant Name</label>
                 </div>
-                <input
-                  type="text"
-                  name="restaurantname"
-                  id="restaurantname"
-                  placeholder="Ex: ABC Company"
-                  required
-                />
+                {{ form.restaurant_name }}
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-money-check-dollar"></i
-                  ><label for="vatandtax"> Vat/Tax(%)</label>
+                <div><i class="fa-solid fa-money-check-dollar"></i>
+                  <label for="id_vat_and_tax">VAT/Tax (%)</label>
                 </div>
-                <input
-                  type="text"
-                  name="vatandtax"
-                  id="vatandtax"
-                  placeholder="Ex: ABC Company"
-                  required
-                />
+                {{ form.vat_and_tax }}
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-location-dot"></i>
-                  <label for="restaurantaddress">Restaurant Address</label>
+                <div><i class="fa-solid fa-location-dot"></i>
+                  <label for="id_restaurant_address">Restaurant Address</label>
                 </div>
-                <input
-                  type="text"
-                  name="restaurantaddress"
-                  id="restaurantaddress"
-                  placeholder="Ex: ABC Company"
-                  required
-                />
+                {{ form.restaurant_address }}
               </div>
               <div class="ip mapcontainer">
-                <div>
-                  <i class="fa-solid fa-location-arrow"></i>
+                <div><i class="fa-solid fa-location-arrow"></i>
                   <label>Select Location on Map</label>
                 </div>
                 <div id="map"></div>
                 <div class="coord-inputs">
-                  <input type="text" id="lat" name="latitude" readonly />
-                  <input type="text" id="lng" name="longitude" readonly />
+                  {{ form.latitude }}
+                  {{ form.longitude }}
                 </div>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-bowl-food"></i>
-                  <label for="cuisine">Cuisine Type</label>
+                <div><i class="fa-solid fa-bowl-food"></i>
+                  <label for="id_cuisine">Cuisine Type</label>
                 </div>
-                <input
-                  type="text"
-                  id="cuisine"
-                  name="cuisine"
-                  list="cuisine-options"
-                  placeholder="Select or type a cuisine"
-                  required
-                />
+                {{ form.cuisine }}
                 <datalist id="cuisine-options">
                   <option value="Italian"></option>
                   <option value="Chinese"></option>
@@ -148,146 +135,84 @@
                 </datalist>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-camera"></i>
-                  <label for="profile-pic">Restaurant Profile Picture</label>
+                <div><i class="fa-solid fa-camera"></i>
+                  <label for="id_profile_picture">Restaurant Profile Picture</label>
                 </div>
-                <input
-                  type="file"
-                  id="profile-pic"
-                  name="profile-pic"
-                  accept="image/*"
-                />
-                <img
-                  id="profile-preview"
-                  class="image-preview"
-                  src="#"
-                  alt="Profile Preview"
-                  style="display: none"
-                />
+                {{ form.profile_picture }}
+                <img id="profile-preview" class="image-preview" src="#" alt="Profile Preview" style="display:none"/>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-images"></i>
-                  <label for="cover-photo">Restaurant Cover Photo</label>
+                <div><i class="fa-solid fa-images"></i>
+                  <label for="id_cover_photo">Restaurant Cover Photo</label>
                 </div>
-                <input
-                  type="file"
-                  id="cover-photo"
-                  name="cover-photo"
-                  accept="image/*"
-                />
-                <img
-                  id="cover-preview"
-                  class="image-preview"
-                  src="#"
-                  alt="Cover Preview"
-                  style="display: none"
-                />
+                {{ form.cover_photo }}
+                <img id="cover-preview" class="image-preview" src="#" alt="Cover Preview" style="display:none"/>
               </div>
             </div>
             <div class="info">
               <div class="head">
-                <div>
-                  <i class="fa-solid fa-circle-user"></i>
+                <div><i class="fa-solid fa-circle-user"></i>
                   <h3>Owner Information</h3>
                 </div>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-user"></i>
-                  <label for="owner-name">Full Name</label>
+                <div><i class="fa-solid fa-user"></i>
+                  <label for="id_owner_name">Full Name</label>
                 </div>
-                <input
-                  type="text"
-                  name="owner-name"
-                  id="owner-name"
-                  placeholder=""
-                  required
-                />
+                {{ form.owner_name }}
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-phone"></i>
-                  <label for="owner-contact">Contact Number </label>
+                <div><i class="fa-solid fa-phone"></i>
+                  <label for="id_owner_contact">Contact Number</label>
                 </div>
-                <input
-                  type="tel"
-                  name="owner-contact"
-                  id="owner-contact"
-                  placeholder="+977xxxxxxxxxx"
-                  pattern="^\+977\d{9}$"
-                  required
-                />
+                {{ form.owner_contact }}
               </div>
             </div>
             <div class="info">
               <div class="head">
-                <div>
-                  <i class="fa-solid fa-plus"></i>
+                <div><i class="fa-solid fa-plus"></i>
                   <h3>Additional Information</h3>
                 </div>
               </div>
               <div class="ip">
-                <div>
-                  <i class="fa-solid fa-file-import"></i>
-                  <label for="menu">Upload Menu (PNG, JPG, or PDF)</label>
+                <div><i class="fa-solid fa-file-import"></i>
+                  <label for="id_menu">Upload Menu (PNG, JPG, PDF)</label>
                 </div>
-                <input
-                  type="file"
-                  id="menu"
-                  name="menu"
-                  accept=".png, .jpg, .jpeg, .pdf"
-                  required
-                />
+                {{ form.menu }}
               </div>
             </div>
           </div>
+          {% endif %}
+
+          {# Step 2: Business Plan #}
+          {% if form.business_plan %}
           <div class="form-step" id="step-2">
             <div id="business-plan-header">
               <h3>Business Plans</h3>
               <h4>Choose Your Business Plan</h4>
             </div>
             <div id="business-plan-body">
+              {% for val,label in form.business_plan.field.choices %}
               <label class="plan-option">
-                <div class="icon"><i class="fa-solid fa-snowflake"></i></i></div>
-                <input
-                  type="radio"
-                  name="businessPlan"
-                  value="commission"
-                  required
-                />
+                <div class="icon">
+                  {% if val == 'commission' %}<i class="fa-solid fa-snowflake"></i>{% else %}<i class="fa-solid fa-globe"></i>{% endif %}
+                </div>
+                <input type="radio" name="{{ form.business_plan.html_name }}" value="{{ val }}" {% if form.business_plan.value == val %}checked{% endif %} required />
                 <div class="plan-box">
-                  <h4>Commission Base</h4>
-                  <p>
-                    Restaurant will pay 20% Commission to Grubmate from each
-                    order. You will get access to all features and options in
-                    the restaurant panel, app, and user interaction.
-                  </p>
+                  <h4>{{ label }}</h4>
+                  {% if val == 'commission' %}
+                  <p>Restaurant will pay 20% Commission to Grubmate from each order. You will get access to all features and options in the restaurant panel, app, and user interaction.</p>
+                  {% else %}
+                  <p>Run restaurant by purchasing subscription packages. You will have access to features in the restaurant panel, app, and user interaction according to the package.</p>
+                  {% endif %}
                 </div>
               </label>
-
-              <label class="plan-option">
-                <div class="icon"><i class="fa-solid fa-globe"></i></div>
-                <input
-                  type="radio"
-                  name="businessPlan"
-                  value="subscription"
-                  required
-                />
-                <div class="plan-box">
-                  <h4>Subscription Base</h4>
-                  <p>
-                    Run restaurant by purchasing subscription packages. You will
-                    have access to features in the restaurant panel, app, and
-                    user interaction according to the package.
-                  </p>
-                </div>
-              </label>
-            </div>
+              {% endfor %}
           </div>
+          {% endif %}
+
           <div class="btn">
-            <button id="nextbtn">
+            <button type="submit" id="nextbtn">
               <i class="fa-solid fa-forward"></i> <span>Next</span>
             </button>
           </div>

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.conf import settings
 from django.db import models
 from django.contrib.auth.models import User
@@ -50,21 +51,46 @@ class Cuisine(models.Model):
 
 
 class Restaurant(models.Model):
-    restaurant_name = models.CharField(max_length=255, null=True)
-    restaurant_contact_name = models.CharField(max_length=255, null=True)
-    contact_number = models.CharField(
-        max_length=15, validators=[phone_validator])
-    secondary_contact_number = models.CharField(
-        max_length=15, validators=[phone_validator], blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    restaurant_address = models.TextField(blank=True, null=True)
-    cuisine = models.ForeignKey(
-        Cuisine, on_delete=models.CASCADE, related_name='cuisine', default="Nepali")
-    latitude = models.FloatField(blank=True, null=True)
-    longitude = models.FloatField(blank=True, null=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='restaurant_profile',
+        null=True
+    )
+    restaurant_name = models.CharField(max_length=100, default='')
+    vat_and_tax = models.DecimalField(
+        max_digits=5, decimal_places=2, default=0.0)
+    restaurant_address = models.TextField(default='')
+    latitude = models.FloatField(default=0.0)
+    longitude = models.FloatField(default=0.0)
+    cuisine = models.CharField(max_length=50, default='')
+    profile_picture = models.ImageField(
+        upload_to='restaurant/profile_pics/',
+        blank=True,
+        null=True
+    )
+    cover_photo = models.ImageField(
+        upload_to='restaurant/cover_photos/',
+        blank=True,
+        null=True
+    )
+    owner_name = models.CharField(max_length=100, default='')
+    owner_contact = models.CharField(
+        max_length=15, null=True, validators=[phone_validator])
+    menu = models.FileField(upload_to='restaurant/menus/', null=True)
+    BUSINESS_PLAN_CHOICES = [
+        ('commission', 'Commission Base'),
+        ('subscription', 'Subscription Base'),
+    ]
+    business_plan = models.CharField(
+        max_length=20,
+        choices=BUSINESS_PLAN_CHOICES,
+        null=True
+    )
+    created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
-        return f"{self.restaurant_name} - {self.city or 'No city'}"
+        return self.restaurant_name
 
 
 class FoodItem(models.Model):

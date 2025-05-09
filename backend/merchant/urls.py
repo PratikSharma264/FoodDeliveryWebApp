@@ -11,12 +11,12 @@ urlpatterns = [
     path('merchant/reset-password/<uidb64>/<token>/', views.merchant_reset_password_view,
          name='merchant_reset_password'),
 
-    path("registerresturant/", views.merchant_res_reg_view,
-         name='restaurant_register'),
+    #     path("registerresturant/", views.merchant_res_reg_view,
+    #          name='restaurant_register'),
 
     path("registerdeliveryman/", views.merchant_del_reg_view,
          name='deliveryman_register'),
-
+    #     path('dummy/', views.restaurant_register_view, name='dummy'),
     path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),
     path("formsignup/", views.merchant_form_signup, name='form_signup'),
     path("formlogin/", views.merchant_form_login, name='form_login'),
