@@ -27,6 +27,8 @@ urlpatterns = [
 
     path("register-restaurant/", views.merchant_res_reg_view,
          name='restaurant_register'),
+    path("application-status/", views.application_status_view,
+         name="application-status"),
 
     path("login/", views.merchant_login_view, name='signup_login'),
     path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),

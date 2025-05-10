@@ -143,7 +143,7 @@ class DeliverymanForm(forms.ModelForm):
     class Meta:
         model = Deliveryman
         fields = '__all__'
-        exclude = ['user']
+        exclude = ['user', 'created_at', 'approved']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

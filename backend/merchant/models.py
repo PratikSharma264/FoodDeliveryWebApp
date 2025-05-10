@@ -88,6 +88,7 @@ class Restaurant(models.Model):
         null=True
     )
     created_at = models.DateTimeField(default=timezone.now)
+    approved = models.BooleanField(default=False)
 
     def __str__(self):
         return self.restaurant_name
@@ -237,6 +238,8 @@ class Deliveryman(models.Model):
                                      vehicle_validator],     help_text="Enter the vehicle number in capital letters (e.g., BA 2 PA 1234 or 3-01-Pa-1234).", null=True)
     DateofBirth = models.DateField()
     UserImage = models.ImageField(upload_to='user_images/')
+    created_at = models.DateTimeField(default=timezone.now)
+    approved = models.BooleanField(default=False)
 
     def __str__(self):
         return f'{self.Firstname} {self.Lastname}'

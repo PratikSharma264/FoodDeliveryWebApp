@@ -13,6 +13,7 @@ from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
 from .models import Merchant, Deliveryman, Restaurant
 from django.contrib.auth.forms import SetPasswordForm
+from django.http import Http404
 
 
 def merchant_home_view(request):
@@ -144,6 +145,24 @@ def merchant_res_reg_view(request):
     else:
         form = RestaurantRegistrationForm()
     return render(request, 'merchant/reg_restaurant.html', {'form': form})
+
+
+@login_required
+def application_status_view(request):
+    profile = (
+        getattr(request.user, 'deliveryman_profile', None)
+        or getattr(request.user, 'restaurant_profile', None)
+    )
+    if profile is None:
+        messages.error(
+            request, "Access Denied! You are neither a deliveryman nor a restaurant owner.")
+        return redirect('home')
+
+    model_name = profile._meta.model_name  # 'deliveryman' or 'restaurant'
+
+    return render(request, "merchant/application_status.html", {
+        'profile': profile,
+    })
 
 
 def merchant_del_reg_view(request):
