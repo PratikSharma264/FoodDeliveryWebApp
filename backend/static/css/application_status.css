@@ -1,0 +1,182 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+
+@font-face {
+  font-family: "florisha";
+  src: url("../fonts/florisha.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  background-color: black;
+  color: white;
+  font-family: "Poppins", sans-serif;
+}
+
+#container {
+  height: 100dvh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+}
+
+#top,
+#email {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#top span i {
+  font-size: 25px;
+  color: rgb(240, 151, 26);
+  animation: ring 2s infinite;
+  transform-origin: top center;
+}
+
+#main {
+  padding: 30px;
+}
+
+#vid {
+  position: absolute;
+  right: 0;
+  z-index: -1;
+}
+
+#extra-info {
+  display: flex;
+  gap: 100px;
+}
+
+@keyframes ring {
+  0% {
+    transform: rotate(0deg);
+  }
+  15% {
+    transform: rotate(15deg);
+  }
+  30% {
+    transform: rotate(-10deg);
+  }
+  45% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+#state div {
+  color: #ffffff;
+  height: 30px;
+  width: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  border-radius: 7px;
+  gap: 10px;
+  transition: transform 0.5s ease, color 0.3s ease;
+}
+
+#approved {
+  background-color: rgb(58, 241, 41);
+}
+
+#pending {
+  background-color: rgb(243, 26, 26);
+}
+
+#state div:hover {
+  transform: scale(1.25);
+}
+
+#status-info {
+  font-size: 50px;
+  font-family: "florisha", "Poppins", sans-serif;
+}
+
+.fa-spin {
+  animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+#userid {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-size: 20px;
+  margin-right: 15px;
+  background: linear-gradient(to right, rgb(67, 206, 162), rgb(24, 90, 157));
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+#userid:hover {
+  transform: scale(1.25);
+  transition: transform 0.3s ease;
+  background: linear-gradient(to right, rgb(255, 126, 95), rgb(254, 180, 123));
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#extra-info h3 {
+  font-family: "Poppins", sans-serif;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  position: relative;
+  display: inline-block;
+  color: rgb(255, 179, 71);
+  margin: 0;
+  padding-top: 10px;
+}
+
+#extra-info h3::after {
+  content: "";
+  position: absolute;
+  bottom: 9px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  border-radius: 2px;
+}
+
+#date {
+  color: rgb(235, 244, 250);
+  font-size: 20px;
+}
+
+#email span {
+  font-size: 15px;
+  color: rgb(248, 24, 24);
+}
+
+#email span:first-child {
+  font-size: 20px;
+}

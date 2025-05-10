@@ -1,3 +1,9 @@
 env/
 node_modules
 .env
+backend/env
+*.pyc
+__pycache__/
+backend/api/migrations/__pycache__/
+backend/merchant/migrations/__pycache__/
+backend/FoodDeliveryWebApp/__pycache__/

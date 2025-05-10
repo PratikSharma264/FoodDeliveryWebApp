@@ -1,0 +1,60 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Grubmate Application Status</title>
+    <!-- <link rel="stylesheet" href="{% static 'css/application_status.css' %}"/> -->
+     <!-- delete the below and keep  above only for testing -->
+    <link rel="stylesheet" href="../../../static/css/application_status.css"/>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div id="container">
+      <div id="main">
+        <div id="top">
+          <h4>#community</h4>
+          <span><i class="fa-solid fa-bell"></i></span>
+        </div>
+        <h1 id="status-info">
+          <!-- userid -->
+          <span id="userid">#userid</span> We're still <br />processing
+          <br />Your application.
+        </h1>
+        <div id="extra-info">
+          <div id="state">
+            <!-- <div id="approved">
+              <span>Approved</span>
+              <span><i class="fa-solid fa-check"></i></span>
+            </div> -->
+
+            <!-- or -->
+
+            <div id="pending">
+              <span>Pending</span>
+              <span
+                ><span><i class="fa-solid fa-spinner fa-spin"></i></span>
+              </span>
+            </div>
+          </div>
+          <h3>Submitted Date: <span id="date">2082-01-25</span></h3>
+        </div>
+        <!-- email display -->
+        <div id="email">
+          <span><i class="fa-solid fa-circle-exclamation"></i></span>
+          <h3>check your email:</h3>
+          <span>"user email"</span>
+        </div>
+      </div>
+      <div id="vid">
+        <!-- <video src= "{% static 'videos/loading.mp4'%}" autoplay loop muted></video> -->
+         <!-- delete the below and keep  above only for testing -->
+        <video src= "../../../static/videos/loading.mp4" autoplay loop muted></video> 
+      </div>
+    </div>
+  </body>
+</html>
