@@ -50,6 +50,22 @@
       <div class="form-container sign-up-container">
         <form action="{% url 'signup_login' %}" method="post">
           {% csrf_token %}
+          {% if signup_form.errors %}
+            <div class="error-container">
+              <ul>
+                {% for field in signup_form %}
+                  {% for error in field.errors %}
+                    <li>
+                      <strong>{{ field.label }}:</strong> {{ error }}
+                    </li>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in signup_form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
           <input type="hidden" name="form_type" value="signup" />
           <h1>Create Account</h1>
           <input type="text" name="name" value="{{ signup_form.name.value|default:'' }}" placeholder="Name" class="form-control" />
@@ -64,11 +80,32 @@
       <div class="form-container sign-in-container">
         <form action="{% url 'signup_login' %}" method="post">
           {% csrf_token %}
+          {% if form.errors %}
+            <div class="error-container">
+              <ul>
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li>
+                      <strong>{{ field.label }}:</strong> {{ error }}
+                    </li>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
           <input type="hidden" name="form_type" value="login" />
           <h1>Log in</h1>
 
           <input type="email" name="email" placeholder="Email" required />
           <input type="password" name="password" placeholder="Password" required />
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
           <a href="{% url 'forget_password' %}">Forgot your password?</a>
           <button class="inputbtn">Log In</button>
         </form>

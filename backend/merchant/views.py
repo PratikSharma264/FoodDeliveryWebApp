@@ -14,6 +14,21 @@ from django.contrib.auth.tokens import default_token_generator
 from .models import Merchant, Deliveryman, Restaurant
 from django.contrib.auth.forms import SetPasswordForm
 from django.http import Http404
+from functools import wraps
+from django.shortcuts import redirect
+
+
+def profile_none_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        profile = (
+            getattr(request.user, 'deliveryman_profile', None)
+            or getattr(request.user, 'restaurant_profile', None)
+        )
+        if profile is None:
+            return view_func(request, *args, **kwargs)
+        return redirect('application-status')
+    return _wrapped_view
 
 
 def merchant_home_view(request):
@@ -75,6 +90,7 @@ def merchant_logout_view(request):
 
 
 @login_required
+@profile_none_required
 def deliveryman_register_view(request):
     if request.method == "POST":
         form = DeliverymanForm(request.POST, request.FILES)
@@ -114,6 +130,7 @@ def merchant_signuplogin_view(request):
 
 
 @login_required
+@profile_none_required
 def merchant_res_reg_view(request):
     restaurant_id = request.session.get('restaurant_id')
 
