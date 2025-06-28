@@ -98,7 +98,8 @@ class FoodItem(models.Model):
 class Order(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
-        ('PROCESSING', 'Processing'),
+        ('CONFIRMED', 'confirmed'),
+        ('PREPARING', 'Preparing'),
         ('OUT_FOR_DELIVERY', 'Out for Delivery'),
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
@@ -156,6 +157,10 @@ class Delivery(models.Model):
     delivery_time = models.DateTimeField(blank=True, null=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
 
+    is_delivered = models.BooleanField(default=False)
+    delivery_rating = models.PositiveIntegerField(default=0, blank=True, null=True)
+    delivery_feedback = models.TextField(blank=True, null=True)
+    
     def __str__(self):
         return f"Delivery #{self.pk} - Status: {self.status}"
 
