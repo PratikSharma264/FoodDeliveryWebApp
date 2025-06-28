@@ -183,7 +183,7 @@ class Deliveryman(models.Model):    #to record the offficial details about the d
     DUTYTIME_CHOICES = [
     ('day', 'Day (10AM–6PM)'),
     ('night', 'Night (6PM–2AM)'),
-]
+    ]
 
 
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
