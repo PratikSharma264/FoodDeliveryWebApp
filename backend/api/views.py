@@ -21,8 +21,10 @@ def api_overview(request):
             'API token': "/api/token/",
             'API token refresh': "/api/token/refresh",
         },
-        'Merchant': {
-            'Register Merchant': "/api/register-user/",
+        'App User': {
+            'Register App User': "/api/register-user/",
+            'Login App User': "/api/login-user/",
+
         }
     }
     return render(request, 'api/api_overview.html', {'api_urls': api_urls})
