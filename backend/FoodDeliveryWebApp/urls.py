@@ -21,10 +21,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path("api/", include('api.urls.overview')),
-    # path("api/merchant/", include('api.urls.merchant')),
+    path("api/", include('api.urls')),
     path("", include('merchant.urls')),
-    # path("api-auth", include('rest_framework.urls')),
+    path("api-auth", include('rest_framework.urls')),
 ]
 
 if settings.DEBUG:

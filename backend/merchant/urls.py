@@ -11,9 +11,6 @@ urlpatterns = [
     path('merchant/reset-password/<uidb64>/<token>/', views.merchant_reset_password_view,
          name='merchant_reset_password'),
 
-    #     path("registerresturant/", views.merchant_res_reg_view,
-    #          name='restaurant_register'),
-
     path("registerdeliveryman/", views.merchant_del_reg_view,
          name='deliveryman_register'),
     #     path('dummy/', views.restaurant_register_view, name='dummy'),
@@ -33,4 +30,6 @@ urlpatterns = [
     path("login/", views.merchant_login_view, name='signup_login'),
     path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
+    path("lobby/", views.lobby_view, name='lobby'),
+
 ]

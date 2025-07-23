@@ -32,14 +32,20 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 # This is for rest and jwt tokens:
-
+# AUTH_USER_MODEL = 'api.CustomUser'
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # 'rest_framework.authentication.TokenAuthentication',
+        "knox.auth.TokenAuthentication"
     ),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    'DEFAULT_RENDERER_CLASSES': (
+        'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    ),
 }
 
 SIMPLE_JWT = {
@@ -60,8 +66,12 @@ INSTALLED_APPS = [
     'api',
     'merchant',
     "rest_framework",
+    "knox",
     "corsheaders",
+    'channels'
 ]
+
+ASGI_APPLICATION = 'mywebsite.asgi.application'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",

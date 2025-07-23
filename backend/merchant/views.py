@@ -264,3 +264,7 @@ def merchant_reset_password_view(request, uidb64, token):
 
 def email_sent_view(request):
     return render(request, "merchant/email_sent.html")
+
+
+def lobby_view(request):
+    return render(request, 'merchant/dummy_lobby.html')
