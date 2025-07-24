@@ -1,3 +1,4 @@
+from rest_framework import permissions
 from knox.auth import TokenAuthentication
 from rest_framework import generics, permissions
 from knox.models import AuthToken
@@ -12,6 +13,16 @@ from .serializers import AppUserSerializer, RegisterSerializer
 from django.contrib.auth import login
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from knox.views import LoginView as KnoxLoginView
+
+
+from knox.views import LoginView as KnoxLoginView
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer
+from rest_framework.response import Response
+from django.contrib.auth import login
+from knox.models import AuthToken
+from rest_framework import generics
+from knox.auth import TokenAuthentication
+from rest_framework import permissions
 
 
 def api_overview(request):
@@ -50,8 +61,16 @@ class login_user(KnoxLoginView):
     authentication_classes = [TokenAuthentication]
 
     def post(self, request, format=None):
-        serializer = AuthTokenSerializer(data=request.data)
+        serializer = EmailAuthTokenSerializer(
+            data=request.data)  # 👈 using custom login serializer
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
-        return super(login_user, self).post(request, format=None)
+
+        response = super(login_user, self).post(request, format=None)
+        token_data = response.data
+
+        token_data['email'] = user.email
+        token_data['full_name'] = user.first_name  # stored as first_name
+
+        return Response(token_data)
