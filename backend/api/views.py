@@ -56,6 +56,7 @@ class register_user(generics.GenericAPIView):
         })
 
 
+
 class login_user(KnoxLoginView):
     permission_classes = (permissions.AllowAny,)
     authentication_classes = [TokenAuthentication]
