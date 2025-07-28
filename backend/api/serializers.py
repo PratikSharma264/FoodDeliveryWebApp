@@ -66,4 +66,4 @@ class RestaurantSerial(serializers.ModelSerializer):
 class Orderserializer(serializers.ModelSerializer):
     class Meta:
         model=Order
-        fields='__all__'
+        fields = ['user', 'restaurant', 'food_item', 'quantity', 'is_transited', 'total_price']

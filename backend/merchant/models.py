@@ -117,31 +117,82 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
+    # User who placed the order
     user = models.ForeignKey(
-        AppUser, on_delete=models.CASCADE, related_name='orders')
+        'AppUser', on_delete=models.CASCADE, related_name='orders')
+    
+    # Restaurant from which order is placed
     restaurant = models.ForeignKey(
-        Restaurant, on_delete=models.CASCADE, related_name='orders')
+        'Restaurant', on_delete=models.CASCADE, related_name='orders')
+    
+    # Food item ordered (single item per order)
+    food_item = models.ForeignKey(
+        'FoodItem', on_delete=models.CASCADE, related_name='orders')
+    
+    # Quantity of the food item
+    quantity = models.PositiveIntegerField(default=1)
+    
+    # Total price of the order (calculated or stored)
+    total_price = models.DecimalField(
+        max_digits=10, decimal_places=2, help_text="Total price for this order")
+    
+    # Transit status (replaces the complex status choices if you prefer boolean)
+    is_transited = models.BooleanField(
+        default=False, help_text="Whether the order is in transit/delivered")
+    
+    # Additional fields from original model
     deliveryman = models.ForeignKey(
-        'Deliveryman', on_delete=models.SET_NULL, null=True, related_name='orders')
+        'Deliveryman', on_delete=models.SET_NULL, null=True, blank=True, 
+        related_name='orders')
+    
     order_date = models.DateTimeField(default=datetime.now)
+    
+    # Keep status for more detailed tracking
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='PENDING')
-
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-order_date']
+        verbose_name = "Order"
+        verbose_name_plural = "Orders"
+    
+    def save(self, *args, **kwargs):
+        # Auto-calculate total_price if not provided
+        if not self.total_price and self.food_item:
+            self.total_price = self.food_item.price * self.quantity
+        
+        # Auto-update is_transited based on status
+        if self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']:
+            self.is_transited = True
+        else:
+            self.is_transited = False
+            
+        super().save(*args, **kwargs)
+    
     def calculate_total(self):
-        return sum(item.food_item.price * item.quantity for item in self.items.all())
-
+        """Calculate total price for the order"""
+        if self.food_item:
+            return self.food_item.price * self.quantity
+        return 0
+    
+    def update_total_price(self):
+        """Update and save the total price"""
+        self.total_price = self.calculate_total()
+        self.save(update_fields=['total_price'])
+    
+    def mark_as_transited(self):
+        """Mark order as transited"""
+        self.is_transited = True
+        if self.status == 'PENDING' or self.status == 'PROCESSING':
+            self.status = 'OUT_FOR_DELIVERY'
+        self.save()
+    
     def __str__(self):
-        return f"Order #{self.pk} by {self.user.name}"
-
-
-class OrderItem(models.Model):
-    order = models.ForeignKey(
-        Order, on_delete=models.CASCADE, related_name='items')
-    food_item = models.ForeignKey(FoodItem, on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField(default=1)
-
-    def __str__(self):
-        return f"{self.food_item.name} x{self.quantity}"
+        return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.name}"
 
 
 # to record and transmit the real-time info of the delivery man
