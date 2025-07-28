@@ -157,3 +157,18 @@ def purchase_cart(request):
         "message": "Purchase successful.",
         "purchased_items": serializer.data
     }, status=status.HTTP_200_OK)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def show_user_order_history(request):
+    user = request.user  # From JWT token
+
+    orders = Order.objects.filter(user=user,is_transited=True)
+
+    if not orders.exists():
+        return Response({'message': 'No orders found for this user.'}, status=status.HTTP_404_NOT_FOUND)
+
+    serializer = Orderserializer(orders, many=True)
+
+    return Response({
+        "order_history": serializer.data,
+    }, status=status.HTTP_200_OK)

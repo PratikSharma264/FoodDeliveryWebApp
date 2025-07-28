@@ -12,4 +12,8 @@ urlpatterns = [
          name="login_user"),
     path('logout-user/', knox_views.LogoutView.as_view(), name='logout_user'),
     path('logout-all/', knox_views.LogoutAllView.as_view(), name='logout_all'),
+    path('showuserorders/', views.show_user_order_history),
+    path('viewcart/', views.view_cart),
+    path('purchasecart/', views.purchase_cart),
+    path('addtocart/<int:food_id>/<int:restaurant_id>/', views.addtocart),
 ]
