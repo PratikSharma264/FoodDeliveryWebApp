@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-
+from merchant.models import FoodItem,Restaurant,Order
 
 class AppUserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,3 +55,15 @@ class EmailAuthTokenSerializer(serializers.Serializer):
 
         attrs['user'] = user
         return attrs
+class FooditemSerial(serializers.ModelSerializer):
+    class Meta:
+        model=FoodItem
+        fields='__all__'
+class RestaurantSerial(serializers.ModelSerializer):
+    class Meta:
+        model=Restaurant
+        fields='__all__'
+class Orderserializer(serializers.ModelSerializer):
+    class Meta:
+        model=Order
+        fields='__all__'
