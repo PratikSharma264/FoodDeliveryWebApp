@@ -117,7 +117,46 @@ class Cuisine(models.Model):
         return self.cuisine_name
 
 
+# class Restaurant(models.Model):
+#     user = models.OneToOneField(
+#         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
+#     restaurant_name = models.CharField(max_length=100, default='')
+#     vat_and_tax = models.DecimalField(
+#         max_digits=5, decimal_places=2, default=0.0)
+#     restaurant_address = models.TextField(default='')
+#     latitude = models.FloatField(default=0.0)
+#     longitude = models.FloatField(default=0.0)
+#     cuisine = models.CharField(max_length=50, default='')
+#     profile_picture = models.ImageField(
+#         upload_to='restaurant/profile_pics/', blank=True, null=True)
+#     cover_photo = models.ImageField(
+#         upload_to='restaurant/cover_photos/', blank=True, null=True)
+#     owner_name = models.CharField(max_length=100, default='')
+#     owner_contact = models.CharField(
+#         max_length=15, null=True, validators=[phone_validator])
+#     menu = models.FileField(upload_to='restaurant/menus/', null=True)
+#     BUSINESS_PLAN_CHOICES = [
+#         ('commission', 'Commission Base'),
+#         ('subscription', 'Subscription Base'),
+#     ]
+#     business_plan = models.CharField(
+#         max_length=20, choices=BUSINESS_PLAN_CHOICES, null=True)
+#     created_at = models.DateTimeField(default=timezone.now)
+#     approved = models.BooleanField(default=False)
+
+#     def __str__(self):
+#         return self.restaurant_name
+
 class Restaurant(models.Model):
+    RESTAURANT_TYPE_CHOICES = [
+        ('local', 'Local'),
+        ('finedining', 'Fine Dining'),
+    ]
+    BUSINESS_PLAN_CHOICES = [
+            ('commission', 'Commission Base'),
+            ('subscription', 'Subscription Base'),
+        ]
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
     restaurant_name = models.CharField(max_length=100, default='')
@@ -135,12 +174,13 @@ class Restaurant(models.Model):
     owner_contact = models.CharField(
         max_length=15, null=True, validators=[phone_validator])
     menu = models.FileField(upload_to='restaurant/menus/', null=True)
-    BUSINESS_PLAN_CHOICES = [
-        ('commission', 'Commission Base'),
-        ('subscription', 'Subscription Base'),
-    ]
     business_plan = models.CharField(
-        max_length=20, choices=BUSINESS_PLAN_CHOICES, null=True)
+        max_length=20, choices= BUSINESS_PLAN_CHOICES, null=True)
+    
+    restaurant_type = models.CharField(
+        max_length=10, choices=RESTAURANT_TYPE_CHOICES, default='local'
+    )
+    
     created_at = models.DateTimeField(default=timezone.now)
     approved = models.BooleanField(default=False)
 
@@ -148,26 +188,55 @@ class Restaurant(models.Model):
         return self.restaurant_name
 
 
-class MenuItem(models.Model):
-    restaurant = models.ForeignKey(
-        Restaurant, on_delete=models.CASCADE, related_name='menu_items')
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=7, decimal_places=2)
-    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
-    is_available = models.BooleanField(default=True)
-    image = models.ImageField(upload_to='food_images/', blank=True, null=True)
+# class MenuItem(models.Model):
+#     restaurant = models.ForeignKey(
+#         Restaurant, on_delete=models.CASCADE, related_name='menu_items')
+#     name = models.CharField(max_length=255)
+#     description = models.TextField(blank=True)
+#     price = models.DecimalField(max_digits=7, decimal_places=2)
+#     discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+#     is_available = models.BooleanField(default=True)
+#     image = models.ImageField(upload_to='food_images/', blank=True, null=True)
 
-    def __str__(self):
-        return f"{self.name} - Rs. {self.price:.2f}"
+#     def __str__(self):
+#         return f"{self.name} - Rs. {self.price:.2f}"
 
 
 class FoodItem(models.Model):
+    AVAILABILITY_CHOICES = [
+        ('OUT_OF_STOCK', 'Out of Stock'),
+        ('LOW_STOCK', 'Low Stock'),
+        ('AVAILABLE', 'Available'),
+    ]
+
+    DELIVERY_STATUS_CHOICES = [
+        ('PROCESSING', 'Processing'),
+        ('DELIVERED', 'Delivered'),
+    ]
+    VEG_NONVEG_CHOICES = [
+        ('veg', 'Vegetarian'),
+        ('nonveg', 'Non-Vegetarian'),
+    ]
+
     name = models.CharField(max_length=255)
-    description = models.TextField()
-    price = models.FloatField()
-    restaurant = models.ForeignKey(
-        Restaurant, on_delete=models.CASCADE, related_name='food_items')
+    price = models.DecimalField(max_digits=7, decimal_places=2)
+    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
+    description = models.TextField(blank=True)
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='food_items')
+    veg_nonveg = models.CharField(max_length=6, choices=VEG_NONVEG_CHOICES, default='veg')
+    profile_picture = models.ImageField(upload_to='food_images/', blank=True, null=True)
+
+    availability_status = models.CharField(
+        max_length=20,
+        choices=AVAILABILITY_CHOICES,
+        default='AVAILABLE'
+    )
+
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DELIVERY_STATUS_CHOICES,
+        default='PROCESSING'
+    )
 
     def __str__(self):
         return f"{self.name} - Rs. {self.price:.2f}"
@@ -182,28 +251,21 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    # User who placed the order
+    
     user = models.ForeignKey(
         'AppUser', on_delete=models.CASCADE, related_name='orders')
 
-    # Restaurant from which order is placed
     restaurant = models.ForeignKey(
         'Restaurant', on_delete=models.CASCADE, related_name='orders')
 
-    # Food item ordered (single item per order)
+   
     food_item = models.ForeignKey(
         'FoodItem', on_delete=models.CASCADE, related_name='orders',
         null=True, blank=True
     )
-
-    # Quantity of the food item
     quantity = models.PositiveIntegerField(default=1)
-
-    # Total price of the order (calculated or stored)
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, help_text="Total price for this order", null=True)
-
-    # Transit status (replaces the complex status choices if you prefer boolean)
     is_transited = models.BooleanField(
         default=False, help_text="Whether the order is in transit/delivered")
 
@@ -214,11 +276,8 @@ class Order(models.Model):
 
     order_date = models.DateTimeField(default=datetime.now)
 
-    # Keep status for more detailed tracking
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
-    # Timestamps
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -228,11 +287,10 @@ class Order(models.Model):
         verbose_name_plural = "Orders"
 
     def save(self, *args, **kwargs):
-        # Auto-calculate total_price if not provided
         if not self.total_price and self.food_item:
             self.total_price = self.food_item.price * self.quantity
 
-        # Auto-update is_transited based on status
+       
         if self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']:
             self.is_transited = True
         else:
@@ -338,8 +396,8 @@ class Deliveryman(models.Model):  # to record the offficial details about the de
     Zone = models.CharField(max_length=20, blank=False, choices=ZONE_CHOICES)
     Vehicle = models.CharField(
         max_length=20, blank=False, choices=VEHICLE_CHOICES)
-    IdentityType = models.CharField(
-        choices=IDENTITY_CHOICES, blank=False, null=True)
+    IdentityType = models.CharField(max_length=30, choices=IDENTITY_CHOICES, blank=False,
+    null=True)
     IdentityNumber = models.CharField(max_length=30, blank=False)
     IdentityImage = models.ImageField(upload_to='identity_images/')
     PanNumber = models.CharField(
