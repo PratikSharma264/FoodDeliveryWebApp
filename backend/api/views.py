@@ -1,7 +1,7 @@
 from django.contrib.auth import login
 from django.shortcuts import render
-
-from rest_framework import generics, permissions, status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics, permissions, status, response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -98,7 +98,43 @@ class login_user_knox(KnoxLoginView):
         token_data['full_name'] = user.first_name
 
         return Response(token_data)
+class ShopPagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'per_page'
 
+@api_view(['GET'])
+def product_list_view(request):
+    queryset = FoodItem.objects.all()
+
+    # Get query parameters
+    category = request.query_params.get('category')
+    min_price = request.query_params.get('min_price')
+    max_price = request.query_params.get('max_price')
+    res_typ = request.query_params.get('restaurant_type')
+
+    # Apply filters
+    if category:
+        queryset = queryset.filter(category=category)
+    if res_typ:
+        queryset = queryset.filter(restaurant_type__iexact=res_typ)
+    if min_price:
+        try:
+            queryset = queryset.filter(price__gte=float(min_price))
+        except ValueError:
+            return Response({'error': 'min_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if max_price:
+        try:
+            queryset = queryset.filter(price__lte=float(max_price))
+        except ValueError:
+            return Response({'error': 'max_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Apply pagination
+    paginator = ShopPagination()
+    paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+    serializer = FooditemSerial(paginated_queryset, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
