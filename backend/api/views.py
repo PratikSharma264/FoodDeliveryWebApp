@@ -102,8 +102,10 @@ class login_user_knox(KnoxLoginView):
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def addtocart(request, food_id, restaurant_id):
+def addtocart(request):
     user = request.user
+    food_id = request.data.get('food_id')
+    restaurant_id = request.data.get('restaurant_id')
     quantity = request.data.get('quantity')
 
     if not all([food_id, restaurant_id, quantity]):

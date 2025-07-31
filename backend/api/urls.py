@@ -15,5 +15,5 @@ urlpatterns = [
     path('showuserorders/', views.show_user_order_history),
     path('viewcart/', views.view_cart),
     path('purchasecart/', views.purchase_cart),
-    path('addtocart/<int:food_id>/<int:restaurant_id>/', views.addtocart),
+    path('addtocart/', views.addtocart),
 ]
