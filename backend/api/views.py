@@ -1,7 +1,7 @@
 from django.contrib.auth import login
 from django.shortcuts import render
-
-from rest_framework import generics, permissions, status
+from rest_framework.pagination import PageNumberPagination
+from rest_framework import generics, permissions, status, response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
@@ -61,7 +61,7 @@ class login_user(APIView):
 
         response = Response({
             'access': str(refresh.access_token),
-            'refresh': str(refresh),
+
             'email': user.email,
             'full_name': user.first_name
         })
@@ -98,7 +98,43 @@ class login_user_knox(KnoxLoginView):
         token_data['full_name'] = user.first_name
 
         return Response(token_data)
+class ShopPagination(PageNumberPagination):
+    page_size = 6
+    page_size_query_param = 'per_page'
 
+@api_view(['GET'])
+def product_list_view(request):
+    queryset = FoodItem.objects.all()
+
+    # Get query parameters
+    category = request.query_params.get('category')
+    min_price = request.query_params.get('min_price')
+    max_price = request.query_params.get('max_price')
+    res_typ = request.query_params.get('restaurant_type')
+
+    # Apply filters
+    if category:
+        queryset = queryset.filter(category=category)
+    if res_typ:
+        queryset = queryset.filter(restaurant_type__iexact=res_typ)
+    if min_price:
+        try:
+            queryset = queryset.filter(price__gte=float(min_price))
+        except ValueError:
+            return Response({'error': 'min_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if max_price:
+        try:
+            queryset = queryset.filter(price__lte=float(max_price))
+        except ValueError:
+            return Response({'error': 'max_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Apply pagination
+    paginator = ShopPagination()
+    paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+    serializer = FooditemSerial(paginated_queryset, many=True)
+    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -195,3 +231,69 @@ def show_user_order_history(request):
     return Response({
         "order_history": serializer.data,
     }, status=status.HTTP_200_OK)
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_cart(request):
+    user = request.user
+    order_id = request.data.get('order_id')
+    try:
+        order = Order.objects.get(id=order_id, user=user,is_transited=False)
+    except Order.DoesNotExist:
+        return Response({'message': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    order.delete()
+    return Response({'message': 'Order deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_cart(request):
+    user = request.user
+    food_id = request.data.get('food_id')
+    restaurant_id = request.data.get('restaurant_id')
+    quantity = request.data.get('quantity')
+
+    if not all([food_id, restaurant_id, quantity]):
+        return Response(
+            {"message": "food_id, restaurant_id, and quantity are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        quantity = int(quantity)
+    except ValueError:
+        return Response({"message": "Quantity must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        food = FoodItem.objects.get(id=food_id)
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+    except (FoodItem.DoesNotExist, Restaurant.DoesNotExist):
+        return Response({"message": "Invalid food or restaurant ID."}, status=status.HTTP_404_NOT_FOUND)
+
+    # Delete the previous order if it exists
+    Order.objects.filter(user=user, food_item=food, restaurant=restaurant).delete()
+
+    #Recalculate total price
+    total_price = food.price * quantity
+    if total_price < 300:
+        return Response({"message": "Minimum order amount is 300."}, status=status.HTTP_400_BAD_REQUEST)
+
+    order_data = {
+        "user": user.id,
+        "food_item": food.id,
+        "restaurant": restaurant.id,
+        "quantity": quantity,
+        "total_price": total_price
+    }
+
+    serializer = Orderserializer(data=order_data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(
+            {'message': 'Order updated successfully.', 'order': serializer.data},
+            status=status.HTTP_200_OK
+        )
+    else:
+        return Response(
+            {'message': 'Error, invalid data.', 'errors': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
