@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from datetime import datetime
 from django.utils import timezone
+from django.contrib.auth.models import AbstractUser ,Group, Permission
 
 # Validator for Nepali phone numbers
 phone_validator = RegexValidator(
@@ -34,17 +35,80 @@ class Merchant(models.Model):
         return f"{self.name} ({self.user.username})"
 
 
+# class AppUser(models.Model):
+#     user = models.OneToOneField(
+#         User, on_delete=models.CASCADE, related_name='appuser_profile', null=True)
+#     name = models.CharField(max_length=255)
+#     phone_number = models.CharField(
+#         max_length=15, validators=[phone_validator])
+#     address = models.TextField()
+
+#     def __str__(self):
+#         return f"{self.name} ({self.phone_number})"
+
+
+class CustomUser(AbstractUser):
+    email = models.EmailField(unique=True)
+    date_of_birth = models.DateField(blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    country = models.CharField(max_length=100, blank=True, null=True)
+    profile_picture = models.ImageField(upload_to='user_images/', blank=True, null=True)
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    groups = models.ManyToManyField(
+        Group,
+        related_name='customuser_set',  # <== important
+        blank=True,
+        help_text='The groups this user belongs to.',
+        related_query_name='user',
+    )
+    user_permissions = models.ManyToManyField(
+        Permission,
+        related_name='customuser_permissions_set',  # <== important
+        blank=True,
+        help_text='Specific permissions for this user.',
+        related_query_name='user',
+    )
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']  
+
+    def __str__(self):
+        try:
+            return f"{self.appuser_profile.name} ({self.email})"
+        except:
+            return f"{self.username} ({self.email})"
+
+    def get_full_name(self):
+        try:
+            return self.appuser_profile.name
+        except:
+            return self.username
+
+    def get_initials(self):
+        try:
+            name = self.appuser_profile.name
+            name_parts = name.split()
+            if len(name_parts) >= 2:
+                return f"{name_parts[0][0].upper()}{name_parts[-1][0].upper()}"
+            return name_parts[0][0].upper() if name_parts else "U"
+        except:
+            return self.username[0].upper() if self.username else "U"
+
+
+
 class AppUser(models.Model):
     user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name='appuser_profile', null=True)
+        CustomUser, on_delete=models.CASCADE, related_name='appuser_profile', null=True)
     name = models.CharField(max_length=255)
     phone_number = models.CharField(
         max_length=15, validators=[phone_validator])
     address = models.TextField()
-
+    
     def __str__(self):
         return f"{self.name} ({self.phone_number})"
-
 
 class Cuisine(models.Model):
     cuisine_name = models.CharField(max_length=100)
