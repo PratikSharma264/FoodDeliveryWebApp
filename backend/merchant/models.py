@@ -168,6 +168,7 @@ class Restaurant(models.Model):
     cuisine = models.CharField(max_length=50, default='')
     profile_picture = models.ImageField(
         upload_to='restaurant/profile_pics/', blank=True, null=True)
+    external_image_url = models.URLField(blank=True, null=True)
     cover_photo = models.ImageField(
         upload_to='restaurant/cover_photos/', blank=True, null=True)
     owner_name = models.CharField(max_length=100, default='')
@@ -235,7 +236,7 @@ class FoodItem(models.Model):
     restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='food_items')
     veg_nonveg = models.CharField(max_length=6, choices=VEG_NONVEG_CHOICES, default='veg')
     profile_picture = models.ImageField(upload_to='food_images/', blank=True, null=True)
-
+    external_image_url = models.URLField(blank=True, null=True)
     availability_status = models.CharField(
         max_length=20,
         choices=AVAILABILITY_CHOICES,
