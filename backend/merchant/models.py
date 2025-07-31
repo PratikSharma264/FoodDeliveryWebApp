@@ -213,9 +213,19 @@ class FoodItem(models.Model):
         ('PROCESSING', 'Processing'),
         ('DELIVERED', 'Delivered'),
     ]
+    
     VEG_NONVEG_CHOICES = [
         ('veg', 'Vegetarian'),
         ('nonveg', 'Non-Vegetarian'),
+    ]
+
+    RATING_CHOICES = [
+        (0, '0'),
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
     ]
 
     name = models.CharField(max_length=255)
@@ -236,6 +246,13 @@ class FoodItem(models.Model):
         max_length=20,
         choices=DELIVERY_STATUS_CHOICES,
         default='PROCESSING'
+    )
+
+    review_rating = models.IntegerField(
+        choices=RATING_CHOICES,
+        null=True,
+        blank=True,
+        help_text="Rate the food item from 0 to 5"
     )
 
     def __str__(self):
