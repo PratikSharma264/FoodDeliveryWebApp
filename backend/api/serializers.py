@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from merchant.models import FoodItem, Restaurant, Order
+from merchant.models import FoodItem, Restaurant, Order,FoodOrderCount
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -75,3 +75,9 @@ class Orderserializer(serializers.ModelSerializer):
         model = Order
         fields = ['user', 'restaurant', 'food_item',
                   'quantity', 'is_transited', 'total_price']
+
+class FoodOrderCountSerializer(serializers.ModelSerializer):
+    food_item = FooditemSerial(read_only=True)
+    class Meta:
+       model = FoodOrderCount
+       fields = ['food_item' ]
