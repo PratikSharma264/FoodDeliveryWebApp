@@ -148,11 +148,6 @@ class FoodItem(models.Model):
         ('LOW_STOCK', 'Low Stock'),
         ('AVAILABLE', 'Available'),
     ]
-
-    DELIVERY_STATUS_CHOICES = [
-        ('PROCESSING', 'Processing'),
-        ('DELIVERED', 'Delivered'),
-    ]
     
     VEG_NONVEG_CHOICES = [
         ('veg', 'Vegetarian'),
@@ -180,11 +175,6 @@ class FoodItem(models.Model):
         max_length=20,
         choices=AVAILABILITY_CHOICES,
         default='AVAILABLE'
-    )
-    delivery_status = models.CharField(
-        max_length=20,
-        choices=DELIVERY_STATUS_CHOICES,
-        default='PROCESSING'
     )
     review_rating = models.IntegerField(
         choices=RATING_CHOICES,

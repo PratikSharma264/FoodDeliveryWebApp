@@ -19,6 +19,7 @@ from merchant.models import FoodItem, Restaurant, Order
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 
+import math
 
 def api_overview(request):
     api_urls = {
@@ -332,3 +333,46 @@ def get_product_by_id(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except FoodItem.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+
+
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    R = 6371  # Earth radius in kilometers
+
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c
+    return distance
+
+@api_view(['GET'])
+def get_nearby_restaurants(request):
+    try:
+        user_lat = float(request.GET.get('latitude'))
+        user_lon = float(request.GET.get('longitude'))
+    except (TypeError, ValueError):
+        return Response({"error": "Please provide valid 'latitude' and 'longitude' as query params."}, status=400)
+
+    restaurants = Restaurant.objects.all()
+
+    distances = []
+    for restaurant in restaurants:
+        distance = haversine_distance(user_lat, user_lon, restaurant.latitude, restaurant.longitude)
+        distances.append((distance, restaurant))
+
+    # Sort and select top 4 nearby
+    distances.sort(key=lambda x: x[0])
+    nearest_restaurants = [r for _, r in distances[:4]]
+
+    serializer = RestaurantSerial(nearest_restaurants, many=True)
+    return Response(serializer.data)
