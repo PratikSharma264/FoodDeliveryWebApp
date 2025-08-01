@@ -14,9 +14,10 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer,RestaurantSerial
 from merchant.models import FoodItem, Restaurant, Order
 from rest_framework.permissions import IsAuthenticated
+from django.core.paginator import Paginator
 
 
 def api_overview(request):
@@ -61,7 +62,6 @@ class login_user(APIView):
 
         response = Response({
             'access': str(refresh.access_token),
-
             'email': user.email,
             'full_name': user.first_name
         })
@@ -102,21 +102,24 @@ class ShopPagination(PageNumberPagination):
     page_size = 6
     page_size_query_param = 'per_page'
 
+
 @api_view(['GET'])
+@permission_classes([AllowAny]) 
 def product_list_view(request):
     queryset = FoodItem.objects.all()
 
     # Get query parameters
-    category = request.query_params.get('category')
+    category = request.query_params.get('category')  
+    res_type = request.query_params.get('res_category')  
     min_price = request.query_params.get('min_price')
     max_price = request.query_params.get('max_price')
-    res_typ = request.query_params.get('restaurant_type')
 
-    # Apply filters
-    if category:
-        queryset = queryset.filter(category=category)
-    if res_typ:
-        queryset = queryset.filter(restaurant_type__iexact=res_typ)
+    if category and category.lower() != "all":
+        queryset = queryset.filter(veg_nonveg__iexact=category)
+
+    if res_type and res_type.lower() != "all":
+        queryset = queryset.filter(restaurant__restaurant_type__iexact=res_type)
+
     if min_price:
         try:
             queryset = queryset.filter(price__gte=float(min_price))
@@ -128,13 +131,21 @@ def product_list_view(request):
             queryset = queryset.filter(price__lte=float(max_price))
         except ValueError:
             return Response({'error': 'max_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
+        
+    page_number = request.query_params.get('_page', 1)
+    per_page = request.query_params.get('_per_page', 6)
+    try:
+        page_number = int(page_number)
+        per_page = int(per_page)
+    except ValueError:
+        return Response({'error': 'Pagination parameters must be integers'}, status=status.HTTP_400_BAD_REQUEST)
+    paginator = Paginator(queryset, per_page)
+    page_obj = paginator.get_page(page_number)
+    serializer = FooditemSerial(page_obj, many=True)
+    response = Response(serializer.data)
+    response['X-Total-Count'] = paginator.count
+    return response
 
-    # Apply pagination
-    paginator = ShopPagination()
-    paginated_queryset = paginator.paginate_queryset(queryset, request)
-
-    serializer = FooditemSerial(paginated_queryset, many=True)
-    return paginator.get_paginated_response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -297,3 +308,27 @@ def update_cart(request):
             {'message': 'Error, invalid data.', 'errors': serializer.errors},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_restaurant_by_id(request, id):
+    try:
+        restaurant = Restaurant.objects.get(id=id)
+        serializer = RestaurantSerial(restaurant)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Restaurant.DoesNotExist:
+        return Response(
+            {"error": "Restaurant not found"},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_product_by_id(request, pk):
+    try:
+        product = FoodItem.objects.get(pk=pk)
+        serializer = FooditemSerial(product)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except FoodItem.DoesNotExist:
+        return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)

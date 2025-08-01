@@ -2,6 +2,8 @@ from django.urls import path
 from knox import views as knox_views
 from api import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from .views import get_restaurant_by_id
+
 urlpatterns = [
     path('', views.api_overview, name="api_overview"),
     path("token/", TokenObtainPairView.as_view(), name="get_token"),
@@ -19,4 +21,6 @@ urlpatterns = [
     path('deletecartitem/', views.delete_cart),
     path('updatecart/', views.update_cart),
     path('products/',views.product_list_view),
+    path('products/<int:pk>', views.get_product_by_id),
+    path('restaurants/<int:id>/', get_restaurant_by_id),
 ]
