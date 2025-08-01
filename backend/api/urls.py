@@ -23,4 +23,5 @@ urlpatterns = [
     path('products/',views.product_list_view),
     path('products/<int:pk>', views.get_product_by_id),
     path('restaurants/<int:id>/', get_restaurant_by_id),
+    path('api/nearby-restaurants/', views.get_nearby_restaurants, name='nearby-restaurants'),
 ]
