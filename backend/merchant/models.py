@@ -124,9 +124,9 @@ class Restaurant(models.Model):
     cuisine = models.CharField(max_length=50, default='')
     profile_picture = models.ImageField(
         upload_to='restaurant/profile_pics/', blank=True, null=True)
-    external_image_url = models.URLField(blank=True, null=True)
     cover_photo = models.ImageField(
         upload_to='restaurant/cover_photos/', blank=True, null=True)
+    external_image_url = models.URLField(blank=True, null=True) 
     owner_name = models.CharField(max_length=100, default='')
     owner_contact = models.CharField(
         max_length=15, null=True, validators=[phone_validator])
