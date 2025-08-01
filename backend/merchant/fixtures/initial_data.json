@@ -1,0 +1,275 @@
+[
+  {
+    "model": "merchant.restaurant",
+    "pk": 1,
+    "fields": {
+      "user": null,
+      "restaurant_name": "Pizza Palace",
+      "vat_and_tax": "13.00",
+      "restaurant_address": "123 Main St, Cityville",
+      "latitude": 27.7172,
+      "longitude": 85.3240,
+      "cuisine": "Italian",
+      "profile_picture": null,
+      "cover_photo": null,
+      "external_image_url": "https://example.com/images/pizza-palace.jpg",
+      "owner_name": "John Doe",
+      "owner_contact": "9812345678",
+      "menu": null,
+      "business_plan": "commission",
+      "restaurant_type": "local",
+      "created_at": "2025-07-31T10:14:24Z",
+      "approved": false
+    }
+  },
+  {
+    "model": "merchant.restaurant",
+    "pk": 2,
+    "fields": {
+      "user": null,
+      "restaurant_name": "Sushi World",
+      "vat_and_tax": "10.00",
+      "restaurant_address": "456 Ocean Ave, Seaside",
+      "latitude": 27.6700,
+      "longitude": 85.4300,
+      "cuisine": "Japanese",
+      "profile_picture": null,
+      "cover_photo": null,
+      "external_image_url": "https://example.com/images/sushi-world.jpg",
+      "owner_name": "Jane Smith",
+      "owner_contact": "9876543210",
+      "menu": null,
+      "business_plan": "subscription",
+      "restaurant_type": "finedining",
+      "created_at": "2025-07-31T10:14:24Z",
+      "approved": false
+    }
+  },
+  {
+    "model": "merchant.restaurant",
+    "pk": 3,
+    "fields": {
+      "user": null,
+      "restaurant_name": "Taco Town",
+      "vat_and_tax": "5.00",
+      "restaurant_address": "789 Fiesta Rd, Mexitown",
+      "latitude": 27.7000,
+      "longitude": 85.3000,
+      "cuisine": "Mexican",
+      "profile_picture": null,
+      "cover_photo": null,
+      "external_image_url": "https://example.com/images/taco-town.jpg",
+      "owner_name": "Pedro Sanchez",
+      "owner_contact": "9800112233",
+      "menu": null,
+      "business_plan": "commission",
+      "restaurant_type": "local",
+      "created_at": "2025-07-31T10:14:24Z",
+      "approved": false
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 1,
+    "fields": {
+      "name": "Margherita Pizza",
+      "price": "9.99",
+      "discount": "0.00",
+      "description": "Classic pizza with tomatoes, mozzarella, and basil",
+      "restaurant": 1,
+      "veg_nonveg": "veg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 2,
+    "fields": {
+      "name": "Pepperoni Pizza",
+      "price": "11.99",
+      "discount": "0.00",
+      "description": "Pepperoni, cheese, and tomato sauce",
+      "restaurant": 1,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 3,
+    "fields": {
+      "name": "California Roll",
+      "price": "7.49",
+      "discount": "0.00",
+      "description": "Crab, avocado, and cucumber",
+      "restaurant": 2,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 4,
+    "fields": {
+      "name": "Spicy Tuna Roll",
+      "price": "8.99",
+      "discount": "0.00",
+      "description": "Tuna with spicy mayo",
+      "restaurant": 2,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://plus.unsplash.com/premium_photo-1712949141720-6ddee2bde0bf?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 5,
+    "fields": {
+      "name": "Beef Taco",
+      "price": "3.99",
+      "discount": "0.00",
+      "description": "Ground beef, lettuce, cheese, and salsa",
+      "restaurant": 3,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://plus.unsplash.com/premium_photo-1664391890333-b6708e34b021?q=80&w=729&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 6,
+    "fields": {
+      "name": "Chicken Quesadilla",
+      "price": "6.49",
+      "discount": "0.00",
+      "description": "Grilled chicken with cheese in a tortilla",
+      "restaurant": 3,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1628430044262-fb84cffbb744?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 7,
+    "fields": {
+      "name": "BBQ Chicken Pizza",
+      "price": "12.49",
+      "discount": "0.00",
+      "description": "Grilled chicken, BBQ sauce, onions, and mozzarella",
+      "restaurant": 1,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=481&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 8,
+    "fields": {
+      "name": "Shrimp Tempura Roll",
+      "price": "9.25",
+      "discount": "0.00",
+      "description": "Shrimp tempura, avocado, and eel sauce",
+      "restaurant": 2,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1570078362689-c57c33cca104?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 9,
+    "fields": {
+      "name": "Carnitas Taco",
+      "price": "4.49",
+      "discount": "0.00",
+      "description": "Slow-cooked pork with onion and cilantro",
+      "restaurant": 3,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://plus.unsplash.com/premium_photo-1678051386853-5623e723745a?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 10,
+    "fields": {
+      "name": "Veggie Quesadilla",
+      "price": "5.99",
+      "discount": "0.00",
+      "description": "Grilled vegetables and cheese in a tortilla",
+      "restaurant": 3,
+      "veg_nonveg": "veg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1708388064941-de7a9f879bf9?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 11,
+    "fields": {
+      "name": "Four Cheese Pizza",
+      "price": "10.99",
+      "discount": "0.00",
+      "description": "Mozzarella, cheddar, parmesan, and gorgonzola",
+      "restaurant": 1,
+      "veg_nonveg": "veg",
+      "profile_picture": null,
+      "external_image_url": "https://plus.unsplash.com/premium_photo-1691911162192-f4a5cd1b7403?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  },
+  {
+    "model": "merchant.fooditem",
+    "pk": 12,
+    "fields": {
+      "name": "Dragon Roll",
+      "price": "10.49",
+      "discount": "0.00",
+      "description": "Eel, cucumber, avocado, and tobiko",
+      "restaurant": 2,
+      "veg_nonveg": "nonveg",
+      "profile_picture": null,
+      "external_image_url": "https://images.unsplash.com/photo-1712192674556-4a89f20240c1?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "availability_status": "AVAILABLE",
+      "delivery_status": "PROCESSING",
+      "review_rating": null
+    }
+  }
+]
