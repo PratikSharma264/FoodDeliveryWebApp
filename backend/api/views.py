@@ -146,7 +146,31 @@ def product_list_view(request):
     response = Response(serializer.data)
     response['X-Total-Count'] = paginator.count
     return response
+class ShopPagination(PageNumberPagination):
+    page_size = 5  # Changed from 6 to 5
+    page_size_query_param = 'per_page'
+class ShopPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'per_page'
 
+
+from django.db.models import F
+@api_view(['GET'])
+def get_most_ordered_food(request):
+    # Get only food items that have been ordered, annotate them with order count
+    most_ordered_foods = FoodItem.objects.filter(
+        order_countno_of_ordersgt=0
+    ).annotate(
+        no_of_orders=F('order_count__no_of_orders')
+    ).order_by('-no_of_orders')
+
+    # Apply pagination (optional: comment out if not needed)
+    paginator = ShopPagination()
+    paginated_data = paginator.paginate_queryset(most_ordered_foods, request)
+
+    # Serialize and return only the results array
+    serializer = FooditemSerial(paginated_data, many=True)
+    return Response(serializer.data, status=200)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
