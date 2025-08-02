@@ -78,17 +78,17 @@ class Orderserializer(serializers.ModelSerializer):
                   'quantity', 'is_transited', 'total_price']
 
 class CartSerializer(serializers.ModelSerializer):
-    food_item_name = serializers.CharField(source='food_item.name', read_only=True)
-    food_item_image = serializers.URLField(source='food_item.profile_picture.url', read_only=True)
-    restaurant_name = serializers.CharField(source='restaurant.restaurant_name', read_only=True)
-    unit_price = serializers.DecimalField(source='food_item.price', max_digits=10, decimal_places=2, read_only=True)
-    
+    cart_id = serializers.IntegerField(read_only=True)  # uses AutoField from model
+
     class Meta:
         model = Cart
         fields = [
-            'cart_id', 'user', 'restaurant', 'food_item', 
-            'quantity', 'total_price', 'created_at', 'updated_at',
-            'food_item_name', 'food_item_image', 'restaurant_name', 'unit_price'
+            'cart_id',
+            'user',
+            'restaurant',
+            'food_item',
+            'quantity',
+            'total_price',
         ]
 class FoodOrderCountSerializer(serializers.ModelSerializer):
     food_item = FooditemSerial(read_only=True)
