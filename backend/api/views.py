@@ -16,8 +16,8 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial,CartSerializer
-from merchant.models import FoodItem, Restaurant, Order,Cart
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer
+from merchant.models import FoodItem, Restaurant, Order, Cart
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 import math
@@ -347,16 +347,16 @@ def delete_cart(request, cart_id):
     """Delete a cart item using URL parameter"""
     user = request.user
     try:
-        cart_item = Cart.objects.get(id=cart_id, user=user, is_transited=False)
+        cart_item = Cart.objects.get(id=cart_id, user=user)
     except Cart.DoesNotExist:
         return Response(
-            {'message': 'Cart item not found.'}, 
+            {'message': 'Cart item not found.'},
             status=status.HTTP_404_NOT_FOUND
         )
 
     cart_item.delete()
     return Response(
-        {'message': 'Cart item deleted successfully.'}, 
+        {'message': 'Cart item deleted successfully.'},
         status=status.HTTP_204_NO_CONTENT
     )
 
@@ -434,25 +434,25 @@ def update_cart(request):
         if quantity < 1:
             raise ValueError
     except ValueError:
-        return Response({"message": "Quantity must be a positive integer."}, 
+        return Response({"message": "Quantity must be a positive integer."},
                         status=status.HTTP_400_BAD_REQUEST)
 
     try:
         order = Order.objects.get(id=order_id, user=user, is_transited=False)
     except Order.DoesNotExist:
-        return Response({"message": "Cart item not found."}, 
+        return Response({"message": "Cart item not found."},
                         status=status.HTTP_404_NOT_FOUND)
 
     order.quantity = quantity
     order.total_price = order.food_item.price * quantity
 
     if order.total_price < 300:
-        return Response({"message": "Minimum order amount is 300."}, 
+        return Response({"message": "Minimum order amount is 300."},
                         status=status.HTTP_400_BAD_REQUEST)
 
     order.save()
     serializer = Orderserializer(order)
-    return Response({'message': 'Cart updated successfully.', 'order': serializer.data}, 
+    return Response({'message': 'Cart updated successfully.', 'order': serializer.data},
                     status=status.HTTP_200_OK)
 
 
