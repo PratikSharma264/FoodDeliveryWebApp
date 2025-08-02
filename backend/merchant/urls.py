@@ -31,6 +31,6 @@ urlpatterns = [
     path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
     path("lobby/", views.lobby_view, name='lobby'),
-    
+
 
 ]

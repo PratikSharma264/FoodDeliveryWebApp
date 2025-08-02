@@ -3,11 +3,11 @@ from knox import views as knox_views
 from api import views
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .views import get_restaurant_by_id
-
+from django.views.decorators.csrf import csrf_exempt
 urlpatterns = [
     path('', views.api_overview, name="api_overview"),
     path("token/", TokenObtainPairView.as_view(), name="get_token"),
-    path("token/refresh", TokenRefreshView.as_view(), name="refresh"),
+    path("token/refresh", csrf_exempt(TokenRefreshView.as_view()), name="refresh"),
     path('register-user/', views.register_user.as_view(),
          name="register_user"),
     path('login-user/', views.login_user.as_view(),
@@ -20,8 +20,12 @@ urlpatterns = [
     path('addtocart/', views.addtocart),
     path('deletecartitem/', views.delete_cart),
     path('updatecart/', views.update_cart),
-    path('products/',views.product_list_view),
+    path('products/', views.product_list_view),
     path('products/<int:pk>', views.get_product_by_id),
     path('restaurants/<int:id>/', get_restaurant_by_id),
-    path('api/nearby-restaurants/', views.get_nearby_restaurants, name='nearby-restaurants'),
+    path('nearby-restaurants/', views.get_nearby_restaurants,
+         name='nearby-restaurants'),
+    path('restaurant-locations/', views.restaurant_locations,
+         name='restaurant-locations')
+
 ]

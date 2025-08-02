@@ -208,7 +208,7 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_profile')
 
     restaurant = models.ForeignKey(
@@ -294,7 +294,7 @@ class Order(models.Model):
 
     def __str__(self):
         if self.food_item and self.user:
-            return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.name}"
+            return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.get_full_name() or self.user.username}"
         return f"Order #{self.pk}"
 
 

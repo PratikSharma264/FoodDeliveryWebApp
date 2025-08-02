@@ -1,3 +1,4 @@
+from math import radians, sin, cos, sqrt, atan2
 from django.db.models import F
 from django.contrib.auth import login
 from django.shortcuts import render
@@ -72,7 +73,7 @@ class login_user(APIView):
             key='refresh_token',
             value=str(refresh),
             httponly=True,
-            secure=True,
+            secure=False,
             samesite='Lax'
         )
 
@@ -392,6 +393,7 @@ def haversine_distance(lat1, lon1, lat2, lon2):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def get_nearby_restaurants(request):
     try:
         user_lat = float(request.GET.get('latitude'))
@@ -413,3 +415,65 @@ def get_nearby_restaurants(request):
 
     serializer = RestaurantSerial(nearest_restaurants, many=True)
     return Response(serializer.data)
+
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    # Radius of Earth in kilometers (use 3956 for miles)
+    R = 6371.0
+
+    # Convert degrees to radians
+    lat1_rad, lon1_rad = radians(lat1), radians(lon1)
+    lat2_rad, lon2_rad = radians(lat2), radians(lon2)
+
+    # Differences
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    # Haversine formula
+    a = sin(dlat / 2)**2 + cos(lat1_rad) * cos(lat2_rad) * sin(dlon / 2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+
+    distance = R * c  # in kilometers
+    return distance
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def restaurant_locations(request):
+    restaurant_id = request.query_params.get('id')
+    user_longitude = request.query_params.get('user_longitude')
+    user_latitude = request.query_params.get('user_latitude')
+
+    if not restaurant_id:
+        return Response({'error': 'restaurant ID is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not user_latitude or not user_longitude:
+        return Response({'error': 'User latitude and longitude are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Parse user lat/lon safely
+        user_lat = float(user_latitude)
+        user_lon = float(user_longitude)
+
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+        distance = calculate_distance(
+            user_lat, user_lon, restaurant.latitude, restaurant.longitude)
+
+        return Response({
+            'id': restaurant.id,
+            'restaurant_name': restaurant.restaurant_name,
+            'latitude': restaurant.latitude,
+            'longitude': restaurant.longitude,
+            'user_latitude': user_lat,
+            'user_longitude': user_lon,
+            'distance': round(distance, 2),
+        }, status=status.HTTP_200_OK)
+
+    except ValueError:
+        return Response({'error': 'Latitude and longitude must be valid numbers'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except Restaurant.DoesNotExist:
+        return Response({'error': 'Restaurant not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    except Exception as e:
+        return Response({'error': f'Unexpected error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
