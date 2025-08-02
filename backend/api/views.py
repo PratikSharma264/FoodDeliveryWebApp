@@ -15,8 +15,8 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial
-from merchant.models import FoodItem, Restaurant, Order
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial,CartSerializer
+from merchant.models import FoodItem, Restaurant, Order,Cart
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 import math
@@ -180,6 +180,55 @@ def get_most_ordered_food(request):
     return Response(serializer.data, status=200)
 
 
+# @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+# def addtocart(request):
+#     user = request.user
+#     food_id = request.data.get('food_id')
+#     restaurant_id = request.data.get('restaurant_id')
+#     quantity = request.data.get('quantity')
+
+#     if not all([food_id, restaurant_id, quantity]):
+#         return Response(
+#             {"message": "food_id, restaurant_id, and quantity are required."},
+#             status=status.HTTP_400_BAD_REQUEST
+#         )
+
+#     try:
+#         quantity = int(quantity)
+#     except ValueError:
+#         return Response({"message": "Quantity must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         food = FoodItem.objects.get(id=food_id)
+#         restaurant = Restaurant.objects.get(id=restaurant_id)
+#     except (FoodItem.DoesNotExist, Restaurant.DoesNotExist):
+#         return Response({"message": "Invalid food or restaurant ID."}, status=status.HTTP_404_NOT_FOUND)
+
+#     total_price = food.price * quantity
+#     if total_price < 300:
+#         return Response({"message": "Minimum order amount is 300."}, status=status.HTTP_400_BAD_REQUEST)
+
+#     order_data = {
+#         "user": user.id,
+#         "food_item": food.id,
+#         "restaurant": restaurant.id,
+#         "quantity": quantity,
+#         "total_price": total_price
+#     }
+
+#     serializer = Orderserializer(data=order_data)
+#     if serializer.is_valid():
+#         serializer.save()
+#         return Response(
+#             {'message': 'Order placed successfully.', 'order': serializer.data},
+#             status=status.HTTP_201_CREATED
+#         )
+#     else:
+#         return Response(
+#             {'message': 'Error, invalid data.', 'errors': serializer.errors},
+#             status=status.HTTP_400_BAD_REQUEST
+#         )
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def addtocart(request):
@@ -209,7 +258,7 @@ def addtocart(request):
     if total_price < 300:
         return Response({"message": "Minimum order amount is 300."}, status=status.HTTP_400_BAD_REQUEST)
 
-    order_data = {
+    cart_data = {
         "user": user.id,
         "food_item": food.id,
         "restaurant": restaurant.id,
@@ -217,11 +266,11 @@ def addtocart(request):
         "total_price": total_price
     }
 
-    serializer = Orderserializer(data=order_data)
+    serializer = CartSerializer(data=cart_data)
     if serializer.is_valid():
         serializer.save()
         return Response(
-            {'message': 'Order placed successfully.', 'order': serializer.data},
+            {'message': 'Item added to cart successfully.', 'cart': serializer.data},
             status=status.HTTP_201_CREATED
         )
     else:
@@ -235,8 +284,8 @@ def addtocart(request):
 @permission_classes([IsAuthenticated])
 def view_cart(request):
     user = request.user
-    cart_items = Order.objects.filter(user=user, is_transited=False)
-    serializer = Orderserializer(cart_items, many=True)
+    cart_items = Cart.objects.filter(user=user, is_transited=False)
+    serializer = CartSerializer(cart_items, many=True)
 
     return Response({
         "cart": serializer.data
@@ -297,14 +346,14 @@ def delete_cart(request, cart_id):
     """Delete a cart item using URL parameter"""
     user = request.user
     try:
-        order = Order.objects.get(id=cart_id, user=user, is_transited=False)
-    except Order.DoesNotExist:
+        cart_item = Cart.objects.get(id=cart_id, user=user, is_transited=False)
+    except Cart.DoesNotExist:
         return Response(
             {'message': 'Cart item not found.'}, 
             status=status.HTTP_404_NOT_FOUND
         )
 
-    order.delete()
+    cart_item.delete()
     return Response(
         {'message': 'Cart item deleted successfully.'}, 
         status=status.HTTP_204_NO_CONTENT
