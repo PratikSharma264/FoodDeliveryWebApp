@@ -285,7 +285,7 @@ def addtocart(request):
 @permission_classes([IsAuthenticated])
 def view_cart(request):
     user = request.user
-    cart_items = Cart.objects.filter(user=user, is_transited=False)
+    cart_items = Cart.objects.filter(user=user)
     serializer = CartSerializer(cart_items, many=True)
 
     return Response({
@@ -343,11 +343,19 @@ def show_user_order_history(request):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
-def delete_cart(request, cart_id):
-    """Delete a cart item using URL parameter"""
+def delete_cart(request):
+    """Delete a cart item using cart_id from request body"""
     user = request.user
+    cart_id = request.data.get('cart_id')
+
+    if not cart_id:
+        return Response(
+            {'message': 'cart_id is required.'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
     try:
-        cart_item = Cart.objects.get(id=cart_id, user=user)
+        cart_item = Cart.objects.get(cart_id=cart_id, user=user)
     except Cart.DoesNotExist:
         return Response(
             {'message': 'Cart item not found.'},
@@ -416,16 +424,55 @@ def delete_cart(request, cart_id):
 #             status=status.HTTP_400_BAD_REQUEST
 #         )
 
+# @api_view(['PUT'])
+# @permission_classes([IsAuthenticated])
+# def update_cart(request):
+#     user = request.user
+#     order_id = request.data.get('order_id')
+#     quantity = request.data.get('quantity')
+
+#     if not all([order_id, quantity]):
+#         return Response(
+#             {"message": "order_id and quantity are required."},
+#             status=status.HTTP_400_BAD_REQUEST
+#         )
+
+#     try:
+#         quantity = int(quantity)
+#         if quantity < 1:
+#             raise ValueError
+#     except ValueError:
+#         return Response({"message": "Quantity must be a positive integer."},
+#                         status=status.HTTP_400_BAD_REQUEST)
+
+#     try:
+#         order = Order.objects.get(id=order_id, user=user, is_transited=False)
+#     except Order.DoesNotExist:
+#         return Response({"message": "Cart item not found."},
+#                         status=status.HTTP_404_NOT_FOUND)
+
+#     order.quantity = quantity
+#     order.total_price = order.food_item.price * quantity
+
+#     if order.total_price < 300:
+#         return Response({"message": "Minimum order amount is 300."},
+#                         status=status.HTTP_400_BAD_REQUEST)
+
+#     order.save()
+#     serializer = Orderserializer(order)
+#     return Response({'message': 'Cart updated successfully.', 'order': serializer.data},
+#                     status=status.HTTP_200_OK)
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_cart(request):
     user = request.user
-    order_id = request.data.get('order_id')
+    cart_id = request.data.get('cart_id')  # renamed for clarity
     quantity = request.data.get('quantity')
 
-    if not all([order_id, quantity]):
+    if not all([cart_id, quantity]):
         return Response(
-            {"message": "order_id and quantity are required."},
+            {"message": "cart_id and quantity are required."},
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -434,27 +481,26 @@ def update_cart(request):
         if quantity < 1:
             raise ValueError
     except ValueError:
-        return Response({"message": "Quantity must be a positive integer."},
+        return Response({"message": "Quantity must be a positive integer."}, 
                         status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        order = Order.objects.get(id=order_id, user=user, is_transited=False)
-    except Order.DoesNotExist:
-        return Response({"message": "Cart item not found."},
+        cart_item = Cart.objects.get(cart_id=cart_id, user=user)
+    except Cart.DoesNotExist:
+        return Response({"message": "Cart item not found."}, 
                         status=status.HTTP_404_NOT_FOUND)
 
-    order.quantity = quantity
-    order.total_price = order.food_item.price * quantity
+    cart_item.quantity = quantity
+    cart_item.total_price = cart_item.food_item.price * quantity
 
-    if order.total_price < 300:
-        return Response({"message": "Minimum order amount is 300."},
+    if cart_item.total_price < 300:
+        return Response({"message": "Minimum order amount is 300."}, 
                         status=status.HTTP_400_BAD_REQUEST)
 
-    order.save()
-    serializer = Orderserializer(order)
-    return Response({'message': 'Cart updated successfully.', 'order': serializer.data},
+    cart_item.save()
+    serializer = CartSerializer(cart_item)
+    return Response({'message': 'Cart updated successfully.', 'cart': serializer.data}, 
                     status=status.HTTP_200_OK)
-
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
