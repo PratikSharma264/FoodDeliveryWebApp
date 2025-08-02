@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.contrib.auth import login
 from django.shortcuts import render
 from rest_framework.pagination import PageNumberPagination
@@ -14,12 +15,12 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer,RestaurantSerial
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial
 from merchant.models import FoodItem, Restaurant, Order
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
-
 import math
+
 
 def api_overview(request):
     api_urls = {
@@ -99,19 +100,21 @@ class login_user_knox(KnoxLoginView):
         token_data['full_name'] = user.first_name
 
         return Response(token_data)
+
+
 class ShopPagination(PageNumberPagination):
     page_size = 6
     page_size_query_param = 'per_page'
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny]) 
+@permission_classes([AllowAny])
 def product_list_view(request):
     queryset = FoodItem.objects.all()
 
     # Get query parameters
-    category = request.query_params.get('category')  
-    res_type = request.query_params.get('res_category')  
+    category = request.query_params.get('category')
+    res_type = request.query_params.get('res_category')
     min_price = request.query_params.get('min_price')
     max_price = request.query_params.get('max_price')
 
@@ -119,7 +122,8 @@ def product_list_view(request):
         queryset = queryset.filter(veg_nonveg__iexact=category)
 
     if res_type and res_type.lower() != "all":
-        queryset = queryset.filter(restaurant__restaurant_type__iexact=res_type)
+        queryset = queryset.filter(
+            restaurant__restaurant_type__iexact=res_type)
 
     if min_price:
         try:
@@ -132,7 +136,7 @@ def product_list_view(request):
             queryset = queryset.filter(price__lte=float(max_price))
         except ValueError:
             return Response({'error': 'max_price must be a number'}, status=status.HTTP_400_BAD_REQUEST)
-        
+
     page_number = request.query_params.get('_page', 1)
     per_page = request.query_params.get('_per_page', 6)
     try:
@@ -146,15 +150,18 @@ def product_list_view(request):
     response = Response(serializer.data)
     response['X-Total-Count'] = paginator.count
     return response
+
+
 class ShopPagination(PageNumberPagination):
     page_size = 5  # Changed from 6 to 5
     page_size_query_param = 'per_page'
+
+
 class ShopPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'per_page'
 
 
-from django.db.models import F
 @api_view(['GET'])
 def get_most_ordered_food(request):
     # Get only food items that have been ordered, annotate them with order count
@@ -171,6 +178,7 @@ def get_most_ordered_food(request):
     # Serialize and return only the results array
     serializer = FooditemSerial(paginated_data, many=True)
     return Response(serializer.data, status=200)
+
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -267,18 +275,21 @@ def show_user_order_history(request):
     return Response({
         "order_history": serializer.data,
     }, status=status.HTTP_200_OK)
+
+
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_cart(request):
     user = request.user
     order_id = request.data.get('order_id')
     try:
-        order = Order.objects.get(id=order_id, user=user,is_transited=False)
+        order = Order.objects.get(id=order_id, user=user, is_transited=False)
     except Order.DoesNotExist:
         return Response({'message': 'Order not found.'}, status=status.HTTP_404_NOT_FOUND)
 
     order.delete()
     return Response({'message': 'Order deleted successfully.'}, status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
@@ -306,9 +317,10 @@ def update_cart(request):
         return Response({"message": "Invalid food or restaurant ID."}, status=status.HTTP_404_NOT_FOUND)
 
     # Delete the previous order if it exists
-    Order.objects.filter(user=user, food_item=food, restaurant=restaurant).delete()
+    Order.objects.filter(user=user, food_item=food,
+                         restaurant=restaurant).delete()
 
-    #Recalculate total price
+    # Recalculate total price
     total_price = food.price * quantity
     if total_price < 300:
         return Response({"message": "Minimum order amount is 300."}, status=status.HTTP_400_BAD_REQUEST)
@@ -348,6 +360,7 @@ def get_restaurant_by_id(request, id):
             status=status.HTTP_404_NOT_FOUND
         )
 
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_product_by_id(request, pk):
@@ -357,9 +370,6 @@ def get_product_by_id(request, pk):
         return Response(serializer.data, status=status.HTTP_200_OK)
     except FoodItem.DoesNotExist:
         return Response({'error': 'Product not found'}, status=status.HTTP_404_NOT_FOUND)
-    
-
-
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):
@@ -373,11 +383,13 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     dlat = lat2_rad - lat1_rad
     dlon = lon2_rad - lon1_rad
 
-    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * \
+        math.cos(lat2_rad) * math.sin(dlon / 2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     distance = R * c
     return distance
+
 
 @api_view(['GET'])
 def get_nearby_restaurants(request):
@@ -391,7 +403,8 @@ def get_nearby_restaurants(request):
 
     distances = []
     for restaurant in restaurants:
-        distance = haversine_distance(user_lat, user_lon, restaurant.latitude, restaurant.longitude)
+        distance = haversine_distance(
+            user_lat, user_lon, restaurant.latitude, restaurant.longitude)
         distances.append((distance, restaurant))
 
     # Sort and select top 4 nearby

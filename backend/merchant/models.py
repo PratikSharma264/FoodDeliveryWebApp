@@ -33,67 +33,11 @@ class Merchant(models.Model):
         return f"{self.name} ({self.user.username})"
 
 
-class CustomUser(AbstractUser):
-    email = models.EmailField(unique=True)
-    date_of_birth = models.DateField(blank=True, null=True)
-    address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
-    profile_picture = models.ImageField(upload_to='user_images/', blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    groups = models.ManyToManyField(
-        Group,
-        related_name='customuser_set',
-        blank=True,
-        help_text='The groups this user belongs to.',
-        related_query_name='user',
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='customuser_permissions_set',
-        blank=True,
-        help_text='Specific permissions for this user.',
-        related_query_name='user',
-    )
-
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']  
-
-    def __str__(self):
-        try:
-            return f"{self.appuser_profile.name} ({self.email})"
-        except:
-            return f"{self.username} ({self.email})"
-
-    def get_full_name(self):
-        try:
-            return self.appuser_profile.name
-        except:
-            return self.username
-
-    def get_initials(self):
-        try:
-            name = self.appuser_profile.name
-            name_parts = name.split()
-            if len(name_parts) >= 2:
-                return f"{name_parts[0][0].upper()}{name_parts[-1][0].upper()}"
-            return name_parts[0][0].upper() if name_parts else "U"
-        except:
-            return self.username[0].upper() if self.username else "U"
-
-
-class AppUser(models.Model):
+class Customer(models.Model):
     user = models.OneToOneField(
-        CustomUser, on_delete=models.CASCADE, related_name='appuser_profile', null=True)
-    name = models.CharField(max_length=255)
-    phone_number = models.CharField(
-        max_length=15, validators=[phone_validator])
-    address = models.TextField()
-    
-    def __str__(self):
-        return f"{self.name} ({self.phone_number})"
+        User, on_delete=models.CASCADE, related_name='user_profile')
+    profile_picture = models.ImageField(
+        upload_to='user_images/', blank=True, null=True)
 
 
 class Cuisine(models.Model):
@@ -126,7 +70,7 @@ class Restaurant(models.Model):
         upload_to='restaurant/profile_pics/', blank=True, null=True)
     cover_photo = models.ImageField(
         upload_to='restaurant/cover_photos/', blank=True, null=True)
-    external_image_url = models.URLField(blank=True, null=True) 
+    external_image_url = models.URLField(blank=True, null=True)
     owner_name = models.CharField(max_length=100, default='')
     owner_contact = models.CharField(
         max_length=15, null=True, validators=[phone_validator])
@@ -148,7 +92,7 @@ class FoodItem(models.Model):
         ('LOW_STOCK', 'Low Stock'),
         ('AVAILABLE', 'Available'),
     ]
-    
+
     VEG_NONVEG_CHOICES = [
         ('veg', 'Vegetarian'),
         ('nonveg', 'Non-Vegetarian'),
@@ -167,9 +111,12 @@ class FoodItem(models.Model):
     price = models.DecimalField(max_digits=7, decimal_places=2)
     discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.0)
     description = models.TextField(blank=True)
-    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='food_items')
-    veg_nonveg = models.CharField(max_length=6, choices=VEG_NONVEG_CHOICES, default='veg')
-    profile_picture = models.ImageField(upload_to='food_images/', blank=True, null=True)
+    restaurant = models.ForeignKey(
+        'Restaurant', on_delete=models.CASCADE, related_name='food_items')
+    veg_nonveg = models.CharField(
+        max_length=6, choices=VEG_NONVEG_CHOICES, default='veg')
+    profile_picture = models.ImageField(
+        upload_to='food_images/', blank=True, null=True)
     external_image_url = models.URLField(blank=True, null=True)
     availability_status = models.CharField(
         max_length=20,
@@ -209,7 +156,7 @@ class Deliveryman(models.Model):
         ('day', 'Day (10AM-6PM)'),
         ('night', 'Night (6PM-2AM)'),
     ]
-    
+
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
     Firstname = models.CharField(max_length=100)
@@ -220,7 +167,8 @@ class Deliveryman(models.Model):
     Zone = models.CharField(max_length=20, blank=False, choices=ZONE_CHOICES)
     Vehicle = models.CharField(
         max_length=20, blank=False, choices=VEHICLE_CHOICES)
-    IdentityType = models.CharField(max_length=30, choices=IDENTITY_CHOICES, blank=False, null=True)
+    IdentityType = models.CharField(
+        max_length=30, choices=IDENTITY_CHOICES, blank=False, null=True)
     IdentityNumber = models.CharField(max_length=30, blank=False)
     IdentityImage = models.ImageField(upload_to='identity_images/')
     PanNumber = models.CharField(
@@ -237,9 +185,9 @@ class Deliveryman(models.Model):
     DutyTime = models.CharField(
         max_length=10, blank=False, choices=DUTYTIME_CHOICES)
     VehicleNumber = models.CharField(
-        max_length=13, 
-        validators=[vehicle_validator], 
-        help_text="Enter the vehicle number in capital letters (e.g., BA 2 PA 1234 or 3-01-Pa-1234).", 
+        max_length=13,
+        validators=[vehicle_validator],
+        help_text="Enter the vehicle number in capital letters (e.g., BA 2 PA 1234 or 3-01-Pa-1234).",
         null=True
     )
     DateofBirth = models.DateField()
@@ -259,47 +207,45 @@ class Order(models.Model):
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     ]
-    
-    user = models.ForeignKey(
-        'AppUser', 
-        on_delete=models.CASCADE, 
-        related_name='orders'
-    )
+
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name='order_profile')
+
     restaurant = models.ForeignKey(
-        'Restaurant', 
-        on_delete=models.CASCADE, 
+        'Restaurant',
+        on_delete=models.CASCADE,
         related_name='orders'
     )
     food_item = models.ForeignKey(
-        'FoodItem', 
-        on_delete=models.CASCADE, 
+        'FoodItem',
+        on_delete=models.CASCADE,
         related_name='orders',
-        null=True, 
+        null=True,
         blank=True
     )
     quantity = models.PositiveIntegerField(default=1)
     total_price = models.DecimalField(
-        max_digits=10, 
+        max_digits=10,
         decimal_places=2,
         help_text="Total price for this order",
-        null=True, 
-        blank=True  
+        null=True,
+        blank=True
     )
     is_transited = models.BooleanField(
         default=False,
         help_text="Whether the order is in transit/delivered"
     )
     deliveryman = models.ForeignKey(
-        'Deliveryman', 
-        on_delete=models.SET_NULL, 
-        null=True, 
+        'Deliveryman',
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
         related_name='orders'
     )
-    order_date = models.DateTimeField(default=timezone.now) 
+    order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
+        max_length=20,
+        choices=STATUS_CHOICES,
         default='PENDING'
     )
     created_at = models.DateTimeField(default=timezone.now)
@@ -312,17 +258,17 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        
+
         if not self.total_price and self.food_item:
             self.total_price = self.food_item.price * self.quantity
-  
+
         if self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']:
             self.is_transited = True
         else:
             self.is_transited = False
-        
+
         super().save(*args, **kwargs)
-        
+
         # Update FoodOrderCount when new order is created
         if is_new and self.food_item:
             food_order_count, created = FoodOrderCount.objects.get_or_create(
@@ -355,7 +301,7 @@ class Order(models.Model):
 class FoodOrderCount(models.Model):
     food_item = models.OneToOneField(
         'FoodItem',
-        on_delete=models.CASCADE, 
+        on_delete=models.CASCADE,
         related_name='order_count'
     )
     no_of_orders = models.PositiveIntegerField(default=0)
@@ -411,7 +357,8 @@ class Delivery(models.Model):
     personnel = models.ForeignKey(
         DeliveryPersonnel, on_delete=models.SET_NULL, null=True, related_name='deliveries')
     delivery_address = models.TextField()
-    assigned_time = models.DateTimeField(default=timezone.now)  # Fixed: use timezone.now
+    assigned_time = models.DateTimeField(
+        default=timezone.now)  # Fixed: use timezone.now
     delivery_time = models.DateTimeField(blank=True, null=True)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
@@ -423,25 +370,25 @@ class Delivery(models.Model):
         verbose_name_plural = "Deliveries"
 
 
-class DeliveryStatus(models.Model):
-    STATUS_CHOICES = [
-        ('ASSIGNED', 'Assigned'),
-        ('PICKED_UP', 'Picked Up'),
-        ('IN_TRANSIT', 'In Transit'),
-        ('DELIVERED', 'Delivered'),
-        ('FAILED', 'Failed'),
-        ('CANCELLED', 'Cancelled'),
-    ]
+# class DeliveryStatus(models.Model):
+#     STATUS_CHOICES = [
+#         ('ASSIGNED', 'Assigned'),
+#         ('PICKED_UP', 'Picked Up'),
+#         ('IN_TRANSIT', 'In Transit'),
+#         ('DELIVERED', 'Delivered'),
+#         ('FAILED', 'Failed'),
+#         ('CANCELLED', 'Cancelled'),
+#     ]
 
-    order = models.OneToOneField(
-        Order, on_delete=models.CASCADE, related_name='delivery_status')
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
-    deliveryman = models.ForeignKey(
-        DeliveryPersonnel, on_delete=models.SET_NULL, null=True, blank=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
-    updated_at = models.DateTimeField(auto_now=True)
+#     order = models.OneToOneField(
+#         Order, on_delete=models.CASCADE, related_name='delivery_status')
+#     user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+#     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
+#     deliveryman = models.ForeignKey(
+#         DeliveryPersonnel, on_delete=models.SET_NULL, null=True, blank=True)
+#     status = models.CharField(
+#         max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
+#     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"Order #{self.order.id} - {self.status}"
+#     def __str__(self):
+#         return f"Order #{self.order.id} - {self.status}"
