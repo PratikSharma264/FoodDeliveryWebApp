@@ -198,6 +198,56 @@ class Deliveryman(models.Model):
     def __str__(self):
         return f'{self.Firstname} {self.Lastname}'
 
+class Cart(models.Model):
+    cart_id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='cart_items'
+    )
+    restaurant = models.ForeignKey(
+        'Restaurant',
+        on_delete=models.CASCADE,
+        related_name='cart_items'
+    )
+    food_item = models.ForeignKey(
+        'FoodItem',
+        on_delete=models.CASCADE,
+        related_name='cart_items'
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Total price for this cart item"
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Cart Item"
+        verbose_name_plural = "Cart Items"
+        # Ensure user can't add same item from same restaurant twice
+        unique_together = ['user', 'restaurant', 'food_item']
+
+    def save(self, *args, **kwargs):
+        # Auto-calculate total price
+        if self.food_item:
+            self.total_price = self.food_item.price * self.quantity
+        super().save(*args, **kwargs)
+
+    def calculate_total(self):
+        if self.food_item:
+            return self.food_item.price * self.quantity
+        return 0
+
+    def update_total_price(self):
+        self.total_price = self.calculate_total()
+        self.save(update_fields=['total_price'])
+
+    def __str__(self):
+        return f"Cart: {self.user.username} - {self.food_item.name} x{self.quantity}"
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -208,7 +258,7 @@ class Order(models.Model):
         ('CANCELLED', 'Cancelled'),
     ]
 
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_profile')
 
     restaurant = models.ForeignKey(
@@ -294,7 +344,7 @@ class Order(models.Model):
 
     def __str__(self):
         if self.food_item and self.user:
-            return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.name}"
+            return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.get_full_name() or self.user.username}"
         return f"Order #{self.pk}"
 
 
