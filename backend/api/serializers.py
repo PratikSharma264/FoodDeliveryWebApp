@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from merchant.models import FoodItem, Restaurant, Order,FoodOrderCount
+from merchant.models import FoodItem, Restaurant, Order,FoodOrderCount, Cart
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -71,11 +71,25 @@ class RestaurantSerial(serializers.ModelSerializer):
 
 
 class Orderserializer(serializers.ModelSerializer):
+    cart_id = serializers.IntegerField(source='id', read_only=True)
     class Meta:
         model = Order
-        fields = ['user', 'restaurant', 'food_item',
+        fields = ['cart_id','user', 'restaurant', 'food_item',
                   'quantity', 'is_transited', 'total_price']
 
+class CartSerializer(serializers.ModelSerializer):
+    food_item_name = serializers.CharField(source='food_item.name', read_only=True)
+    food_item_image = serializers.URLField(source='food_item.profile_picture.url', read_only=True)
+    restaurant_name = serializers.CharField(source='restaurant.restaurant_name', read_only=True)
+    unit_price = serializers.DecimalField(source='food_item.price', max_digits=10, decimal_places=2, read_only=True)
+    
+    class Meta:
+        model = Cart
+        fields = [
+            'cart_id', 'user', 'restaurant', 'food_item', 
+            'quantity', 'total_price', 'created_at', 'updated_at',
+            'food_item_name', 'food_item_image', 'restaurant_name', 'unit_price'
+        ]
 class FoodOrderCountSerializer(serializers.ModelSerializer):
     food_item = FooditemSerial(read_only=True)
     class Meta:
