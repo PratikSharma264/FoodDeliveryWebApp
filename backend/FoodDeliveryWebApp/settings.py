@@ -10,12 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from urllib.parse import urlparse, parse_qsl
-from pathlib import Path
-from datetime import timedelta
-from dotenv import load_dotenv
-import os
 from decouple import config
+import os
+from dotenv import load_dotenv
+from datetime import timedelta
+from pathlib import Path
+from urllib.parse import urlparse, parse_qsl
+load_dotenv()
+
+# Replace the DATABASES section of your settings.py with this
+tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,7 +41,7 @@ ALLOWED_HOSTS = ["*"]
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # 'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
         "knox.auth.TokenAuthentication"
     ),
     "DEFAULT_PERMISSION_CLASSES": [
@@ -67,6 +71,7 @@ INSTALLED_APPS = [
     'api',
     'merchant',
     "rest_framework",
+    'rest_framework.authtoken',
     "knox",
     "corsheaders",
     'channels'
@@ -115,12 +120,7 @@ WSGI_APPLICATION = "FoodDeliveryWebApp.wsgi.application"
 #         "NAME": BASE_DIR / "db.sqlite3",
 #     }
 # }
-# Add these at the top of your settings.py
 
-load_dotenv()
-
-# Replace the DATABASES section of your settings.py with this
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
 
 DATABASES = {
     'default': {

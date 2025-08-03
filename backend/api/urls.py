@@ -29,4 +29,5 @@ urlpatterns = [
          name='nearby-restaurants'),
     path('restaurant-locations/', views.restaurant_locations,
          name='restaurant-locations'),
+    path('place-order', views.place_order_api, name='place-order')
 ]

@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from merchant.models import FoodItem, Restaurant, Order,FoodOrderCount, Cart
+from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -72,13 +72,16 @@ class RestaurantSerial(serializers.ModelSerializer):
 
 class Orderserializer(serializers.ModelSerializer):
     cart_id = serializers.IntegerField(source='id', read_only=True)
+
     class Meta:
         model = Order
-        fields = ['cart_id','user', 'restaurant', 'food_item',
+        fields = ['cart_id', 'user', 'restaurant', 'food_item',
                   'quantity', 'is_transited', 'total_price']
 
+
 class CartSerializer(serializers.ModelSerializer):
-    cart_id = serializers.IntegerField(read_only=True)  # uses AutoField from model
+    cart_id = serializers.IntegerField(
+        read_only=True)  # uses AutoField from model
 
     class Meta:
         model = Cart
@@ -90,8 +93,34 @@ class CartSerializer(serializers.ModelSerializer):
             'quantity',
             'total_price',
         ]
+
+
 class FoodOrderCountSerializer(serializers.ModelSerializer):
     food_item = FooditemSerial(read_only=True)
+
     class Meta:
-       model = FoodOrderCount
-       fields = ['food_item' ]
+        model = FoodOrderCount
+        fields = ['food_item']
+
+
+class PlaceOrderSerializer(serializers.ModelSerializer):
+    food_item_name = serializers.CharField(
+        source='food_item.name', read_only=True)
+    restaurant_name = serializers.CharField(
+        source='restaurant.name', read_only=True)
+
+    class Meta:
+        model = Order
+        fields = [
+            'id',
+            'user',
+            'restaurant',
+            'restaurant_name',
+            'food_item',
+            'food_item_name',
+            'quantity',
+            'total_price',
+            'order_date',
+            'status',
+        ]
+        read_only_fields = ['id', 'order_date', 'status']

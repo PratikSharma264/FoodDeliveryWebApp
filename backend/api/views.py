@@ -1,5 +1,7 @@
+from django.utils import timezone
 from math import radians, sin, cos, sqrt, atan2
 from django.db.models import F
+from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.shortcuts import render
 from rest_framework.pagination import PageNumberPagination
@@ -16,7 +18,7 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer
 from merchant.models import FoodItem, Restaurant, Order, Cart
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
@@ -481,26 +483,27 @@ def update_cart(request):
         if quantity < 1:
             raise ValueError
     except ValueError:
-        return Response({"message": "Quantity must be a positive integer."}, 
+        return Response({"message": "Quantity must be a positive integer."},
                         status=status.HTTP_400_BAD_REQUEST)
 
     try:
         cart_item = Cart.objects.get(cart_id=cart_id, user=user)
     except Cart.DoesNotExist:
-        return Response({"message": "Cart item not found."}, 
+        return Response({"message": "Cart item not found."},
                         status=status.HTTP_404_NOT_FOUND)
 
     cart_item.quantity = quantity
     cart_item.total_price = cart_item.food_item.price * quantity
 
     if cart_item.total_price < 300:
-        return Response({"message": "Minimum order amount is 300."}, 
+        return Response({"message": "Minimum order amount is 300."},
                         status=status.HTTP_400_BAD_REQUEST)
 
     cart_item.save()
     serializer = CartSerializer(cart_item)
-    return Response({'message': 'Cart updated successfully.', 'cart': serializer.data}, 
+    return Response({'message': 'Cart updated successfully.', 'cart': serializer.data},
                     status=status.HTTP_200_OK)
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -514,6 +517,41 @@ def get_restaurant_by_id(request, id):
             {"error": "Restaurant not found"},
             status=status.HTTP_404_NOT_FOUND
         )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def place_order_api(request):
+    user = request.user
+    cart_items = Cart.objects.filter(user=user)
+
+    if not cart_items.exists():
+        return Response(
+            {"detail": "Your cart is empty."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    created_orders = []
+
+    # Removed transaction.atomic() block
+    for item in cart_items:
+        order = Order.objects.create(
+            user=user,
+            restaurant=item.restaurant,
+            food_item=item.food_item,
+            quantity=item.quantity,
+            total_price=item.total_price,
+            order_date=timezone.now(),
+        )
+        created_orders.append(order)
+
+    cart_items.delete()
+
+    serializer = PlaceOrderSerializer(created_orders, many=True)
+    return Response({
+        "message": "Order(s) placed successfully.",
+        "orders": serializer.data
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])

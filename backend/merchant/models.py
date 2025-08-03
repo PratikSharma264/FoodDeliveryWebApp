@@ -284,7 +284,7 @@ class Order(models.Model):
         blank=True
     )
     is_transited = models.BooleanField(
-        default=False,
+        default=True,
         help_text="Whether the order is in transit/delivered"
     )
     deliveryman = models.ForeignKey(
@@ -300,8 +300,6 @@ class Order(models.Model):
         choices=STATUS_CHOICES,
         default='PENDING'
     )
-    created_at = models.DateTimeField(default=timezone.now)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-order_date']
