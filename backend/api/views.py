@@ -32,9 +32,31 @@ def api_overview(request):
             'API token': "/api/token/",
             'API token refresh': "/api/token/refresh",
         },
-        'App User': {
+        'User Authentication': {
             'Register App User': "/api/register-user/",
             'Login App User': "/api/login-user/",
+            'Logout App User': "/api/logout-user/",
+            'Logout All Sessions': "/api/logout-all/",
+        },
+        'Cart Management': {
+            'View Cart': "/api/viewcart/",
+            'Add to Cart': "/api/addtocart/",
+            'Delete Cart Item': "/api/deletecartitem/",
+            'Update Cart': "/api/updatecart/",
+            'Purchase Cart': "/api/purchasecart/",
+        },
+        'Orders': {
+            'Show User Orders': "/api/showuserorders/",
+            'Place Order': "/api/place-order",
+        },
+        'Products': {
+            'List Products': "/api/products/",
+            'Get Product by ID': "/api/products/<int:pk>",
+        },
+        'Restaurants': {
+            'Get Restaurant by ID': "/api/restaurants/<int:id>/",
+            'Nearby Restaurants': "/api/nearby-restaurants/",
+            'Restaurant Locations': "/api/restaurant-locations/",
         }
     }
     return render(request, 'api/api_overview.html', {'api_urls': api_urls})
