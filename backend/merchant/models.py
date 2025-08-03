@@ -198,11 +198,12 @@ class Deliveryman(models.Model):
     def __str__(self):
         return f'{self.Firstname} {self.Lastname}'
 
+
 class Cart(models.Model):
     cart_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(
-        User, 
-        on_delete=models.CASCADE, 
+        User,
+        on_delete=models.CASCADE,
         related_name='cart_items'
     )
     restaurant = models.ForeignKey(
@@ -248,6 +249,7 @@ class Cart(models.Model):
 
     def __str__(self):
         return f"Cart: {self.user.username} - {self.food_item.name} x{self.quantity}"
+
 
 class Order(models.Model):
     STATUS_CHOICES = [
