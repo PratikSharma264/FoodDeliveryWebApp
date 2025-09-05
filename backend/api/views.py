@@ -18,7 +18,7 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer,Restaurantlistserial
 from merchant.models import FoodItem, Restaurant, Order, Cart
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
@@ -125,7 +125,30 @@ class login_user_knox(KnoxLoginView):
         token_data['full_name'] = user.first_name
 
         return Response(token_data)
+class ShopPagination(PageNumberPagination):
+    page_size = 5
+    page_size_query_param = 'per_page'
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_restaurant_list(request):
+    query = Restaurant.objects.filter(approved=True)
 
+    page_number = request.query_params.get('page', 1)
+    per_page = request.query_params.get('per_page', 18)
+
+    try:
+        page_number = int(page_number)
+        per_page = int(per_page)
+    except ValueError:
+        return Response({'error': 'Invalid pagination parameters'}, status=400)
+
+    pag = Paginator(query, per_page)
+    pagobj = pag.get_page(page_number)
+
+    serializer = Restaurantlistserial(pagobj, many=True)
+    response = Response(serializer.data)
+    response['X-Total-Count'] = pag.count
+    return response
 
 class ShopPagination(PageNumberPagination):
     page_size = 6
