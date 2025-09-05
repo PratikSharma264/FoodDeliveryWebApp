@@ -124,3 +124,14 @@ class PlaceOrderSerializer(serializers.ModelSerializer):
             'status',
         ]
         read_only_fields = ['id', 'order_date', 'status']
+class  Restaurantlistserial(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant
+        fields = [
+            'restaurant_name',
+            'cuisine',
+            'restaurant_address',
+            'profile_picture',
+            'menu',
+            'review_rating'
+        ]
