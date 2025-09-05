@@ -1,0 +1,155 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/m_signup.css' %}" />
+    <title>Grubmate</title>
+  </head>
+  <body>
+    <header>
+      <a href="{% url 'home' %}" id="logowrapper-link">
+        <div class="logo-container">
+          <div id="logo">
+            <span><i class="fa-brands fa-glide-g"></i></span>
+            <span><i class="fa-brands fa-meetup"></i></span>
+          </div>
+          <div id="brandname">
+            <span>Grub</span>
+            <span>mate</span>
+          </div>
+        </div>
+      </a>
+      <div id="auth-registration">
+        {% if user.is_authenticated %}
+          <a id="logout" href="{% url 'merchant-logout' %}">LogOut</a>
+        {% else %}
+          <a id="signin" href="{% url 'merchant-signin' %}">Sign in</a>
+          <a id="signup" href="{% url 'merchant-signup' %}">Sign up</a>
+        {% endif %}
+      </div>
+    </header>
+    <main>
+      <div class="signup-main">
+        <div class="signup-submain">
+          <div>
+            <form id="signup-form" action="{% url 'merchant-signup' %}" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="form_type" value="signup" />
+
+              <div id="formhead">
+                <h1><span><i class="fa-solid fa-plus"></i></span>Create Account</h1>
+                <p>Please enter your details</p>
+              </div>
+
+              {% if signup_form.errors %}
+                <div class="error-container">
+                  <ul>
+                    {% for field in signup_form %}
+                      {% for error in field.errors %}
+                        <li>
+                          <strong>{{ field.label }}:</strong> {{ error }}
+                        </li>
+                      {% endfor %}
+                    {% endfor %}
+                    {% for error in signup_form.non_field_errors %}
+                      <li>{{ error }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+              {% endif %}
+
+              <div class="ipfield">
+                <input type="text" id="fullname" name="name" value="{{ signup_form.name.value|default:'' }}" placeholder="Name" class="form-control" />
+                <div id="nameError" class="text-danger"></div>
+              </div>
+
+              <div class="ipfield">
+                <input type="email" name="email" id="email" value="{{ signup_form.email.value|default:'' }}" placeholder="Email" class="form-control" />
+              </div>
+
+              <div class="ipfield">
+                <input type="tel" name="phone_number" id="phonenumber" value="{{ signup_form.phone_number.value|default:'' }}" placeholder="Phone number" class="form-control" />
+              </div>
+
+              <div class="ipfield">
+                <input type="password" name="password1" id="password" placeholder="Password" class="form-control" />
+              </div>
+
+              <div class="ipfield">
+                <input type="password" name="password2" id="confirmpassword" placeholder="Confirm Password" class="form-control" />
+              </div>
+
+              <div id="submitbtn">
+                <button class="inputbtn" type="submit">Sign Up</button>
+              </div>
+            </form>
+          </div>
+          <div id="sidepanel">
+            <div id="sidepanel-head">
+              <h2>
+                <span><i class="fa-solid fa-face-laugh-beam"></i>Welcome!</span>
+                Enter you 'signup details' and start you journey with
+                <span>Grubmate</span>.
+              </h2>
+              <div id="acpresent">
+                <p>already have an account?</p>
+                <a href="{% url 'merchant-signin' %}">Click to Signin page</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="card-container"></div>
+    </main>
+    <footer id="footer">
+      <div class="foot logo-container">
+        <div id="logo">
+          <span><i class="fa-brands fa-glide-g"></i></span>
+          <span><i class="fa-brands fa-meetup"></i></span>
+        </div>
+        <div id="brandname">
+          <span>Grub</span>
+          <span>mate</span>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Resturants</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Deliveryboy</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div></div>
+      <div class="footinfo" id="contact">
+        <h4>Contact us</h4>
+        <div>
+          <div>
+            <span><i class="fa-solid fa-phone"></i></span>
+            <span>(+977) 97xxxxxxxx</span>
+          </div>
+          <div>
+            <span><i class="fa-solid fa-envelope"></i></span>
+            <span>supportgru8b@gmail.com</span>
+          </div>
+          <div id="sociallinks">
+            <h4>Social links</h4>
+            <div>
+              <span><i class="fa-brands fa-facebook"></i></span>
+              <span><i class="fa-brands fa-instagram"></i></span>
+              <span><i class="fa-brands fa-x-twitter"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <script src="{% static 'm_signup.js' %}"></script>
+  </body>
+</html>

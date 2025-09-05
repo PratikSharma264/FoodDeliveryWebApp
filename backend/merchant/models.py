@@ -419,7 +419,6 @@ class Delivery(models.Model):
     class Meta:
         verbose_name_plural = "Deliveries"
 
-
 # class DeliveryStatus(models.Model):
 #     STATUS_CHOICES = [
 #         ('ASSIGNED', 'Assigned'),

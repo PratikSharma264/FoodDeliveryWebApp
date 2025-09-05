@@ -1,3 +1,4 @@
+from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import MerchantSignUpForm,  RestaurantRegistrationForm, MerchantForgotPasswordForm, DeliverymanForm, BusinessPlanForm
@@ -32,46 +33,55 @@ def profile_none_required(view_func):
 
 
 def merchant_home_view(request):
+    print("Logged in as:", request.user,
+          request.user.is_superuser, request.user.is_staff)
     return render(request, "merchant/m_home.html")
 
 
-def merchant_login_view(request):
-    show_signup = False
-    signup_form = MerchantSignUpForm()
+def merchant_signup_view(request):
+    if request.method == "POST":
+        signup_form = MerchantSignUpForm(request.POST)
+        if signup_form.is_valid():
+            user = signup_form.save()
+            user.is_staff = False
+            user.is_superuser = False
+            user.save()
+            logout(request)
+            login(request, user)
 
-    next_url = request.GET.get('next', None)
-    print(next_url)
-    if next_url:
-        request.session['next_url'] = next_url
+            messages.success(
+                request, "Account created. You are now logged in.")
+            return redirect("home")
+        else:
+            messages.error(request, "Please fix the errors below.")
+    else:
+        signup_form = MerchantSignUpForm()
+
+    return render(request, "merchant/merchant_signup.html", {"signup_form": signup_form})
+
+
+@require_http_methods(["GET", "POST"])
+def merchant_login_view(request):
+    """
+    Login-only view for merchants.
+    """
+    next_url = request.GET.get('next') or request.session.get('next_url')
+    if request.user.is_authenticated:
+        return redirect(next_url or "home")
 
     if request.method == "POST":
-        form_type = request.POST.get('form_type')
-        if form_type == 'signup':
-            signup_form = MerchantSignUpForm(request.POST)
-            if signup_form.is_valid():
-                user = signup_form.save()
-                login(request, user)
-                return redirect(request.session.get('next_url', 'home'))
-            else:
-                show_signup = True
+        next_url = request.POST.get("next") or next_url
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, "You have successfully logged in.")
+            return redirect(next_url or "home")
+        else:
+            messages.error(request, "Invalid email or password.")
 
-        elif form_type == 'login':
-            email = request.POST.get('email')
-            password = request.POST.get('password')
-            user = authenticate(request, username=email, password=password)
-
-            if user is not None:
-                login(request, user)
-                messages.success(request, "You have successfully logged in!")
-                return redirect(request.session.get('next_url', 'home'))
-            else:
-                messages.warning(request, "Invalid login credentials.")
-                show_signup = False
-
-    return render(request, "merchant/m_sign_log.html", {
-        'signup_form': signup_form,
-        'show_signup': show_signup,
-    })
+    return render(request, "merchant/merchant_login.html", {"next": next_url})
 
 
 @login_required
@@ -86,7 +96,7 @@ def merchant_dashboard(request):
 def merchant_logout_view(request):
     logout(request)
     messages.success(request, ("You are successfully logged out"))
-    return redirect('signup_login')
+    return redirect('home')
 
 
 @login_required
@@ -122,10 +132,6 @@ def merchant_form_res_reg(request):
 
 
 def merchant_form_del_reg(request):
-    pass
-
-
-def merchant_signuplogin_view(request):
     pass
 
 
@@ -251,7 +257,7 @@ def merchant_reset_password_view(request, uidb64, token):
                 update_session_auth_hash(request, form.user)
                 messages.success(
                     request, 'Your merchant password has been reset successfully.')
-                return redirect('signup_login')
+                return redirect('merchant-signin')
         else:
             form = SetPasswordForm(user)
 
@@ -259,7 +265,7 @@ def merchant_reset_password_view(request, uidb64, token):
     else:
         messages.error(
             request, 'Password reset link is invalid or has expired.')
-        return redirect('signup_login')
+        return redirect('mechant-signin')
 
 
 def email_sent_view(request):

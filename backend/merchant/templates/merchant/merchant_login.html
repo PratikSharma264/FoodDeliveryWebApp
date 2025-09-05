@@ -1,0 +1,157 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/m_login.css' %}" />
+    <title>Grubmate-Login</title>
+  </head>
+  <body>
+    <header>
+      <a href="{% url 'home' %}" id="logowrapper-link">
+        <div class="logo-container">
+          <div id="logo">
+            <span><i class="fa-brands fa-glide-g"></i></span>
+            <span><i class="fa-brands fa-meetup"></i></span>
+          </div>
+          <div id="brandname">
+            <span>Grub</span>
+            <span>mate</span>
+          </div>
+        </div>
+      </a>
+      <div id="auth-registration">
+        {% if user.is_authenticated %}
+          <a id="logout" href="{% url 'merchant-logout' %}">LogOut</a>
+        {% else %}
+          <a id="signin" href="{% url 'merchant-signin' %}">Sign in</a>
+          <a id="signup" href="{% url 'merchant-signup' %}">Sign up</a>
+        {% endif %}
+      </div>
+    </header>
+    <main>
+      <div class="login-main">
+        <div class="login-submain">
+          <div id="sidepanel">
+            <div id="sidepanel-head">
+              <h2>
+                <span><i class="fa-solid fa-face-laugh-beam"></i>Welcome back!</span>
+                Log in and pick up where you left off with
+                <span>Grubmate</span>.
+              </h2>
+              <div id="acpresent">
+                <p>don't have an account?</p>
+                <a href="{% url 'merchant-signup' %}">Click to Signup page</a>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div>
+              <form id="login-form" action="{% url 'merchant-signin' %}" method="post" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="form_type" value="login" />
+                <input type="hidden" name="next" value="{{ next|default:'' }}" />
+
+                <div id="formhead">
+                  <h1><span><i class="fa-solid fa-plus"></i></span>Login to your Account</h1>
+                  <p>Please enter your details</p>
+                </div>
+
+                {# Optional: show form.errors if you render a form in context (keeps parity with the original) #}
+                {% if form.errors %}
+                  <div class="error-container">
+                    <ul>
+                      {% for field in form %}
+                        {% for error in field.errors %}
+                          <li>
+                            <strong>{{ field.label }}:</strong> {{ error }}
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+                      {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                {% endif %}
+
+                {# Django messages (success / error / warning) #}
+                {% if messages %}
+                  {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                  {% endfor %}
+                {% endif %}
+
+                <div class="ipfield">
+                  <input type="email" name="email" id="email" placeholder="Email" value="{{ request.POST.email|default:'' }}" required autocomplete="email" />
+                </div>
+
+                <div class="ipfield">
+                  <input type="password" name="password" id="password" placeholder="Password" required autocomplete="current-password" />
+                </div>
+
+                <div id="submitbtn">
+                  <button class="inputbtn" type="submit">Login</button>
+                </div>
+              </form>
+
+              <div id="forgotpw">
+                <a href="{% url 'forget_password' %}"><p>forgot your password?</p></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="card-container"></div>
+    </main>
+    <footer id="footer">
+      <div class="foot logo-container">
+        <div id="logo">
+          <span><i class="fa-brands fa-glide-g"></i></span>
+          <span><i class="fa-brands fa-meetup"></i></span>
+        </div>
+        <div id="brandname">
+          <span>Grub</span>
+          <span>mate</span>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Resturants</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Deliveryboy</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div></div>
+      <div class="footinfo" id="contact">
+        <h4>Contact us</h4>
+        <div>
+          <div>
+            <span><i class="fa-solid fa-phone"></i></span>
+            <span>(+977) 97xxxxxxxx</span>
+          </div>
+          <div>
+            <span><i class="fa-solid fa-envelope"></i></span>
+            <span>supportgru8b@gmail.com</span>
+          </div>
+          <div id="sociallinks">
+            <h4>Social links</h4>
+            <div>
+              <span><i class="fa-brands fa-facebook"></i></span>
+              <span><i class="fa-brands fa-instagram"></i></span>
+              <span><i class="fa-brands fa-x-twitter"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+    <script src="{% static 'scipts/m_login.js' %}"></script>
+  </body>
+</html>

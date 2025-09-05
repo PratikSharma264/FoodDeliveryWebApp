@@ -5,13 +5,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grubmate–Restaurant Registration</title>
+    <title>Grubmate – Restaurant Registration</title>
     <link rel="stylesheet" href="{% static 'css/reg_resturant.css' %}" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   </head>
   <body>
     <header>
@@ -25,9 +22,11 @@
       </div>
       <div class="header-link">
         <ul>
-          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="home">
+            <a href="{% url 'home' %}">Home</a>
+          </li>
           <li id="signlog" class="navbtn">
-            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
+            <a href="{% url 'merchant-signin' %}">SignUp/LogIn</a>
           </li>
           <li id="join" class="navbtn">
             <a id="mainjoin" href="javascript:void(0);">Join Us</a>
@@ -39,186 +38,122 @@
         </ul>
       </div>
     </header>
+
     <section>
-      <div class="container">
-        <!-- Page Header -->
-        <div class="progress-header">
-          <div id="topicon"><i class="fa-solid fa-utensils"></i></div>
-          <h4 class="title">Restaurant Registration Application</h4>
-          <div class="progress-wrapper">
-            <div id="progress1" class="step {% if not form.business_plan %}current{% endif %}">
-              <div class="circle">1</div>
-              <p>General Information</p>
-            </div>
-            <div class="line"></div>
-            <div id="progress2" class="step {% if form.business_plan %}current{% endif %}">
-              <div class="circle">2</div>
-              <p>Business Plan</p>
-            </div>
-            <div class="line"></div>
-            <div id="progress3" class="step">
-              <div class="circle">3</div>
-              <p>Complete</p>
-            </div>
-          </div>
-        </div>
-        <!-- End Page Header -->
-      </div>
       <div class="form-container">
         <form id="main-form" action="{% url 'restaurant_register' %}" method="post" enctype="multipart/form-data">
           {% csrf_token %}
-   {% if form.errors %}
-    <div class="error-container">
-      <ul>
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-    
-          {# Step 1: General Information #}
-          {% if not form.business_plan %}
-          <div class="form-step" id="step-1">
-            <div class="info">
-              <div class="head">
-                <div>
-                  <i class="fa-solid fa-circle-question"></i>
-                  <h3>General Information</h3>
-                </div>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-house"></i>
-                  <label for="id_restaurant_name">Restaurant Name</label>
-                </div>
-                {{ form.restaurant_name }}
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-money-check-dollar"></i>
-                  <label for="id_vat_and_tax">VAT/Tax (%)</label>
-                </div>
-                {{ form.vat_and_tax }}
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-location-dot"></i>
-                  <label for="id_restaurant_address">Restaurant Address</label>
-                </div>
-                {{ form.restaurant_address }}
-              </div>
-              <div class="ip mapcontainer">
-                <div><i class="fa-solid fa-location-arrow"></i>
-                  <label>Select Location on Map</label>
-                </div>
-                <div id="map"></div>
-                <div class="coord-inputs">
-                  {{ form.latitude }}
-                  {{ form.longitude }}
-                </div>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-bowl-food"></i>
-                  <label for="id_cuisine">Cuisine Type</label>
-                </div>
-                {{ form.cuisine }}
-                <datalist id="cuisine-options">
-                  <option value="Italian"></option>
-                  <option value="Chinese"></option>
-                  <option value="Indian"></option>
-                  <option value="Mexican"></option>
-                  <option value="Nepali"></option>
-                  <option value="Japanese"></option>
-                </datalist>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-camera"></i>
-                  <label for="id_profile_picture">Restaurant Profile Picture</label>
-                </div>
-                {{ form.profile_picture }}
-                <img id="profile-preview" class="image-preview" src="#" alt="Profile Preview" style="display:none"/>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-images"></i>
-                  <label for="id_cover_photo">Restaurant Cover Photo</label>
-                </div>
-                {{ form.cover_photo }}
-                <img id="cover-preview" class="image-preview" src="#" alt="Cover Preview" style="display:none"/>
-              </div>
+
+          {% if form.errors %}
+            <div class="error-container">
+              <ul>
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
             </div>
-            <div class="info">
-              <div class="head">
-                <div><i class="fa-solid fa-circle-user"></i>
-                  <h3>Owner Information</h3>
-                </div>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-user"></i>
-                  <label for="id_owner_name">Full Name</label>
-                </div>
-                {{ form.owner_name }}
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-phone"></i>
-                  <label for="id_owner_contact">Contact Number</label>
-                </div>
-                {{ form.owner_contact }}
-              </div>
-            </div>
-            <div class="info">
-              <div class="head">
-                <div><i class="fa-solid fa-plus"></i>
-                  <h3>Additional Information</h3>
-                </div>
-              </div>
-              <div class="ip">
-                <div><i class="fa-solid fa-file-import"></i>
-                  <label for="id_menu">Upload Menu (PNG, JPG, PDF)</label>
-                </div>
-                {{ form.menu }}
-              </div>
-            </div>
-          </div>
           {% endif %}
 
-          {# Step 2: Business Plan #}
-          {% if form.business_plan %}
-          <div class="form-step" id="step-2">
-            <div id="business-plan-header">
-              <h3>Business Plans</h3>
-              <h4>Choose Your Business Plan</h4>
+          <!-- General Information -->
+          <div class="form-step" id="general-info">
+            <h3>General Information</h3>
+            <div class="ip">
+              <label for="id_restaurant_name"><i class="fa-solid fa-house"></i> Restaurant Name</label>
+              {{ form.restaurant_name }}
             </div>
-            <div id="business-plan-body">
-              {% for val,label in form.business_plan.field.choices %}
+            <div class="ip">
+              <label for="id_vat_and_tax"><i class="fa-solid fa-money-check-dollar"></i> VAT/Tax (%)</label>
+              {{ form.vat_and_tax }}
+            </div>
+            <div class="ip">
+              <label for="id_restaurant_address"><i class="fa-solid fa-location-dot"></i> Restaurant Address</label>
+              {{ form.restaurant_address }}
+            </div>
+            <div class="ip mapcontainer">
+              <label><i class="fa-solid fa-location-arrow"></i> Select Location on Map</label>
+              <div id="map"></div>
+              <div class="coord-inputs">{{ form.latitude }} {{ form.longitude }}</div>
+            </div>
+            <div class="ip">
+              <label for="id_cuisine"><i class="fa-solid fa-bowl-food"></i> Cuisine Type</label>
+              {{ form.cuisine }}
+            </div>
+            <div class="ip">
+              <label for="id_profile_picture"><i class="fa-solid fa-camera"></i> Restaurant Profile Picture</label>
+              {{ form.profile_picture }}
+            </div>
+            <div class="ip">
+              <label for="id_cover_photo"><i class="fa-solid fa-images"></i> Restaurant Cover Photo</label>
+              {{ form.cover_photo }}
+            </div>
+          </div>
+
+          <!-- Owner Information -->
+          <div class="form-step" id="owner-info">
+            <h3>Owner Information</h3>
+            <div class="ip">
+              <label for="id_owner_name"><i class="fa-solid fa-user"></i> Full Name</label>
+              {{ form.owner_name }}
+            </div>
+            <div class="ip">
+              <label for="id_owner_contact"><i class="fa-solid fa-phone"></i> Contact Number</label>
+              {{ form.owner_contact }}
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div class="form-step" id="additional-info">
+            <h3>Additional Information</h3>
+            <div class="ip">
+              <label for="id_menu"><i class="fa-solid fa-file-import"></i> Upload Menu (PNG, JPG, PDF)</label>
+              {{ form.menu }}
+            </div>
+          </div>
+
+          <!-- Business Plan -->
+          <div class="form-step" id="business-plan">
+            <h3>Business Plan</h3>
+            {% for val, label in form.business_plan.field.choices %}
               <label class="plan-option">
                 <div class="icon">
-                  {% if val == 'commission' %}<i class="fa-solid fa-snowflake"></i>{% else %}<i class="fa-solid fa-globe"></i>{% endif %}
+                  {% if val == 'commission' %}
+                    <i class="fa-solid fa-snowflake"></i>
+                  {% else %}
+                    <i class="fa-solid fa-globe"></i>
+                  {% endif %}
                 </div>
-                <input type="radio" name="{{ form.business_plan.html_name }}" value="{{ val }}" {% if form.business_plan.value == val %}checked{% endif %} required />
+
+                <!-- Radio input required for form submission -->
+                <input type="radio"
+                       name="{{ form.business_plan.html_name }}"
+                       value="{{ val }}"
+                       {% if form.business_plan.value == val %}checked{% endif %}
+                       required />
+
                 <div class="plan-box">
                   <h4>{{ label }}</h4>
                   {% if val == 'commission' %}
-                  <p>Restaurant will pay 20% Commission to Grubmate from each order. You will get access to all features and options in the restaurant panel, app, and user interaction.</p>
+                    <p>Restaurant will pay 20% Commission to Grubmate from each order. Full access to restaurant panel and features.</p>
                   {% else %}
-                  <p>Run restaurant by purchasing subscription packages. You will have access to features in the restaurant panel, app, and user interaction according to the package.</p>
+                    <p>Run restaurant by purchasing subscription packages. Access according to the package.</p>
                   {% endif %}
                 </div>
               </label>
-              {% endfor %}
+            {% endfor %}
           </div>
-          {% endif %}
 
           <div class="btn">
-            <button type="submit" id="nextbtn">
-              <i class="fa-solid fa-forward"></i> <span>Next</span>
-            </button>
+            <button type="submit" id="submit-btn"><i class="fa-solid fa-check"></i> <span>Submit</span></button>
           </div>
         </form>
       </div>
     </section>
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="{% static 'scripts/reg_resturant.js' %}" defer></script>
   </body>

@@ -4,115 +4,204 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Grubmate</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
     <link rel="stylesheet" href="{% static 'css/m_home.css' %}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <title>Grubmate</title>
   </head>
   <body>
     <header>
-      <div id="drop-btn">
-        <i class="fa-solid fa-bars" id="bar"></i>
-        <i class="fa-solid fa-xmark" id="xmark"></i>
-        <div id="logo-brand">
-          <i class="fa-solid fa-truck-fast"></i>
-          <h3>Grubmate</h3>
+      <a href="{% url 'home' %}" id="logowrapper-link">
+        <div class="logo-container">
+          <div id="logo">
+            <span><i class="fa-brands fa-glide-g"></i></span>
+            <span><i class="fa-brands fa-meetup"></i></span>
+          </div>
+          <div id="brandname">
+            <span>Grub</span>
+            <span>mate</span>
+          </div>
         </div>
-      </div>
-      <div class="header-link">
-        <ul>
-          <li id="home">
-            <a href="{% url 'home' %}">Home</a>
-          </li>
-          {% if user.is_authenticated %}
-            <li id="signlog" class="navbtn">
-              <a href="{% url 'merchant-logout' %}">LogOut</a>
-            </li>
-          {% else %}
-            <li id="signlog" class="navbtn">
-              <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
-            </li>
-          {% endif %}
-          <li id="join" class="navbtn">
-            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
-            <ul class="dropdown">
-              <li>
-                <a href="{% url 'restaurant_register' %}">Join as Restaurant</a>
-              </li>
-              <li>
-                <a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a>
-              </li>
-            </ul>
-          </li>
-        </ul>
+      </a>
+      <div id="auth-registration">
+        {% if user.is_authenticated %}
+          <a id="logout" href="{% url 'merchant-logout' %}">LogOut</a>
+        {% else %}
+          <a id="signin" href="{% url 'merchant-signin' %}">Sign in</a>
+          <a id="signup" href="{% url 'merchant-signup' %}">Sign up</a>
+        {% endif %}
       </div>
     </header>
-    <div id="main-container">
-      <div id="intro">
-        <img src="{% static 'images/Vector2.png' %}" alt="vctr" id="vctr" />
-        <img src="{% static 'images/Group3.png' %}" alt="grp3" height="120" width="200" id="rev" />
-        <img src="{% static 'images/loveicon.png' %}" alt="loveicon" id="loveicon" />
-        <i class="fa-solid fa-truck-monster"></i>
-        <h2>Nepal's Premium Online <br />Food Delivery Platform</h2>
-        <h1>Grubmate</h1>
-        <h3>
-          Grubmate stands as Nepal's premium online
-          <br />food delivery platform, redefining culinary experiences.
-        </h3>
-      </div>
-      <div id="intro-image">
-        <img src="{% static 'images/Burger.png' %}" alt="burger1" />
-      </div>
-    </div>
-    <div id="features">
-      <div id="feature-header">
-        <h2>Stunning Features</h2>
-        <h3>Remarkable Features that You Can Count!</h3>
-      </div>
-      <div id="feature-container">
-        <div class="featurebox">
-          <div class="boxicon">
-            <i class="fa-solid fa-money-bill-wave"></i>
-          </div>
-          <div class="boxtext">
-            <h4>Reasonable Price</h4>
-            <p>Start your business in cheap cost. In your budget.</p>
-          </div>
+    <main>
+      <div id="heromain">
+        <div id="pointing">
+          <img src="{% static 'images/pointing.png' %}" alt="pointing" />
         </div>
-        <div class="featurebox">
-          <div class="boxicon">
-            <i class="fa-solid fa-truck-fast"></i>
-          </div>
-          <div class="boxtext">
-            <h4>Fast Delivery</h4>
-            <p>Start your business in cheap cost. In your budget.</p>
-          </div>
+        <p id="heroinfo-subtopic">
+          <span><i class="fa-solid fa-face-smile-wink"></i></span>
+          <span>easy way to order your food</span>
+        </p>
+        <h2 id="heroinfo-maintopic">
+          <span>Choosing Healthy</span>
+          <br />
+          <span>& Fresh Food</span>
+        </h2>
+        <p id="heroinfo-text">
+          Just confirm your order and enjoy our delicious <br />fastest delivery.
+        </p>
+        <div id="learnbtn">
+          <a href="#whyus-container"><button><span><i class="fa-solid fa-circle-info"></i></span> Learn about us</button></a>
+          <a href="#footer">
+            <span>View Contact info</span>
+            <span id="contacticon"><i class="fa-solid fa-message"></i></span>
+          </a>
         </div>
-        <div class="featurebox">
-          <div class="boxicon">
-            <i class="fa-solid fa-credit-card"></i>
-          </div>
-          <div class="boxtext">
-            <h4>Easy Payment</h4>
-            <p>Smart and easy payment system to maintain your business.</p>
-          </div>
+      </div>
+      <div id="heroimg-container">
+        <div id="heroimage">
+          <img src="{% static 'images/burger1.png' %}" alt="heroimage" />
         </div>
-        <div class="featurebox">
-          <div class="boxicon">
-            <i class="fa-solid fa-envelope"></i>
-          </div>
-          <div class="boxtext">
-            <h4>24h Support</h4>
-            <p>24/7 customer support service to support you.</p>
-          </div>
+      </div>
+    </main>
+    <div id="registration-container">
+      <h3>Register with us</h3>
+      <div id="delimodel">
+        <img src="{% static 'images/rider.png' %}" alt="" />
+      </div>
+      <div id="hotelmodel">
+        <img src="{% static 'images/hotel.png' %}" alt="" />
+      </div>
+      <div id="registration-wrapper">
+        <div id="register-merchant">
+          <a href="{% url 'merchant_register' %}?role=restaurant">Join as Restaurant</a>
+          <p>Partner with Grubmate and grow your business</p>
+          <p>0% commission for 1st month</p>
+        </div>
+        <div id="register-deliveryboy">
+          <a href="{% url 'merchant_register' %}?role=deliveryman">Join as Deliveryman</a>
+          <p>Ride with pride</p>
+          <p>Join our delivery fleet today and start earning weekly</p>
         </div>
       </div>
     </div>
-    <footer>
-      <p>
-        <i class="fa fa-heart"></i> Grubmate
-        <span><i class="fa-solid fa-truck-fast"></i></span>
-      </p>
+    <div id="whyus-container">
+      <div id="whyus-wrapper">
+        <h3>Why join Grubmate?</h3>
+        <div id="aboutus">
+          <p>
+            At <span>GrubMate</span> , we believe that great food brings people together. Founded in the heart of Nepal, our mission is to connect food lovers with their favorite local restaurants, cafes, and eateries—delivering delicious meals right to your doorstep, wherever you are. We understand the unique flavors and culinary diversity that Nepal has to offer, from the bustling streets of Kathmandu to the serene towns of Pokhara and beyond.
+          </p>
+          <p>Our platform is designed to celebrate this diversity, making it easy for you to explore and enjoy a wide range of cuisines, whether you’re craving momos, dal bhat, Newari specialties, or international dishes.</p>
+        </div>
+        <div id="whyus-features">
+          <div>
+            <span class="feature-logo"><i class="fa-solid fa-people-group"></i></span>
+            <h4>Attract new customers</h4>
+            <p>Reach the millions of people ordering on Grubmate</p>
+          </div>
+          <div>
+            <span class="feature-logo"><i class="fa-solid fa-truck-fast"></i></span>
+            <h4>Safe delivery</h4>
+            <p>Easily get your orders delivered through our trained delivery personnel with realtime tracking.</p>
+          </div>
+          <div>
+            <span class="feature-logo"><i class="fa-solid fa-envelope"></i></span>
+            <h4>Onboarding support</h4>
+            <p>For any suppor, email us at supportgru8b@gmail.com</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="joinsteps-container">
+      <div id="joinsteps-wrapper">
+        <h3>Join Grubmate with 4 easy steps</h3>
+        <div id="steps-container">
+          <div class="step">
+            <div class="steplogo">
+              <i class="fa-solid fa-user-plus"></i>
+            </div>
+            <div>
+              <h4>Step 1</h4>
+              <p>Signup and Login on Grubmate</p>
+            </div>
+          </div>
+          <hr style="color: white; width: 100%" />
+          <div class="step">
+            <div class="steplogo">
+              <i class="fa-solid fa-file"></i>
+            </div>
+            <div>
+              <h4>Step 2</h4>
+              <p>Fill the registration form</p>
+            </div>
+          </div>
+          <hr style="color: white; width: 100%" />
+          <div class="step">
+            <div class="steplogo">
+              <i class="fa-solid fa-pause"></i>
+            </div>
+            <div>
+              <h4>Step 3</h4>
+              <p>Wait till your form is approved</p>
+            </div>
+          </div>
+          <hr style="color: white; width: 100%" />
+          <div class="step">
+            <div class="steplogo">
+              <i class="fa-solid fa-address-card"></i>
+            </div>
+            <div>
+              <h4>Step 4</h4>
+              <p>Customize your dashboard</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer id="footer">
+      <div class="foot logo-container">
+        <div id="logo">
+          <span><i class="fa-brands fa-glide-g"></i></span>
+          <span><i class="fa-brands fa-meetup"></i></span>
+        </div>
+        <div id="brandname">
+          <span>Grub</span>
+          <span>mate</span>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Resturants</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div class="footinfo">
+        <h4>For Deliveryboy</h4>
+        <div class="footreglink">
+          <a href="">Partner With Us</a>
+        </div>
+      </div>
+      <div></div>
+      <div class="footinfo" id="contact">
+        <h4>Contact us</h4>
+        <div>
+          <div>
+            <span><i class="fa-solid fa-phone"></i></span>
+            <span>(+977) 97xxxxxxxx</span>
+          </div>
+          <div>
+            <span><i class="fa-solid fa-envelope"></i></span>
+            <span>supportgru8b@gmail.com</span>
+          </div>
+          <div id="sociallinks">
+            <h4>Social links</h4>
+            <div>
+              <span><i class="fa-brands fa-facebook"></i></span>
+              <span><i class="fa-brands fa-instagram"></i></span>
+              <span><i class="fa-brands fa-x-twitter"></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
-    <script src="{% static 'scripts/m_home.js' %}"></script>
   </body>
 </html>

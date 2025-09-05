@@ -1,179 +1,320 @@
 {% load static %}
-
 <!DOCTYPE html>
-
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Deliveryman Registration</title>
-    <link rel="stylesheet" href="{% static 'css/reg_deliveryman.css' %}" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/m_register.css' %}" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <title>Grubmate-Merchant_Registration</title>
   </head>
   <body>
-    <header>
-      <div id="drop-btn">
-        <i class="fa-solid fa-bars" id="bar"></i>
-        <i class="fa-solid fa-xmark" id="xmark"></i>
-        <div id="logo-brand">
-          <i class="fa-solid fa-truck-fast"></i>
-          <h3>Grubmate</h3>
-        </div>
-      </div>
-      <div class="header-link">
-        <ul>
-          <li id="home"><a href="{% url 'home' %}">Home</a></li>
-          <li id="signlog" class="navbtn">
-            <a href="{% url 'signup_login' %}">SignUp/LogIn</a>
-          </li>
-          <li id="join" class="navbtn">
-            <a id="mainjoin" href="javascript:void(0);">Join Us</a>
-            <ul class="dropdown">
-              <li><a href="{% url 'restaurant_register' %}">Join as Restaurant</a></li>
-              <li><a href="{% url 'deliveryman_register' %}">Join as Deliveryman</a></li>
-            </ul>
-          </li>
-        </ul>
-      </div>
-    </header>
-
-<div id="form-container">
-  <div id="form-head">
-    <div><i class="fa-solid fa-user-tie"></i></div>
-    <div><h2>Deliveryman Application</h2></div>
-  </div>
-
-  <form id="form-body" action="{% url 'deliveryman_register' %}" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-
-    {% if form.errors %}
-    <div class="error-container">
-      <ul>
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
-
-    <div id="main-info">
+    <main>
       <div>
-        <i class="fa-solid fa-circle-question"></i>
-        <h4>Deliveryman Info</h4>
-      </div>
-      <div id="main-info-container">
-        <div id="fname">
-          <label for="Firstname">First Name</label>
-          {{ form.Firstname }}
+        <div id="changerole-maincontainer">
+          <div id="changerole-subcontainer">
+            <div>
+              <div class="role-btn role-active">
+                <h4>merchant</h4>
+              </div>
+              <div class="role-btn">
+                <h4>deliveryman</h4>
+              </div>
+            </div>
+          </div>
+          <div id="goback">
+            <a href=""><i class="fa-solid fa-circle-xmark"></i></a>
+          </div>
         </div>
-        <div id="lname">
-          <label for="Lastname">Last Name</label>
-          {{ form.Lastname }}
-        </div>
-        <div id="email">
-          <label for="Email">Email</label>
-          {{ form.Email }}
-        </div>
-        <div id="deltype">
-          <label for="DeliveryType">Delivery Type</label>
-          <select name="DeliveryType" id="DeliveryType" required>
-            <option value="" disabled {% if not form.DeliveryType.value %}selected{% endif %}>Select Delivery Type</option>
-            {% for val,label in form.DeliveryType.field.choices %}
-              <option value="{{ val }}" {% if form.DeliveryType.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="deliveryzone">
-          <label for="Zone">Zone</label>
-          <select name="Zone" id="Zone" required>
-            <option value="" disabled {% if not form.Zone.value %}selected{% endif %}>Select Delivery Zone</option>
-            {% for val,label in form.Zone.field.choices %}
-              <option value="{{ val }}" {% if form.Zone.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="delvehicle">
-          <label for="Vehicle">Vehicle</label>
-          <select name="Vehicle" id="Vehicle" required>
-            <option value="" disabled {% if not form.Vehicle.value %}selected{% endif %}>Select Vehicle</option>
-            {% for val,label in form.Vehicle.field.choices %}
-              <option value="{{ val }}" {% if form.Vehicle.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="verify">
-          <label for="IdentityType">Identity Type</label>
-          <select name="IdentityType" id="IdentityType" required>
-            <option value="" disabled {% if not form.IdentityType.value %}selected{% endif %}>Select Identity Type</option>
-            {% for val,label in form.IdentityType.field.choices %}
-              <option value="{{ val }}" {% if form.IdentityType.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="identitynum">
-          <label for="IdentityNumber">Identity Number</label>
-          {{ form.IdentityNumber }}
-        </div>
-        <div id="identityimg">
-          <label for="IdentityImage">Identity Image</label>
-          {{ form.IdentityImage }}
-        </div>
-      </div>
-    </div>
+        <div id="merchantreg-main">
+          <form action="">
+            <div id="mainform">
+              <div class="form-head">
+                <i class="fa-solid fa-circle-info"></i>
+                <h3>General Information</h3>
+              </div>
+              <div class="form-body">
+                <div class="ip">
+                  <div>
+                    <label for="restaurant-name">Restaurant Name</label>
+                  </div>
+                  <div>
+                    <input type="text" id="restaurant-name" name="restaurant-name" required />
+                  </div>
+                </div>
 
-    <div id="main-info">
-      <div>
-        <i class="fa-solid fa-cross"></i>
-        <h4>Additional Info</h4>
+                <div class="ip">
+                  <div>
+                    <label for="owner-name">Owner Name</label>
+                  </div>
+                  <div>
+                    <input type="text" id="owner-name" name="owner-name" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="contact">Contact Number</label>
+                  </div>
+                  <div>
+                    <input type="tel" id="contact" name="contact" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="email">Email Address</label>
+                  </div>
+                  <div>
+                    <input type="email" id="email" name="email" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="address">Restaurant Address</label>
+                  </div>
+                  <div>
+                    <input type="text" id="address" name="address" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="cuisine">Cuisine Type</label>
+                  </div>
+                  <div>
+                    <input type="text" id="cuisine" name="cuisine" required />
+                  </div>
+                </div>
+
+                <div class="ip description">
+                  <div>
+                    <label for="description">Restaurant Description</label>
+                  </div>
+                  <div>
+                    <textarea id="description" name="description" rows="4" required></textarea>
+                  </div>
+                </div>
+                <div class="ip">
+                  <div>
+                    <label for="restype">Business Type</label>
+                  </div>
+                  <div class="select-wrapper">
+                    <select id="restype" name="resturant_type" required>
+                      <option value="local">Local</option>
+                      <option value="fine_dining">Fine Dining</option>
+                    </select>
+                    <i class="fa-solid fa-square-caret-down"></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="formmap">
+              <div id="formmap-subcontainer">
+                <div class="form-head">
+                  <i class="fa-solid fa-location-dot"></i>
+                  <h3>Select Location on Map</h3>
+                </div>
+                <div class="position-container">
+                  <div class="ip">
+                    <div>
+                      <label>Latitude</label>
+                    </div>
+                    <div>
+                      <input type="text" id="lat" name="latitude" readonly />
+                    </div>
+                  </div>
+                  <div class="ip">
+                    <div>
+                      <label>Longitude</label>
+                    </div>
+                    <div>
+                      <input type="text" id="lng" name="longitude" readonly />
+                    </div>
+                  </div>
+                </div>
+                <div id="map"></div>
+                <div class="submit-wrapper" id="merchant-submit">
+                  <button id="merchant-submit-btn">Submit</button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div id="deliveryboyreg-main">
+          <form action="{% url 'merchant_register' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% if form.errors %}
+              <div class="error-container">
+                <ul>
+                  {% for field in form %}
+                    {% for error in field.errors %}
+                      <li>
+                        <strong>{{ field.label }}:</strong> {{ error }}
+                      </li>
+                    {% endfor %}
+                  {% endfor %}
+                  {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+              </div>
+            {% endif %}
+            <div id="mainform">
+              <div class="form-head">
+                <i class="fa-solid fa-circle-info"></i>
+                <h3>General Information</h3>
+              </div>
+              <div class="form-body">
+                <div class="ip">
+                  <div>
+                    <label for="first_name">First Name</label>
+                  </div>
+                  <div>
+                    <input type="text" id="first-name" name="first_name" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="last_name">Last Name</label>
+                  </div>
+                  <div>
+                    <input type="text" id="last-name" name="last_name" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="contact">Contact Number</label>
+                  </div>
+                  <div>
+                    <input type="tel" id="contact" name="contact" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="email">Email Address</label>
+                  </div>
+                  <div>
+                    <input type="email" id="email" name="email" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="address">Current Address</label>
+                  </div>
+                  <div>
+                    <input type="text" id="address" name="address" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="deliveryboy_image">Deliveryman Image</label>
+                  </div>
+                  <div>
+                    <input type="file" id="identityimage" name="identityimage" accept="image/*" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="pan_number">Pan Number</label>
+                  </div>
+                  <div>
+                    <input type="text" id="pan-number" name="pan_number" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="dob">Date of Birth</label>
+                  </div>
+                  <div>
+                    <input type="date" name="dob" id="dob" required />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="additionalform">
+              <div class="form-head">
+                <i class="fa-solid fa-plus"></i>
+                <h3>Additional Information</h3>
+              </div>
+              <div class="additional-body">
+                <div class="ip">
+                  <div>
+                    <label for="vehicle_type">Vehicle</label>
+                  </div>
+                  <div class="select-wrapper">
+                    <select id="vehicletype" name="vehicle_type" required>
+                      <option value="scooter">Scooter</option>
+                      <option value="bike">Bike</option>
+                    </select>
+                    <i class="fa-solid fa-square-caret-down"></i>
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="delivery_zone">Delivery zone</label>
+                  </div>
+                  <div class="select-wrapper">
+                    <select id="deliveryzone" name="delivery_zone" required>
+                      <option value="bhaktapur">Bhaktapur</option>
+                      <option value="kathmandu">Kathmandu</option>
+                    </select>
+                    <i class="fa-solid fa-square-caret-down"></i>
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="duty_time">Duty Time</label>
+                  </div>
+                  <div class="select-wrapper">
+                    <select id="duty-time" name="duty_time" required>
+                      <option value="morning_to_day">6AM - 2PM</option>
+                      <option value="day_to_night">2PM - 10PM</option>
+                    </select>
+                    <i class="fa-solid fa-square-caret-down"></i>
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="vehicle_number">Vehicle Number</label>
+                  </div>
+                  <div>
+                    <input type="text" id="vehicle-number" name="vehicle_number" placeholder="eg: BA-01-PA-1234" required />
+                  </div>
+                </div>
+
+                <div class="ip">
+                  <div>
+                    <label for="contact">BlueBook Scan Copy</label>
+                  </div>
+                  <div>
+                    <input type="file" name="billBook" id="billBook" accept="image/*,application/pdf" required />
+                  </div>
+                </div>
+                <div class="submit-wrapper" id="deliveryboy-submit">
+                  <button id="merchant-submit-btn">Submit</button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
-      <div id="additional-info-container">
-        <div id="pannum">
-          <label for="PanNumber">PAN Number</label>
-          {{ form.PanNumber }}
-        </div>
-        <div id="billbook">
-          <label for="BillBookScanCopy">BillBook Scan Copy</label>
-          {{ form.BillBookScanCopy }}
-        </div>
-        <div id="dutytime">
-          <label for="DutyTime">Duty Time</label>
-          <select name="DutyTime" id="DutyTime" required>
-            {% for val,label in form.DutyTime.field.choices %}
-              <option value="{{ val }}" {% if form.DutyTime.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="vehiclenum">
-          <label for="VehicleNumber">Vehicle Number</label>
-          {{ form.VehicleNumber }}
-        </div>
-        <div id="dateofbirth">
-          <label for="DateofBirth">Date of Birth</label>
-          {{ form.DateofBirth }}
-        </div>
-        <div id="userimage">
-          <label for="UserImage">Deliveryman Image</label>
-          {{ form.UserImage }}
-        </div>
-      </div>
-    </div>
-
-    <div id="submit">
-      <button type="submit">Submit</button>
-    </div>
-  </form>
-</div>
-
-<script src="{% static 'scripts/reg_deliveryman.js' %}"></script>
-```
-
+    </main>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="{% static 'scripts/m_register.js' %}"></script>
   </body>
 </html>
