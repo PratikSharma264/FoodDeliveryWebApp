@@ -1,18 +1,14 @@
-
 {% load static %}
 
 <!DOCTYPE html>
-
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Deliveryman Registration</title>
-    <link rel="stylesheet" href="{% static 'css/reg_deliveryman.css' %}" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
+    <title>Grubmate – Restaurant Registration</title>
+    <link rel="stylesheet" href="{% static 'css/reg_resturant.css' %}" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   </head>
   <body>
     <header>
@@ -26,7 +22,9 @@
       </div>
       <div class="header-link">
         <ul>
-          <li id="home"><a href="{% url 'home' %}">Home</a></li>
+          <li id="home">
+            <a href="{% url 'home' %}">Home</a>
+          </li>
           <li id="signlog" class="navbtn">
             <a href="{% url 'merchant-signin' %}">SignUp/LogIn</a>
           </li>
@@ -41,140 +39,122 @@
       </div>
     </header>
 
-<div id="form-container">
-  <div id="form-head">
-    <div><i class="fa-solid fa-user-tie"></i></div>
-    <div><h2>Deliveryman Application</h2></div>
-  </div>
+    <section>
+      <div class="form-container">
+        <form id="main-form" action="{% url 'restaurant_register' %}" method="post" enctype="multipart/form-data">
+          {% csrf_token %}
 
-  <form id="form-body" action="{% url 'deliveryman_register' %}" method="post" enctype="multipart/form-data">
-    {% csrf_token %}
+          {% if form.errors %}
+            <div class="error-container">
+              <ul>
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                  <li>{{ error }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% endif %}
 
-    {% if form.errors %}
-    <div class="error-container">
-      <ul>
-        {% for field in form %}
-          {% for error in field.errors %}
-            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-          {% endfor %}
-        {% endfor %}
-        {% for error in form.non_field_errors %}
-          <li>{{ error }}</li>
-        {% endfor %}
-      </ul>
-    </div>
-    {% endif %}
+          <!-- General Information -->
+          <div class="form-step" id="general-info">
+            <h3>General Information</h3>
+            <div class="ip">
+              <label for="id_restaurant_name"><i class="fa-solid fa-house"></i> Restaurant Name</label>
+              {{ form.restaurant_name }}
+            </div>
+            <div class="ip">
+              <label for="id_vat_and_tax"><i class="fa-solid fa-money-check-dollar"></i> VAT/Tax (%)</label>
+              {{ form.vat_and_tax }}
+            </div>
+            <div class="ip">
+              <label for="id_restaurant_address"><i class="fa-solid fa-location-dot"></i> Restaurant Address</label>
+              {{ form.restaurant_address }}
+            </div>
+            <div class="ip mapcontainer">
+              <label><i class="fa-solid fa-location-arrow"></i> Select Location on Map</label>
+              <div id="map"></div>
+              <div class="coord-inputs">{{ form.latitude }} {{ form.longitude }}</div>
+            </div>
+            <div class="ip">
+              <label for="id_cuisine"><i class="fa-solid fa-bowl-food"></i> Cuisine Type</label>
+              {{ form.cuisine }}
+            </div>
+            <div class="ip">
+              <label for="id_profile_picture"><i class="fa-solid fa-camera"></i> Restaurant Profile Picture</label>
+              {{ form.profile_picture }}
+            </div>
+            <div class="ip">
+              <label for="id_cover_photo"><i class="fa-solid fa-images"></i> Restaurant Cover Photo</label>
+              {{ form.cover_photo }}
+            </div>
+          </div>
 
-    <div id="main-info">
-      <div>
-        <i class="fa-solid fa-circle-question"></i>
-        <h4>Deliveryman Info</h4>
+          <!-- Owner Information -->
+          <div class="form-step" id="owner-info">
+            <h3>Owner Information</h3>
+            <div class="ip">
+              <label for="id_owner_name"><i class="fa-solid fa-user"></i> Full Name</label>
+              {{ form.owner_name }}
+            </div>
+            <div class="ip">
+              <label for="id_owner_contact"><i class="fa-solid fa-phone"></i> Contact Number</label>
+              {{ form.owner_contact }}
+            </div>
+          </div>
+
+          <!-- Additional Information -->
+          <div class="form-step" id="additional-info">
+            <h3>Additional Information</h3>
+            <div class="ip">
+              <label for="id_menu"><i class="fa-solid fa-file-import"></i> Upload Menu (PNG, JPG, PDF)</label>
+              {{ form.menu }}
+            </div>
+          </div>
+
+          <!-- Business Plan -->
+          <div class="form-step" id="business-plan">
+            <h3>Business Plan</h3>
+            {% for val, label in form.business_plan.field.choices %}
+              <label class="plan-option">
+                <div class="icon">
+                  {% if val == 'commission' %}
+                    <i class="fa-solid fa-snowflake"></i>
+                  {% else %}
+                    <i class="fa-solid fa-globe"></i>
+                  {% endif %}
+                </div>
+
+                <!-- Radio input required for form submission -->
+                <input type="radio"
+                       name="{{ form.business_plan.html_name }}"
+                       value="{{ val }}"
+                       {% if form.business_plan.value == val %}checked{% endif %}
+                       required />
+
+                <div class="plan-box">
+                  <h4>{{ label }}</h4>
+                  {% if val == 'commission' %}
+                    <p>Restaurant will pay 20% Commission to Grubmate from each order. Full access to restaurant panel and features.</p>
+                  {% else %}
+                    <p>Run restaurant by purchasing subscription packages. Access according to the package.</p>
+                  {% endif %}
+                </div>
+              </label>
+            {% endfor %}
+          </div>
+
+          <div class="btn">
+            <button type="submit" id="submit-btn"><i class="fa-solid fa-check"></i> <span>Submit</span></button>
+          </div>
+        </form>
       </div>
-      <div id="main-info-container">
-        <div id="fname">
-          <label for="Firstname">First Name</label>
-          {{ form.Firstname }}
-        </div>
-        <div id="lname">
-          <label for="Lastname">Last Name</label>
-          {{ form.Lastname }}
-        </div>
-        <div id="email">
-          <label for="Email">Email</label>
-          {{ form.Email }}
-        </div>
-        <div id="deltype">
-          <label for="DeliveryType">Delivery Type</label>
-          <select name="DeliveryType" id="DeliveryType" required>
-            <option value="" disabled {% if not form.DeliveryType.value %}selected{% endif %}>Select Delivery Type</option>
-            {% for val,label in form.DeliveryType.field.choices %}
-              <option value="{{ val }}" {% if form.DeliveryType.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="deliveryzone">
-          <label for="Zone">Zone</label>
-          <select name="Zone" id="Zone" required>
-            <option value="" disabled {% if not form.Zone.value %}selected{% endif %}>Select Delivery Zone</option>
-            {% for val,label in form.Zone.field.choices %}
-              <option value="{{ val }}" {% if form.Zone.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="delvehicle">
-          <label for="Vehicle">Vehicle</label>
-          <select name="Vehicle" id="Vehicle" required>
-            <option value="" disabled {% if not form.Vehicle.value %}selected{% endif %}>Select Vehicle</option>
-            {% for val,label in form.Vehicle.field.choices %}
-              <option value="{{ val }}" {% if form.Vehicle.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="verify">
-          <label for="IdentityType">Identity Type</label>
-          <select name="IdentityType" id="IdentityType" required>
-            <option value="" disabled {% if not form.IdentityType.value %}selected{% endif %}>Select Identity Type</option>
-            {% for val,label in form.IdentityType.field.choices %}
-              <option value="{{ val }}" {% if form.IdentityType.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="identitynum">
-          <label for="IdentityNumber">Identity Number</label>
-          {{ form.IdentityNumber }}
-        </div>
-        <div id="identityimg">
-          <label for="IdentityImage">Identity Image</label>
-          {{ form.IdentityImage }}
-        </div>
-      </div>
-    </div>
+    </section>
 
-    <div id="main-info">
-      <div>
-        <i class="fa-solid fa-cross"></i>
-        <h4>Additional Info</h4>
-      </div>
-      <div id="additional-info-container">
-        <div id="pannum">
-          <label for="PanNumber">PAN Number</label>
-          {{ form.PanNumber }}
-        </div>
-        <div id="billbook">
-          <label for="BillBookScanCopy">BillBook Scan Copy</label>
-          {{ form.BillBookScanCopy }}
-        </div>
-        <div id="dutytime">
-          <label for="DutyTime">Duty Time</label>
-          <select name="DutyTime" id="DutyTime" required>
-            {% for val,label in form.DutyTime.field.choices %}
-              <option value="{{ val }}" {% if form.DutyTime.value == val %}selected{% endif %}>{{ label }}</option>
-            {% endfor %}
-          </select>
-        </div>
-        <div id="vehiclenum">
-          <label for="VehicleNumber">Vehicle Number</label>
-          {{ form.VehicleNumber }}
-        </div>
-        <div id="dateofbirth">
-          <label for="DateofBirth">Date of Birth</label>
-          {{ form.DateofBirth }}
-        </div>
-        <div id="userimage">
-          <label for="UserImage">Deliveryman Image</label>
-          {{ form.UserImage }}
-        </div>
-      </div>
-    </div>
-
-    <div id="submit">
-      <button type="submit">Submit</button>
-    </div>
-  </form>
-</div>
-
-<script src="{% static 'scripts/reg_deliveryman.js' %}"></script>
-```
-
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="{% static 'scripts/reg_resturant.js' %}" defer></script>
   </body>
 </html>

@@ -79,77 +79,84 @@ class MerchantForgotPasswordForm(forms.Form):
     )
 
 
+from django import forms
+from .models import Deliveryman
+
 class DeliverymanForm(forms.ModelForm):
     Firstname = forms.CharField(
         required=True,
-        widget=forms.TextInput(attrs={'placeholder': 'Firstname'})
+        widget=forms.TextInput(attrs={'placeholder': 'Firstname', 'id': 'first-name'})
     )
     Lastname = forms.CharField(
         required=True,
-        widget=forms.TextInput(attrs={'placeholder': 'Lastname'})
+        widget=forms.TextInput(attrs={'placeholder': 'Lastname', 'id': 'last-name'})
     )
-    Email = forms.EmailField(
+    Address = forms.CharField(
         required=True,
-        widget=forms.EmailInput(attrs={'placeholder': 'abc@gmail.com'})
-    )
-    DeliveryType = forms.ChoiceField(
-        required=True,
-        choices=Deliveryman.DELIVERY_TYPE_CHOICES,
-        widget=forms.Select()
-    )
-    Zone = forms.ChoiceField(
-        required=True,
-        choices=Deliveryman.ZONE_CHOICES,
-        widget=forms.Select()
+        widget=forms.TextInput(attrs={'placeholder': 'Current address', 'id': 'address'})
     )
     Vehicle = forms.ChoiceField(
         required=True,
-        choices=Deliveryman.VEHICLE_CHOICES,
-        widget=forms.Select()
+        choices=getattr(Deliveryman, 'VEHICLE_CHOICES', []),
+        widget=forms.Select(attrs={'id': 'vehicletype'})
     )
-    IdentityType = forms.ChoiceField(
+    Zone = forms.ChoiceField(
         required=True,
-        choices=Deliveryman.IDENTITY_CHOICES,
-        widget=forms.Select()
+        choices=getattr(Deliveryman, 'ZONE_CHOICES', []),
+        widget=forms.Select(attrs={'id': 'deliveryzone'})
     )
-    IdentityNumber = forms.CharField(
-        required=True,
-        widget=forms.TextInput(attrs={'placeholder': 'ID number'})
-    )
-    IdentityImage = forms.ImageField(required=True)
-    PanNumber = forms.CharField(
-        required=True,
-        widget=forms.TextInput(
-            attrs={'placeholder': '9 digit pan number (123456789)', 'pattern': r'\d{9}'})
-    )
-    BillBookScanCopy = forms.ImageField(required=True)
     DutyTime = forms.ChoiceField(
         required=True,
-        choices=Deliveryman.DUTYTIME_CHOICES,
-        widget=forms.Select()
+        choices=getattr(Deliveryman, 'DUTYTIME_CHOICES', []),
+        widget=forms.Select(attrs={'id': 'duty-time'})
     )
     VehicleNumber = forms.CharField(
         required=True,
-        widget=forms.TextInput(
-            attrs={'placeholder': 'BA 01 PA 1234 / 03-01-Pa-1234'})
+        widget=forms.TextInput(attrs={'placeholder': 'BA 01 PA 1234 / 03-01-Pa-1234', 'id': 'vehicle-number'})
+    )
+    UserImage = forms.ImageField(
+        required=True,
+        widget=forms.ClearableFileInput(attrs={'id': 'identityimage', 'accept': 'image/*'})
+    )
+    PanNumber = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': '9 digit pan number (123456789)', 'id': 'pan-number'})
     )
     DateofBirth = forms.DateField(
         required=True,
-        widget=forms.DateInput(
-            attrs={'type': 'date', 'placeholder': 'YYYY-MM-DD'})
+        widget=forms.DateInput(attrs={'type': 'date', 'id': 'dob'})
     )
-    UserImage = forms.ImageField(required=True)
+    BillBookScanCopy = forms.FileField(
+        required=True,
+        widget=forms.ClearableFileInput(attrs={'id': 'billBook', 'accept': 'image/*,application/pdf'})
+    )
 
     class Meta:
         model = Deliveryman
-        fields = '__all__'
+        fields = [
+            "Firstname",
+            "Lastname",
+            "Address",
+            "Vehicle",
+            "Zone",
+            "DutyTime",
+            "VehicleNumber",
+            "UserImage",
+            "PanNumber",
+            "DateofBirth",
+            "BillBookScanCopy",
+        ]
         exclude = ['user', 'created_at', 'approved']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for fname in ['DeliveryType', 'Zone', 'Vehicle', 'IdentityType', 'DutyTime']:
-            self.fields[fname].choices = [
-                (v, l) for v, l in self.fields[fname].choices if v != '']
+        for fname in ['Zone', 'Vehicle', 'DutyTime']:
+            if fname in self.fields:
+                self.fields[fname].choices = [(v, l) for v, l in self.fields[fname].choices if v != '']
+                self.fields[fname].widget.attrs.setdefault('class', 'form-select')
+        for name, field in self.fields.items():
+            if field.required:
+                field.widget.attrs.setdefault('required', 'required')
 
 
 class RestaurantRegistrationForm(forms.ModelForm):

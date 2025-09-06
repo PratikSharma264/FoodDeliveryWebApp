@@ -10,16 +10,20 @@ phone_validator = RegexValidator(
     regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
     message="Enter a valid Nepali mobile or landline number"
 )
+import re
+from django.core.validators import RegexValidator
 
 vehicle_validator = RegexValidator(
     regex=(
         r'^(?:'
-        r'[A-Z]{1,2}\s?\d{1,2}\s?[A-Z]{1,2}\s?\d{1,4}'
-        r'|\d{1,2}-\d{1,2}-[A-Za-z]{1,3}-\d{1,4}'
+        r'[A-Z]{1,2}[-\s]?\d{1,2}[-\s]?[A-Z]{1,2}[-\s]?\d{1,4}'
+        r'|\d{1,2}-\d{1,2}-[A-Z]{1,3}-\d{1,4}'
         r')$'
     ),
-    message="Enter a valid vehicle number"
+    message="Enter a valid vehicle number (e.g. 'BA 01 PA 1234', 'BA-07-PA-1234', or '3-01-PA-1234').",
+    flags=re.IGNORECASE
 )
+
 
 
 class Merchant(models.Model):
@@ -133,19 +137,10 @@ class FoodItem(models.Model):
     def __str__(self):
         return f"{self.name} - Rs. {self.price:.2f}"
 
-
 class Deliveryman(models.Model):
     VEHICLE_CHOICES = [
         ('Scooter', 'Scooter'),
         ('Bike', 'Bike'),
-    ]
-    IDENTITY_CHOICES = [
-        ('Citizenship', 'Citizenship'),
-        ('Driving License', 'Driving License'),
-    ]
-    DELIVERY_TYPE_CHOICES = [
-        ('Freelance', 'Freelancer'),
-        ('Salarybased', 'Salarybased'),
     ]
     ZONE_CHOICES = [
         ('Kathmandu', 'Kathmandu'),
@@ -157,38 +152,26 @@ class Deliveryman(models.Model):
         ('night', 'Night (6PM-2AM)'),
     ]
 
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
     Firstname = models.CharField(max_length=100)
     Lastname = models.CharField(max_length=100)
-    Email = models.EmailField(unique=True)
-    DeliveryType = models.CharField(
-        max_length=20, blank=False, choices=DELIVERY_TYPE_CHOICES)
+    Address = models.CharField(max_length=255, null=True)
+    Vehicle = models.CharField(max_length=20, blank=False, choices=VEHICLE_CHOICES)
     Zone = models.CharField(max_length=20, blank=False, choices=ZONE_CHOICES)
-    Vehicle = models.CharField(
-        max_length=20, blank=False, choices=VEHICLE_CHOICES)
-    IdentityType = models.CharField(
-        max_length=30, choices=IDENTITY_CHOICES, blank=False, null=True)
-    IdentityNumber = models.CharField(max_length=30, blank=False)
-    IdentityImage = models.ImageField(upload_to='identity_images/')
     PanNumber = models.CharField(
         max_length=9,
         validators=[
-            RegexValidator(
-                regex=r'^\d{9}$',
-                message='Enter a valid 9-digit PAN number'
-            )
+            RegexValidator(regex=r'^\d{9}$', message='Enter a valid 9-digit PAN number')
         ],
         help_text='Enter a 9-digit PAN number issued by IRD Nepal.'
     )
-    BillBookScanCopy = models.ImageField(upload_to='bill_book_images/')
-    DutyTime = models.CharField(
-        max_length=10, blank=False, choices=DUTYTIME_CHOICES)
+    BillBookScanCopy = models.FileField(upload_to='bill_book_files/')
+    DutyTime = models.CharField(max_length=10, blank=False, choices=DUTYTIME_CHOICES)
     VehicleNumber = models.CharField(
+        null= True,
         max_length=13,
         validators=[vehicle_validator],
-        help_text="Enter the vehicle number in capital letters (e.g., BA 2 PA 1234 or 3-01-Pa-1234).",
-        null=True
+        help_text="Enter the vehicle number in capital letters (e.g., BA 2 PA 1234 or 3-01-Pa-1234)."
     )
     DateofBirth = models.DateField()
     UserImage = models.ImageField(upload_to='user_images/')

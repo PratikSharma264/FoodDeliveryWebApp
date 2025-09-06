@@ -98,7 +98,6 @@ def merchant_logout_view(request):
     messages.success(request, ("You are successfully logged out"))
     return redirect('home')
 
-
 @login_required
 @profile_none_required
 def deliveryman_register_view(request):
@@ -107,16 +106,16 @@ def deliveryman_register_view(request):
         if form.is_valid():
             deliveryman = form.save(commit=False)
             deliveryman.user = request.user
-            form.save()
-            messages.success(
-                request, "Your registration has been successfully completed. Welcome aboard.")
-            return redirect('merchant-dashboard')
+            deliveryman.save()
+            if hasattr(form, "save_m2m"):
+                form.save_m2m()
+            messages.success(request, "Your registration has been successfully completed. Welcome aboard.")
+            return redirect("merchant-dashboard")
     else:
-        form = DeliverymanForm(initial={
-            'Email': request.user.email
-        })
+        form = DeliverymanForm()
 
     return render(request, "merchant/reg_deliveryman.html", {"form": form})
+
 
 
 def merchant_form_signup(request):
