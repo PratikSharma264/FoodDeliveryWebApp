@@ -72,14 +72,24 @@ header {
   gap: 10px;
 }
 
+#signin,
+#signup,
+#logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #signin {
   border: 1px solid #ec600fff;
   border-radius: 7px;
   height: 40px;
   width: 90px;
+  color: #000000;
   background-color: #ffffff;
   font-family: "Poppins";
   font-size: 14px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -88,23 +98,7 @@ header {
   color: #ffffff;
 }
 
-#signup {
-  border: none;
-  border-radius: 7px;
-  background: linear-gradient(to right, #505050ff, #000);
-  color: #e0e0e0;
-  height: 40px;
-  width: 90px;
-  font-family: "Poppins";
-  font-size: 14px;
-  cursor: pointer;
-}
-
-#signup:hover {
-  background: #000000;
-  color: #ffffff;
-}
-
+#signup,
 #logout {
   border: none;
   border-radius: 7px;
@@ -112,11 +106,13 @@ header {
   color: #e0e0e0;
   height: 40px;
   width: 90px;
+  text-decoration: none;
   font-family: "Poppins";
   font-size: 14px;
   cursor: pointer;
 }
 
+#signup:hover,
 #logout:hover {
   background: #000000;
   color: #ffffff;
@@ -145,7 +141,7 @@ main {
   width: 80%;
   padding: 20px;
   display: flex;
-  background-image: url("../assests/images/dropdown.png");
+  background-image: url("../images/dropdown.png");
 }
 
 .signup-submain > div:first-child {

@@ -48,12 +48,12 @@ def merchant_signup_view(request):
             user.save()
             logout(request)
             login(request, user)
-
+            signup_form = MerchantSignUpForm()
             messages.success(
                 request, "Account created. You are now logged in.")
             return redirect("home")
         else:
-            messages.error(request, "Please fix the errors below.")
+            messages.error(request, "Signup failed. Please fix the errors below.")
     else:
         signup_form = MerchantSignUpForm()
 
