@@ -21,6 +21,21 @@ h4 {
   margin: 0;
 }
 
+.success-card {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 5px solid #28a745;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: all 0.5s ease-in-out;
+  opacity: 1;
+}
+
 header {
   height: 100px;
   display: flex;
@@ -72,14 +87,24 @@ header {
   gap: 10px;
 }
 
+#signin,
+#signup,
+#logout {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #signin {
   border: 1px solid #ec600fff;
   border-radius: 7px;
   height: 40px;
   width: 90px;
+  color: #000000;
   background-color: #ffffff;
   font-family: "Poppins";
   font-size: 14px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -88,13 +113,15 @@ header {
   color: #ffffff;
 }
 
-#signup {
+#signup,
+#logout {
   border: none;
   border-radius: 7px;
   background: linear-gradient(to right, #505050ff, #000);
   color: #e0e0e0;
   height: 40px;
   width: 90px;
+  text-decoration: none;
   font-family: "Poppins";
   font-size: 14px;
   cursor: pointer;
@@ -155,7 +182,7 @@ h2#heroinfo-maintopic {
   justify-content: center;
 }
 
-#learnbtn a button {
+#learnbtn > a button {
   border: none;
   height: 50px;
   width: 160px;
@@ -169,11 +196,11 @@ h2#heroinfo-maintopic {
   transform: translateX(-100px);
 }
 
-#learnbtn a:first-child button:hover {
+#learnbtn > a:first-child button:hover {
   background-color: #fc7100ff;
 }
 
-#learnbtn a:last-child {
+#learnbtn > a:last-child {
   text-decoration: none;
   color: #ff6600ff;
   font-family: "Poppins";
@@ -319,8 +346,8 @@ h2#heroinfo-maintopic {
   color: #e0e0e0;
 }
 
-#register-merchant a,
-#register-deliveryboy a {
+#register-merchant > a,
+#register-deliveryboy > a {
   text-decoration: none;
   border: none;
   border-radius: 5px;
@@ -337,7 +364,7 @@ h2#heroinfo-maintopic {
   background-color: #353333ff;
 }
 #register-deliveryboy a {
-  backgound-color: #e0e0e0;
+  background-color: #e0e0e0;
   color: #353333ff;
 }
 

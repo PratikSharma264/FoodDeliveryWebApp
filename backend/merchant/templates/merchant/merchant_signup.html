@@ -1,10 +1,14 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="{% static 'css/m_signup.css' %}" />
     <title>Grubmate</title>
   </head>
@@ -40,46 +44,64 @@
               <input type="hidden" name="form_type" value="signup" />
 
               <div id="formhead">
-                <h1><span><i class="fa-solid fa-plus"></i></span>Create Account</h1>
+                <h1>
+                  <span><i class="fa-solid fa-plus"></i></span>Create Account
+                </h1>
                 <p>Please enter your details</p>
               </div>
 
-              {% if signup_form.errors %}
-                <div class="error-container">
-                  <ul>
-                    {% for field in signup_form %}
-                      {% for error in field.errors %}
-                        <li>
-                          <strong>{{ field.label }}:</strong> {{ error }}
-                        </li>
-                      {% endfor %}
-                    {% endfor %}
-                    {% for error in signup_form.non_field_errors %}
-                      <li>{{ error }}</li>
-                    {% endfor %}
-                  </ul>
-                </div>
-              {% endif %}
-
               <div class="ipfield">
-                <input type="text" id="fullname" name="name" value="{{ signup_form.name.value|default:'' }}" placeholder="Name" class="form-control" />
+                <input
+                  type="text"
+                  id="fullname"
+                  name="name"
+                  value="{{ signup_form.name.value|default:'' }}"
+                  placeholder="Name"
+                  class="form-control"
+                />
                 <div id="nameError" class="text-danger"></div>
               </div>
 
               <div class="ipfield">
-                <input type="email" name="email" id="email" value="{{ signup_form.email.value|default:'' }}" placeholder="Email" class="form-control" />
+                <input
+                  type="email"
+                  name="email"
+                  id="email"
+                  value="{{ signup_form.email.value|default:'' }}"
+                  placeholder="Email"
+                  class="form-control"
+                />
               </div>
 
               <div class="ipfield">
-                <input type="tel" name="phone_number" id="phonenumber" value="{{ signup_form.phone_number.value|default:'' }}" placeholder="Phone number" class="form-control" />
+                <input
+                  type="tel"
+                  name="phone_number"
+                  id="phonenumber"
+                  value="{{ signup_form.phone_number.value|default:'' }}"
+                  placeholder="Phone number"
+                  class="form-control"
+                />
               </div>
 
               <div class="ipfield">
-                <input type="password" name="password1" id="password" placeholder="Password" class="form-control" />
+                <input
+                  type="password"
+                  name="password1"
+                  id="password"
+                  placeholder="Password"
+                  class="form-control"
+                />
               </div>
 
               <div class="ipfield">
-                <input type="password" name="password2" id="confirmpassword" placeholder="Confirm Password" class="form-control" />
+                <input
+                  type="password"
+                  name="password2"
+                  id="confirmpassword"
+                  placeholder="Confirm Password"
+                  class="form-control"
+                />
               </div>
 
               <div id="submitbtn">
@@ -91,11 +113,11 @@
             <div id="sidepanel-head">
               <h2>
                 <span><i class="fa-solid fa-face-laugh-beam"></i>Welcome!</span>
-                Enter you 'signup details' and start you journey with
+                Enter you 'signup details' and start your journey with
                 <span>Grubmate</span>.
               </h2>
               <div id="acpresent">
-                <p>already have an account?</p>
+                <p>Already have an account?</p>
                 <a href="{% url 'merchant-signin' %}">Click to Signin page</a>
               </div>
             </div>
@@ -150,6 +172,27 @@
         </div>
       </div>
     </footer>
-    <script src="{% static 'm_signup.js' %}"></script>
+
+  {% if signup_form.errors %}
+  <script id="form-errors" type="application/json">
+    {
+      {% for field, errors in signup_form.errors.items %}
+        "{{ field }}": [
+          {% for error in errors %}
+            {"message": "{{ error|escapejs }}"}{% if not forloop.last %},{% endif %}
+          {% endfor %}
+        ]{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    }
+  </script>
+{% endif %}
+
+{% if signup_success %}
+  <script id="signup-success" type="application/json">
+    {"message": "Account created successfully! You are now logged in."}
+  </script>
+{% endif %}
+
+    <script src="{% static 'scripts/m_signup.js' %}"></script>
   </body>
 </html>
