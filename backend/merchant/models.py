@@ -4,6 +4,10 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
 from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.db import models
+from django.conf import settings
+from django.core.validators import RegexValidator
+from django.utils import timezone
 
 # Validator for Nepali phone numbers
 phone_validator = RegexValidator(
@@ -51,38 +55,71 @@ class Cuisine(models.Model):
         return self.cuisine_name
 
 
+# class Restaurant(models.Model):
+#     RESTAURANT_TYPE_CHOICES = [
+#         ('local', 'Local'),
+#         ('finedining', 'Fine Dining'),
+#     ]
+#     BUSINESS_PLAN_CHOICES = [
+#         ('commission', 'Commission Base'),
+#         ('subscription', 'Subscription Base'),
+#     ]
+
+#     user = models.OneToOneField(
+#         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
+#     restaurant_name = models.CharField(max_length=100, default='')
+#     vat_and_tax = models.DecimalField(
+#         max_digits=5, decimal_places=2, default=0.0)
+#     restaurant_address = models.TextField(default='')
+#     latitude = models.FloatField(default=0.0)
+#     longitude = models.FloatField(default=0.0)
+#     cuisine = models.CharField(max_length=50, default='')
+#     profile_picture = models.ImageField(
+#         upload_to='restaurant/profile_pics/', blank=True, null=True)
+#     cover_photo = models.ImageField(
+#         upload_to='restaurant/cover_photos/', blank=True, null=True)
+#     external_image_url = models.URLField(blank=True, null=True)
+#     owner_name = models.CharField(max_length=100, default='')
+#     owner_contact = models.CharField(
+#         max_length=15, null=True, validators=[phone_validator])
+#     menu = models.FileField(upload_to='restaurant/menus/', null=True)
+#     business_plan = models.CharField(
+#         max_length=20, choices=BUSINESS_PLAN_CHOICES, null=True)
+#     restaurant_type = models.CharField(
+#         max_length=10, choices=RESTAURANT_TYPE_CHOICES, default='local')
+#     created_at = models.DateTimeField(default=timezone.now)
+#     approved = models.BooleanField(default=False)
+
+#     def __str__(self):
+#         return self.restaurant_name
+
+
 class Restaurant(models.Model):
     RESTAURANT_TYPE_CHOICES = [
         ('local', 'Local'),
-        ('finedining', 'Fine Dining'),
-    ]
-    BUSINESS_PLAN_CHOICES = [
-        ('commission', 'Commission Base'),
-        ('subscription', 'Subscription Base'),
+        ('fine_dining', 'Fine Dining'),
     ]
 
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True
+    )
     restaurant_name = models.CharField(max_length=100, default='')
-    vat_and_tax = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0.0)
+    owner_name = models.CharField(max_length=100, default='')
+    owner_email = models.EmailField(max_length=255, null=True, blank=True)
+    owner_contact = models.CharField(
+        max_length=15, null=True, validators=[phone_validator]
+    )
     restaurant_address = models.TextField(default='')
     latitude = models.FloatField(default=0.0)
     longitude = models.FloatField(default=0.0)
     cuisine = models.CharField(max_length=50, default='')
-    profile_picture = models.ImageField(
-        upload_to='restaurant/profile_pics/', blank=True, null=True)
-    cover_photo = models.ImageField(
-        upload_to='restaurant/cover_photos/', blank=True, null=True)
-    external_image_url = models.URLField(blank=True, null=True)
-    owner_name = models.CharField(max_length=100, default='')
-    owner_contact = models.CharField(
-        max_length=15, null=True, validators=[phone_validator])
-    menu = models.FileField(upload_to='restaurant/menus/', null=True)
-    business_plan = models.CharField(
-        max_length=20, choices=BUSINESS_PLAN_CHOICES, null=True)
+    description = models.TextField(null=True, blank=True)
     restaurant_type = models.CharField(
-        max_length=10, choices=RESTAURANT_TYPE_CHOICES, default='local')
+        max_length=20, choices=RESTAURANT_TYPE_CHOICES, default='local'
+    )
+    profile_picture = models.ImageField(upload_to='restaurant/profile_pics/', blank=True, null=True)
+    cover_photo = models.ImageField(upload_to='restaurant/cover_photos/', blank=True, null=True)
+    menu = models.FileField(upload_to='restaurant/menus/', blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     approved = models.BooleanField(default=False)
 

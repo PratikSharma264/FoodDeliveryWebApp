@@ -46,7 +46,12 @@
         <div id="email">
           <span><i class="fa-solid fa-circle-exclamation"></i></span>
           <h3>check your email:</h3>
+          {% if profile.approved %}
+           <span><a href="{%url 'deliveryman-dashboard'%}">click here to go to dashboard</a></span>
+           {%else%}
           <span>"{{ profile.user }}"</span>
+          {% endif %}
+               
         </div>
       </div>
       <div id="vid">

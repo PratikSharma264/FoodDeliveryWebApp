@@ -28,7 +28,20 @@
           </div>
         </div>
         <div id="merchantreg-main">
-          <form action="">
+          <form action="{% url 'merchant-signup' %}?role=restaurant" method="POST">
+            {% csrf_token %}
+            <!-- hidden role field -->
+            <input type="hidden" name="role" value="restaurant" />
+
+              {% if form.errors %}
+              <ul>
+                {% for field in form %}
+                  {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                  {% endfor %}
+                {% endfor %}
+              </ul>
+            {% endif %}
             <div id="mainform">
               <div class="form-head">
                 <i class="fa-solid fa-circle-info"></i>
@@ -40,7 +53,7 @@
                     <label for="restaurant-name">Restaurant Name</label>
                   </div>
                   <div>
-                    <input type="text" id="restaurant-name" name="restaurant-name" {{ form.restaurant_name.value|default_if_none:'' }} required />
+                    <input type="text" id="restaurant-name" name="restaurant_name" {{ form.restaurant_name.value|default_if_none:'' }} required />
                   </div>
                 </div>
 
@@ -49,7 +62,7 @@
                     <label for="owner-name">Owner Name</label>
                   </div>
                   <div>
-                    <input type="text" id="owner-name" name="owner-name" {{ form.owner_name.value|default_if_none:'' }} required />
+                    <input type="text" id="owner-name" name="owner_name" {{ form.owner_name.value|default_if_none:'' }} required />
                   </div>
                 </div>
 
@@ -64,10 +77,10 @@
 
                 <div class="ip">
                   <div>
-                    <label for="email">Email Address</label>
+                    <label for="email" >Email Address</label>
                   </div>
                   <div>
-                    <input type="email" id="email" name="email" required />
+                    <input type="email" id="email" name="email" {{ form.owner_email.value|default_if_none:'' }}  required />
                   </div>
                 </div>
 
@@ -76,7 +89,7 @@
                     <label for="address">Restaurant Address</label>
                   </div>
                   <div>
-                    <input type="text" id="address" name="address" required />
+                    <input type="text" id="address" name="address" {{ form.restaurant_address.value|default_if_none:'' }} required />
                   </div>
                 </div>
 
@@ -85,7 +98,7 @@
                     <label for="cuisine">Cuisine Type</label>
                   </div>
                   <div>
-                    <input type="text" id="cuisine" name="cuisine" required />
+                    <input type="text" id="cuisine" name="cuisine" {{ form.cuisine.value|default_if_none:'' }} required />
                   </div>
                 </div>
 
@@ -94,59 +107,63 @@
                     <label for="description">Restaurant Description</label>
                   </div>
                   <div>
-                    <textarea id="description" name="description" rows="4" required></textarea>
+                    <textarea id="description" name="description" rows="4" {{ form.description.value|default_if_none:'' }} required></textarea>
                   </div>
                 </div>
-                <div class="ip">
-                  <div>
-                    <label for="restype">Business Type</label>
-                  </div>
-                  <div class="select-wrapper">
-                    <select id="restype" name="resturant_type" required>
-                      <option value="local">Local</option>
-                      <option value="fine_dining">Fine Dining</option>
-                    </select>
-                    <i class="fa-solid fa-square-caret-down"></i>
-                  </div>
-                </div>
+                  <div class="ip">
+              <div>
+                <label for="restype">Business Type</label>
+              </div>
+              <div class="select-wrapper">
+                <select id="restype" name="resturant_type" required>
+                  <option value="local" {% if form.resturant_type.value == "local" %}selected{% endif %}>Local</option>
+                  <option value="fine_dining" {% if form.resturant_type.value == "fine_dining" %}selected{% endif %}>Fine Dining</option>
+                </select>
+                <i class="fa-solid fa-square-caret-down"></i>
+              </div>
+            </div>
               </div>
             </div>
             <div id="formmap">
-              <div id="formmap-subcontainer">
-                <div class="form-head">
-                  <i class="fa-solid fa-location-dot"></i>
-                  <h3>Select Location on Map</h3>
+          <div id="formmap-subcontainer">
+            <div class="form-head">
+              <i class="fa-solid fa-location-dot"></i>
+              <h3>Select Location on Map</h3>
+            </div>
+            <div class="position-container">
+              <div class="ip">
+                <div>
+                  <label>Latitude</label>
                 </div>
-                <div class="position-container">
-                  <div class="ip">
-                    <div>
-                      <label>Latitude</label>
-                    </div>
-                    <div>
-                      <input type="text" id="lat" name="latitude" readonly />
-                    </div>
-                  </div>
-                  <div class="ip">
-                    <div>
-                      <label>Longitude</label>
-                    </div>
-                    <div>
-                      <input type="text" id="lng" name="longitude" readonly />
-                    </div>
-                  </div>
+                <div>
+                  <input type="text" id="lat" name="latitude" readonly value="{{ form.latitude.value|default_if_none:'' }}" />
                 </div>
-                <div id="map"></div>
-                <div class="submit-wrapper" id="merchant-submit">
-                  <button id="merchant-submit-btn">Submit</button>
+              </div>
+              <div class="ip">
+                <div>
+                  <label>Longitude</label>
+                </div>
+                <div>
+                  <input type="text" id="lng" name="longitude" readonly value="{{ form.longitude.value|default_if_none:'' }}" />
                 </div>
               </div>
             </div>
+            <div id="map"></div>
+            <div class="submit-wrapper" id="merchant-submit">
+              <button id="merchant-submit-btn" type="submit">Submit</button>
+            </div>
+          </div>
+        </div>
+
           </form>
         </div>
 
        <div id="deliveryboyreg-main">
   <form action="{% url 'merchant_register' %}?role=deliveryman" method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    <!-- hidden role field -->
+    <input type="hidden" name="role" value="deliveryman" />
+
     {% if form.errors %}
       <div class="error-container">
         <ul>

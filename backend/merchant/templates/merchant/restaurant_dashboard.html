@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="{%static 'css/restaurant_dashboard.css'%}" />
+    <script src="{%static 'css/restaurant_dashboard.js'%}" defer></script>
+  </head>
+  <body>
+    <header>
+      <a href="#" id="logowrapper-link">
+        <div class="logo-container">
+          <div id="logo">
+            <span><i class="fa-brands fa-glide-g"></i></span>
+            <span><i class="fa-brands fa-meetup"></i></span>
+          </div>
+          <div id="brandname">
+            <span>Grub</span>
+            <span>mate</span>
+          </div>
+        </div>
+        </a>
+      <nav>
+        <ul id="navbar">
+          <li class="link" id="active">
+            <a href="#"
+              ><span class="nav-icons"><i class="fa-solid fa-house"></i></span>
+              <h4>Dashboard</h4></a
+            >
+          </li>
+          <li class="link" id="order">
+            <a href="#"
+              ><span class="nav-icons"
+                ><i class="fa-solid fa-cart-shopping"></i
+              ></span>
+              <h4>Orders</h4>
+              <span>0</span>
+              </a>
+          </li>
+          <li class="link">
+            <a href="#"
+              ><span class="nav-icons"><i class="fa-solid fa-bowl-food"></i></i></span>
+              <h4>Menu Dishes</h4></a
+            >
+          </li>
+          <li class="link">
+            <a href="#"
+              ><span class="nav-icons"><i class="fa-solid fa-people-group"></i></span>
+              <h4>Customers</h4></a
+            >
+          </li>
+          <li class="link">
+            <a href="#"
+              ><span class="nav-icons"><i class="fa-solid fa-gear"></i></span>
+              <h4>Setting</h4></a
+            >
+          </li>
+        </ul>
+      </nav>
+      <div id="logout">
+        <div id="circle">
+          <img
+            src="{%static 'images/burgerstill.png' %}"
+            alt="burger"
+            height="80px"
+            weight="80px"
+          />
+        </div>
+        <button>
+          <span class="logout-icon"
+            ><i class="fa-solid fa-right-from-bracket"></i></span
+          ><span>logout</span>
+        </button>
+      </div>
+    </header>
+    <div class="container" id="dashboard">
+      <div id="container-head">
+        <div id="head-content">
+          <h2>Dashboard</h2>
+          <h4>welcome <span>"resturant name"</span></h4>
+        </div>
+        <div id="search-subcontainer">
+          <span><i class="fa-brands fa-searchengin"></i></span>
+          <input
+            type="search"
+            name="search"
+            id="search"
+            placeholder="search anything here..."
+          />
+        </div>
+        <div>
+          <div id="pp-container"> 
+            <img
+            src="{% static 'images/profilepic.png' %}"
+            alt="profilepic"
+            height="50"
+            width="50"
+          /></div>
+         
+          <h4>Resturant Name</h4>
+        </div>
+      </div>
+      <dv id="container-body">
+        <div id="business-statistics">
+          <div class="statistics">
+            <h4>Total Menus</h4>
+            <div>
+              <p>14</p>
+              <span
+                ><i class="fa-solid fa-up-long fa-increase"></i>
+                <span class="percent-change fa-increase">12.5%</span></span
+              >
+            </div>
+          </div>
+          <div class="statistics">
+            <h4>Total Revenue</h4>
+            <div>
+              <p>Rs. 10k</p>
+              <span
+                ><i class="fa-solid fa-down-long fa-decrease"></i>
+                <span class="percent-change fa-decrease">-4%</span></span
+              >
+            </div>
+          </div>
+          <div class="statistics">
+            <h4>Total Orders</h4>
+            <div>
+              <p>57</p>
+              <span
+                ><i class="fa-solid fa-down-long fa-decrease"></i>
+                <span class="percent-change fa-decrease">-2.34%</span></span
+              >
+            </div>
+          </div>
+          <div class="statistics">
+            <h4>Total Customers</h4>
+            <div>
+              <p>199</p>
+              <span
+                ><i class="fa-solid fa-down-long fa-increase"></i>
+                <span class="percent-change fa-increase">32%</span></span
+              >
+            </div>
+          </div>
+        </div>
+        <div id="statistics-summary">
+          <div id="summary1">
+            <h3>Orders Summary</h3>
+          </div>
+          <div id="summary2">
+            <div id="summary2-div">
+              <h3>Order Statistics</h3>
+            </div>
+          </div>
+        </div>
+        <!-- <div id="popular">
+          <h3>Popular Menu Dishes</h3>
+          <div id="popular-body">
+          <div class="popular-container">
+            <div><img src="../images/burger.jpg" alt="bug"></div>
+            <div>
+              <p>124</p>
+              <span
+                ><i class="fa-solid fa-up-long fa-increase"></i>
+                <span>12.5%</span></span
+              >
+            </div>
+          </div>
+             <div class="popular-container">
+            <div><img src="../images/dounut.jpg" alt="bug"></div>
+            <div>
+              <p>124</p>
+              <span
+                ><i class="fa-solid fa-up-long fa-increase"></i>
+                <span>12.5%</span></span
+              >
+            </div>
+             </div>
+             <div class="popular-container">
+            <div><img src="../images/food.png" alt="bug"></div>
+            <div>
+              <p>124</p>
+              <span
+                ><i class="fa-solid fa-up-long fa-increase"></i>
+                <span>12.5%</span></span
+              >
+            </div>
+          </div>
+          </div>
+        </div> -->
+      </dv>
+    </div>
+  </body>
+</html>

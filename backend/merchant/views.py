@@ -1,7 +1,7 @@
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import MerchantSignUpForm,  RestaurantRegistrationForm, MerchantForgotPasswordForm, DeliverymanForm, BusinessPlanForm
+from .forms import MerchantSignUpForm,  RestaurantRegistrationForm, MerchantForgotPasswordForm, DeliverymanForm
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_user_model
 from .utils import account_activation_token
@@ -33,8 +33,6 @@ def profile_none_required(view_func):
 
 
 def merchant_home_view(request):
-    print("Logged in as:", request.user,
-          request.user.is_superuser, request.user.is_staff)
     return render(request, "merchant/m_home.html")
 
 
@@ -48,12 +46,12 @@ def merchant_signup_view(request):
             user.save()
             logout(request)
             login(request, user)
-            signup_form = MerchantSignUpForm()
+
             messages.success(
                 request, "Account created. You are now logged in.")
             return redirect("home")
         else:
-            messages.error(request, "Signup failed. Please fix the errors below.")
+            messages.error(request, "Please fix the errors below.")
     else:
         signup_form = MerchantSignUpForm()
 
@@ -84,10 +82,24 @@ def merchant_login_view(request):
     return render(request, "merchant/merchant_login.html", {"next": next_url})
 
 
+
 @login_required
-def merchant_dashboard(request):
-    profile = get_object_or_404(Deliveryman, user=request.user)
-    return render(request, "merchant/merchant_dashboard.html", {
+def restaurant_dashboard(request):
+    try:
+        profile = Restaurant.objects.get(user=request.user)
+    except Restaurant.DoesNotExist:
+        return redirect('deliveryman-dashboard')
+    return render(request, "merchant/restaurant_dashboard.html", {
+        'restauant': profile,
+    })
+
+@login_required
+def deliveryman_dashboard(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')  
+    return render(request, "merchant/deliveryman_dashboard.html", {
         'deliveryman': profile,
     })
 
@@ -98,6 +110,7 @@ def merchant_logout_view(request):
     messages.success(request, ("You are successfully logged out"))
     return redirect('home')
 
+
 @login_required
 @profile_none_required
 def deliveryman_register_view(request):
@@ -106,16 +119,16 @@ def deliveryman_register_view(request):
         if form.is_valid():
             deliveryman = form.save(commit=False)
             deliveryman.user = request.user
-            deliveryman.save()
-            if hasattr(form, "save_m2m"):
-                form.save_m2m()
-            messages.success(request, "Your registration has been successfully completed. Welcome aboard.")
-            return redirect("merchant-dashboard")
+            form.save()
+            messages.success(
+                request, "Your registration has been successfully completed. Welcome aboard.")
+            return redirect('merchant-dashboard')
     else:
-        form = DeliverymanForm()
+        form = DeliverymanForm(initial={
+            'Email': request.user.email
+        })
 
     return render(request, "merchant/reg_deliveryman.html", {"form": form})
-
 
 
 def merchant_form_signup(request):
@@ -133,27 +146,24 @@ def merchant_form_res_reg(request):
 def merchant_form_del_reg(request):
     pass
 
-
 @login_required
 @profile_none_required
 def merchant_res_reg_view(request):
-    restaurant_id = request.session.get('restaurant_id')
+    # Remove all references to restaurant_id session and BusinessPlanForm
 
-    # If business plan step
-    if restaurant_id:
-        restaurant = get_object_or_404(Restaurant, id=restaurant_id)
-        if request.method == 'POST':
-            plan_form = BusinessPlanForm(request.POST, instance=restaurant)
-            if plan_form.is_valid():
-                plan_form.save()
-                messages.success(
-                    request, 'Your business plan has been saved. Welcome aboard.')
-                # cleanup session
-                request.session.pop('restaurant_id', None)
-                return redirect('merchant-dashboard')
-        else:
-            plan_form = BusinessPlanForm(instance=restaurant)
-        return render(request, 'merchant/reg_restaurant.html', {'form': plan_form})
+    if request.method == 'POST':
+        form = RestaurantRegistrationForm(request.POST, request.FILES)
+        if form.is_valid():
+            restaurant = form.save(commit=False)
+            restaurant.owner = request.user  # or however you link merchant
+            restaurant.save()
+            messages.success(request, 'Your restaurant has been registered. Welcome aboard.')
+            return redirect('application-status')
+    else:
+        form = RestaurantRegistrationForm()
+
+    return render(request, 'merchant/reg_restaurant.html', {'form': form})
+
 
     # Otherwise, general registration step
     if request.method == 'POST':

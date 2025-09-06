@@ -11,7 +11,8 @@ urlpatterns = [
          name='merchant_reset_password'),
 
     #     path('dummy/', views.restaurant_register_view, name='dummy'),
-    path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),
+    path("restaurant-dashboard/", views.restaurant_dashboard, name='restaurant-dashboard'),
+       path("deliveryman-dashboard/", views.deliveryman_dashboard, name='deliveryman-dashboard'),
     path("formsignup/", views.merchant_form_signup, name='form_signup'),
     path("formlogin/", views.merchant_form_login, name='form_login'),
     path("formresreg/", views.merchant_form_res_reg, name='form_res_reg'),
@@ -26,7 +27,6 @@ urlpatterns = [
 
     path("signup/", views.merchant_signup_view, name='merchant-signup'),
     path("merchant/login/", views.merchant_login_view, name="merchant-signin"),
-    path("dashboard/", views.merchant_dashboard, name='merchant-dashboard'),
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
     path("lobby/", views.lobby_view, name='lobby'),
 
