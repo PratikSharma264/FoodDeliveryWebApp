@@ -1,0 +1,16 @@
+{% extends "merchant/restaurant_dashboard.html" %}
+{% load static %}
+{% block styles %} <link rel="stylesheet" href="{%static 'css/restaurant_customers.css'%}" />{% endblock  %}
+{% block headcontent %}
+<div id="head-content">
+          <h2>Customers</h2>
+          <h4><span>"Your Customers"</span></h4>
+        </div>
+  {% endblock  %}
+  {% block deactivate %}dashboard{% endblock  %}
+  {% block activate_customers %}active{% endblock  %}
+{% block mainspace %}    
+    {% endblock %}
+     {% block scripts %}<script src="{%static 'scripts/restaurant_customers.js'%}" defer></script>{% endblock  %}
+
+

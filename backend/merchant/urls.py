@@ -13,10 +13,7 @@ urlpatterns = [
     #     path('dummy/', views.restaurant_register_view, name='dummy'),
     path("restaurant-dashboard/", views.restaurant_dashboard, name='restaurant-dashboard'),
        path("deliveryman-dashboard/", views.deliveryman_dashboard, name='deliveryman-dashboard'),
-    path("formsignup/", views.merchant_form_signup, name='form_signup'),
-    path("formlogin/", views.merchant_form_login, name='form_login'),
-    path("formresreg/", views.merchant_form_res_reg, name='form_res_reg'),
-    path("formdelreg/", views.merchant_form_del_reg, name='form_del_reg'),
+  
     path("register-merchant/", views.merchant_form_register_view,
          name='merchant_register'),
 
@@ -27,6 +24,8 @@ urlpatterns = [
     path("merchant/login/", views.merchant_login_view, name="merchant-signin"),
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
     path("lobby/", views.lobby_view, name='lobby'),
-
-
+    path("restaurant-orders/", views.restaurant_orders, name='restaurant-orders'),
+    path("restaurant-menu-dishes/", views.restaurant_menu_dishes, name='restaurant-menu-dishes'),
+    path("restaurant-customers/", views.restaurant_customers, name='restaurant-customers'),
+    path("restaurant-settings/", views.restaurant_settings, name='restaurant-settings'),
 ]

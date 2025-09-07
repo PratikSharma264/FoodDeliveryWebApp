@@ -1,0 +1,51 @@
+{% extends "merchant/restaurant_dashboard.html" %}
+{% load static %}
+{% block styles %} <link rel="stylesheet" href="{%static 'css/restaurant_orders.css'%}" />{% endblock  %}
+{% block headcontent %}
+  <div id="head-content">
+          <h2>Orders</h2>
+          <h4><span>"your received orders"</span></h4>
+        </div>
+  {% endblock  %}
+  {% block deactivate %}dashboard{% endblock  %}
+  {% block activate_order %}active{% endblock  %}
+{% block mainspace %}    
+      <div id="container-body">
+        <div id="current-order-container">
+          <div id="currentorder-header">
+            <h3>Your received orders</h3>
+            <!-- later implement the filter based on product(add here filter
+            input) -->
+          </div>
+          <div id="current-order-wrapper">
+            <div id="emptyorder">
+              <div id="crossimg">
+                <img src="../assests//images//cross.png" alt="" />
+              </div>
+              <div>
+                <p>You haven't received any orders!</p>
+              </div>
+            </div>
+            <!-- <div class="current-order-item">
+              <div class="update-currentitems">
+                <i class="fa-solid fa-square-pen"></i>
+              </div>
+              <div class="expand-currentitems">
+                <div>
+                  <i class="fa-solid fa-circle-arrow-right"></i>
+                  <span>expand</span>
+                </div>
+              </div>
+              <div class="maininfodiv">
+                <div class="orderinfo">
+                  <h4>orderid</h4>
+                  <span>order date</span>
+                  <span>order time</span>
+                </div>
+              </div>
+            </div> -->
+          </div>
+        </div>
+      </div>
+    {% endblock %}
+     {% block scripts %}<script src="{%static 'css/restaurant_orders.js'%}" defer></script>{% endblock  %}

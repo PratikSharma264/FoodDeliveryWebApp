@@ -10,6 +10,7 @@
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
     <link rel="stylesheet" href="{%static 'css/restaurant_dashboard.css'%}" />
+    {% block styles %}{% endblock  %}
     <script src="{%static 'css/restaurant_dashboard.js'%}" defer></script>
   </head>
   <body>
@@ -28,14 +29,14 @@
         </a>
       <nav>
         <ul id="navbar">
-          <li class="link" id="active">
-            <a href="#"
+          <li class="link" id="{% block deactivate %}active{% endblock  %}">
+            <a href="{%url 'restaurant-dashboard'%}"
               ><span class="nav-icons"><i class="fa-solid fa-house"></i></span>
               <h4>Dashboard</h4></a
             >
           </li>
-          <li class="link" id="order">
-            <a href="#"
+          <li class="link" id="{% block activate_order %}order{%endblock%}">
+            <a href="{%url 'restaurant-orders'%}"
               ><span class="nav-icons"
                 ><i class="fa-solid fa-cart-shopping"></i
               ></span>
@@ -43,20 +44,20 @@
               <span>0</span>
               </a>
           </li>
-          <li class="link">
-            <a href="#"
+          <li class="link" id="{% block activate_menu_dishes %}menu_dishes{%endblock%}">
+            <a href="{%url 'restaurant-menu-dishes'%}"
               ><span class="nav-icons"><i class="fa-solid fa-bowl-food"></i></i></span>
               <h4>Menu Dishes</h4></a
             >
           </li>
-          <li class="link">
-            <a href="#"
+          <li class="link" id="{% block activate_customers %}customers{%endblock%}">
+            <a href="{%url 'restaurant-customers'%}"
               ><span class="nav-icons"><i class="fa-solid fa-people-group"></i></span>
               <h4>Customers</h4></a
             >
           </li>
-          <li class="link">
-            <a href="#"
+          <li class="link" id="{% block activate_settings %}settings{%endblock%}">
+            <a href="{%url 'restaurant-settings'%}"
               ><span class="nav-icons"><i class="fa-solid fa-gear"></i></span>
               <h4>Setting</h4></a
             >
@@ -72,19 +73,25 @@
             weight="80px"
           />
         </div>
+        
         <button>
+          <a href="{%url 'merchant-logout'%}">
           <span class="logout-icon"
             ><i class="fa-solid fa-right-from-bracket"></i></span
           ><span>logout</span>
+          </a >
         </button>
+      
       </div>
     </header>
     <div class="container" id="dashboard">
       <div id="container-head">
+        {% block headcontent %}
         <div id="head-content">
           <h2>Dashboard</h2>
-          <h4>welcome <span>"resturant name"</span></h4>
+          <h4>welcome <span>{{restaurant.restaurant_name}}</span></h4>
         </div>
+        {% endblock  %}
         <div id="search-subcontainer">
           <span><i class="fa-brands fa-searchengin"></i></span>
           <input
@@ -103,10 +110,11 @@
             width="50"
           /></div>
          
-          <h4>Resturant Name</h4>
+          <h4>{{restaurant.restaurant_name}}</h4>
         </div>
       </div>
-      <dv id="container-body">
+      {% block mainspace %}
+       <dv id="container-body">
         <div id="business-statistics">
           <div class="statistics">
             <h4>Total Menus</h4>
@@ -194,7 +202,8 @@
           </div>
           </div>
         </div> -->
-      </dv>
+      </dv> {% endblock %}
     </div>
+    {% block scripts %}{% endblock  %}
   </body>
 </html>
