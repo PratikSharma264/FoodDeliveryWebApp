@@ -109,6 +109,24 @@ class RestaurantRegistrationForm(forms.ModelForm):
         exclude = ['user', 'created_at', 'approved']
 
 
+
+# forms.py
+from django import forms
+from .models import FoodItem
+
+class FoodItemForm(forms.ModelForm):
+    class Meta:
+        model = FoodItem
+        fields = [
+            'name',                 
+            'price',               
+            'discount',             
+            'veg_nonveg',          
+            'availability_status',  
+            'profile_picture',      
+            'description',          
+        ]
+
 # class BusinessPlanForm(forms.ModelForm):
 #     class Meta:
 #         model = Restaurant
