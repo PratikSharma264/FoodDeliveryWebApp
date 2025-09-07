@@ -28,7 +28,7 @@
           </div>
         </div>
         <div id="merchantreg-main">
-          <form action="{% url 'merchant-signup' %}?role=restaurant" method="POST">
+          <form action="{% url 'merchant_register' %}?role=restaurant" method="POST">
             {% csrf_token %}
             <!-- hidden role field -->
             <input type="hidden" name="role" value="restaurant" />
@@ -71,7 +71,12 @@
                     <label for="contact">Contact Number</label>
                   </div>
                   <div>
-                    <input type="tel" id="contact" name="contact" {{ form.owner_contact.value|default_if_none:'' }} required />
+                   <input type="tel"
+                    id="owner_contact"
+                    name="owner_contact"
+                    value="{{ form.owner_contact.value|default_if_none:'' }}"
+                    required />
+
                   </div>
                 </div>
 
@@ -89,7 +94,7 @@
                     <label for="address">Restaurant Address</label>
                   </div>
                   <div>
-                    <input type="text" id="address" name="address" {{ form.restaurant_address.value|default_if_none:'' }} required />
+                    <input type="text" id="restaurant_address" name="restaurant_address" value="{{ form.restaurant_address.value|default_if_none:'' }}" required />
                   </div>
                 </div>
 
@@ -111,17 +116,18 @@
                   </div>
                 </div>
                   <div class="ip">
-              <div>
-                <label for="restype">Business Type</label>
-              </div>
-              <div class="select-wrapper">
-                <select id="restype" name="resturant_type" required>
-                  <option value="local" {% if form.resturant_type.value == "local" %}selected{% endif %}>Local</option>
-                  <option value="fine_dining" {% if form.resturant_type.value == "fine_dining" %}selected{% endif %}>Fine Dining</option>
-                </select>
-                <i class="fa-solid fa-square-caret-down"></i>
-              </div>
-            </div>
+  <div>
+    <label for="restype">Business Type</label>
+  </div>
+  <div class="select-wrapper">
+    <select id="restype" name="restaurant_type" required>
+      <option value="local" {% if form.restaurant_type.value == "local" %}selected{% endif %}>Local</option>
+      <option value="fine_dining" {% if form.restaurant_type.value == "fine_dining" %}selected{% endif %}>Fine Dining</option>
+    </select>
+    <i class="fa-solid fa-square-caret-down"></i>
+  </div>
+</div>
+
               </div>
             </div>
             <div id="formmap">

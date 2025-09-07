@@ -82,7 +82,6 @@ def merchant_login_view(request):
     return render(request, "merchant/merchant_login.html", {"next": next_url})
 
 
-
 @login_required
 def restaurant_dashboard(request):
     try:
@@ -93,12 +92,13 @@ def restaurant_dashboard(request):
         'restauant': profile,
     })
 
+
 @login_required
 def deliveryman_dashboard(request):
     try:
         profile = Deliveryman.objects.get(user=request.user)
     except Deliveryman.DoesNotExist:
-        return redirect('restaurant-dashboard')  
+        return redirect('restaurant-dashboard')
     return render(request, "merchant/deliveryman_dashboard.html", {
         'deliveryman': profile,
     })
@@ -113,22 +113,39 @@ def merchant_logout_view(request):
 
 @login_required
 @profile_none_required
-def deliveryman_register_view(request):
-    if request.method == "POST":
-        form = DeliverymanForm(request.POST, request.FILES)
-        if form.is_valid():
-            deliveryman = form.save(commit=False)
-            deliveryman.user = request.user
-            form.save()
-            messages.success(
-                request, "Your registration has been successfully completed. Welcome aboard.")
-            return redirect('merchant-dashboard')
-    else:
-        form = DeliverymanForm(initial={
-            'Email': request.user.email
-        })
+def merchant_form_register_view(request):
+    role = request.POST.get('role') or request.GET.get('role')
 
-    return render(request, "merchant/reg_deliveryman.html", {"form": form})
+    if request.method == "POST":
+        if role == "restaurant":
+            form = RestaurantRegistrationForm(request.POST, request.FILES)
+            if form.is_valid():
+                restaurant = form.save(commit=False)
+                restaurant.user = request.user
+                restaurant.save()
+                form.save_m2m()
+                messages.success(
+                    request, 'Your restaurant has been registered. Welcome aboard.')
+                return redirect('home')
+
+        elif role == "deliveryman":
+            form = DeliverymanForm(request.POST, request.FILES)
+            if form.is_valid():
+                deliveryman = form.save(commit=False)
+                deliveryman.user = request.user
+                deliveryman.save()
+                form.save_m2m()
+                messages.success(
+                    request, "Your registration has been successfully completed. Welcome aboard.")
+                return redirect('home')
+    else:
+        if role == "restaurant":
+            form = RestaurantRegistrationForm(
+                initial={'Email': request.user.email})
+        else:
+            form = DeliverymanForm(initial={'Email': request.user.email})
+
+    return render(request, "merchant/merchant_form_register.html", {"form": form})
 
 
 def merchant_form_signup(request):
@@ -146,6 +163,7 @@ def merchant_form_res_reg(request):
 def merchant_form_del_reg(request):
     pass
 
+
 @login_required
 @profile_none_required
 def merchant_res_reg_view(request):
@@ -157,13 +175,13 @@ def merchant_res_reg_view(request):
             restaurant = form.save(commit=False)
             restaurant.owner = request.user  # or however you link merchant
             restaurant.save()
-            messages.success(request, 'Your restaurant has been registered. Welcome aboard.')
+            messages.success(
+                request, 'Your restaurant has been registered. Welcome aboard.')
             return redirect('application-status')
     else:
         form = RestaurantRegistrationForm()
 
     return render(request, 'merchant/reg_restaurant.html', {'form': form})
-
 
     # Otherwise, general registration step
     if request.method == 'POST':

@@ -17,11 +17,9 @@ urlpatterns = [
     path("formlogin/", views.merchant_form_login, name='form_login'),
     path("formresreg/", views.merchant_form_res_reg, name='form_res_reg'),
     path("formdelreg/", views.merchant_form_del_reg, name='form_del_reg'),
-    path("register-merchant/", views.deliveryman_register_view,
+    path("register-merchant/", views.merchant_form_register_view,
          name='merchant_register'),
 
-    path("register-restaurant/", views.merchant_res_reg_view,
-         name='restaurant_register'),
     path("application-status/", views.application_status_view,
          name="application-status"),
 

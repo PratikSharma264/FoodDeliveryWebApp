@@ -5,7 +5,6 @@ from django.core.validators import RegexValidator
 from django.conf import settings
 from .models import Merchant, Restaurant, Deliveryman
 
-# Validators
 phone_validator = RegexValidator(
     regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
     message="Enter a valid Nepali mobile or landline number"
@@ -70,9 +69,7 @@ class MerchantForgotPasswordForm(forms.Form):
     )
 
 
-# -------------------------
-# Deliveryman Form
-# -------------------------
+
 class DeliverymanForm(forms.ModelForm):
     Firstname = forms.CharField(required=True, widget=forms.TextInput(attrs={'placeholder': 'Firstname', 'id': 'first-name'}))
     Lastname = forms.CharField(required=True, widget=forms.TextInput(attrs={'placeholder': 'Lastname', 'id': 'last-name'}))
@@ -103,16 +100,12 @@ class DeliverymanForm(forms.ModelForm):
                 field.widget.attrs.setdefault('required', 'required')
 
 
-# -------------------------
-# Restaurant Forms
-# -------------------------
 class RestaurantRegistrationForm(forms.ModelForm):
     class Meta:
         model = Restaurant
         fields = ['restaurant_name', 'restaurant_address', 'latitude', 'longitude',
                   'cuisine', 'description', 'profile_picture', 'cover_photo',
                   'owner_name', 'owner_contact', 'owner_email', 'menu', 'restaurant_type']
-        # Exclude 'user', 'created_at', 'approved' if you don't want them in the form
         exclude = ['user', 'created_at', 'approved']
 
 
