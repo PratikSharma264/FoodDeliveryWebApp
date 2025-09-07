@@ -24,16 +24,16 @@
             </div>
           </div>
           <div id="goback">
-            <a href=""><i class="fa-solid fa-circle-xmark"></i></a>
+            <a href="{% url 'home' %}"><i class="fa-solid fa-circle-xmark"></i></a>
           </div>
         </div>
         <div id="merchantreg-main">
-          <form action="{% url 'merchant_register' %}?role=restaurant" method="POST">
+          <form id="merchant-form" action="{% url 'merchant_register' %}?role=restaurant" method="POST"  novalidate>
             {% csrf_token %}
             <!-- hidden role field -->
-            <input type="hidden" name="role" value="restaurant" />
+            <input type="hidden" name="role" value="restaurant" />     
 
-              {% if form.errors %}
+              <!-- {% if form.errors %}
               <ul>
                 {% for field in form %}
                   {% for error in field.errors %}
@@ -41,7 +41,7 @@
                   {% endfor %}
                 {% endfor %}
               </ul>
-            {% endif %}
+            {% endif %} -->
             <div id="mainform">
               <div class="form-head">
                 <i class="fa-solid fa-circle-info"></i>
@@ -165,12 +165,13 @@
         </div>
 
        <div id="deliveryboyreg-main">
-  <form action="{% url 'merchant_register' %}?role=deliveryman" method="post" enctype="multipart/form-data">
+  <form id="deliveryman-form" action="{% url 'merchant_register' %}?role=deliveryman" method="post" enctype="multipart/form-data"  novalidate>
     {% csrf_token %}
     <!-- hidden role field -->
     <input type="hidden" name="role" value="deliveryman" />
 
-    {% if form.errors %}
+
+    <!-- {% if form.errors %}
       <div class="error-container">
         <ul>
           {% for field in form %}
@@ -185,7 +186,7 @@
           {% endfor %}
         </ul>
       </div>
-    {% endif %}
+    {% endif %} -->
     <div id="mainform">
       <div class="form-head">
         <i class="fa-solid fa-circle-info"></i>
@@ -344,10 +345,37 @@
     </div>
   </form>
 </div>
-
-        </div>
       </div>
+       <div id="card-container"></div>
     </main>
+
+{% if form.errors %}
+  {{ form.errors|json_script:"form-errors" }}
+{% endif %}
+
+    {% if messages %}
+  <script id="django-messages" type="application/json">
+    {
+      "errors": [
+        {% for message in messages %}
+          {% if message.tags == "error" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ],
+      "success": [
+        {% for message in messages %}
+          {% if message.tags == "success" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ]
+    }
+  </script>
+{% endif %}
+
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="{% static 'scripts/m_register.js' %}"></script>
