@@ -380,3 +380,12 @@ def lobby_view(request):
     except Restaurant.DoesNotExist:
         return redirect('deliveryman-dashboard')
     return render(request, 'merchant/dummy_lobby.html')
+
+
+
+def order_receive_view(request):
+    try:
+        profile = Restaurant.objects.get(user=request.user)
+    except Restaurant.DoesNotExist:
+        return redirect('deliveryman-dashboard')
+    return render(request, 'merchant/order_receive.html')

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Order Receiver</title>
+</head>
+<body>
+    <h1>Order Receiver</h1>
+
+    <div id="orders"></div>
+
+    <script>
+        const url = `ws://${window.location.host}/ws/socket-server/`;
+        const orderSocket = new WebSocket(url);
+
+        orderSocket.onopen = () => console.log("Connected to lobby messages");
+
+        orderSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            if (data.type === 'chat') {
+                const ordersDiv = document.getElementById('orders');
+                ordersDiv.insertAdjacentHTML('beforeend', `<p>${data.message}</p>`);
+            }
+        };
+    </script>
+</body>
+</html>

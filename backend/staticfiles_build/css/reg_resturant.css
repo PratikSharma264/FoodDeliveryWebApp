@@ -1,0 +1,481 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css?family=Montserrat:400,800");
+
+@font-face {
+  font-family: "florisha";
+  src: url("../fonts/florisha.otf") format("opentype");
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: "Qurova";
+  src: url("../fonts/QurovaSemiBold.otf") format("opentype");
+  font-weight: 800;
+  font-style: normal;
+}
+
+body {
+  margin: 0;
+  font-family: "Poppins", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7f7f7;
+  background-image: url("../images/fly.png");
+  background-repeat: no-repeat;
+  background-position: 103% 0%;
+}
+
+header {
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 150px;
+  flex-wrap: wrap;
+}
+
+#drop-btn {
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 100px;
+}
+
+#xmark {
+  display: none;
+}
+
+#xmark.active {
+  display: block;
+}
+
+#bar,
+#xmark {
+  transition: opacity 0.3s ease;
+}
+
+#logo-brand {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+#logo-brand h3 {
+  color: red;
+}
+
+#logo-brand i {
+  color: red;
+}
+
+.header-link {
+  max-height: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: max-height 1s ease, opacity 1s ease, visibility 0.5s;
+}
+
+.header-link.active {
+  max-height: 500px;
+  opacity: 1;
+  visibility: visible;
+}
+
+.header-link ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 150px;
+  justify-content: center;
+}
+
+.header-link ul li a {
+  text-decoration: none;
+  color: black;
+  font-size: 14px;
+  padding: 12px 20px;
+  display: block;
+  transition: background-color 0.3s ease;
+}
+
+.header-link ul li a:hover {
+  background-color: #555;
+  border-radius: 5px;
+  color: white;
+}
+
+.header-link ul li:last-child #mainjoin {
+  background-color: black;
+  color: white;
+  border-radius: 5px;
+}
+
+.header-link ul li:last-child #mainjoin:hover {
+  background-color: red;
+}
+
+#drop-btn i {
+  font-size: 20px;
+}
+
+#join {
+  position: relative;
+  display: inline-block;
+}
+
+#join ul {
+  display: none;
+  position: absolute;
+  gap: 0;
+  background-color: #f9f9f9;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+#join ul li a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+#join ul li a:hover {
+  background-color: #f1f1f1;
+}
+
+#join:hover ul {
+  display: block;
+  z-index: 999;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0px auto;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(45deg, #ff6f61, #ff9980);
+  z-index: -1;
+}
+
+.dropdown a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+.title {
+  font-size: 24px;
+  margin-bottom: 30px;
+  color: #faf3e0;
+  text-align: center;
+}
+
+.progress-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+}
+
+.progress-header {
+  position: relative;
+}
+
+#topicon {
+  font-size: 30px;
+  position: absolute;
+  left: 140px;
+  color: white;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  text-align: center;
+}
+
+.circle {
+  width: 40px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background-color: #ccc;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.step.current .circle {
+  background-color: #4caf50;
+  transform: scale(1.1);
+}
+
+.step.completed .circle {
+  background-color: #2196f3;
+}
+
+.step p {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.line {
+  height: 4px;
+  background-color: #ccc;
+  flex: 1;
+  margin: 0 10px;
+}
+
+.step.completed + .line {
+  background-color: #2196f3;
+}
+
+.step.current + .line {
+  background-color: #4caf50;
+}
+
+.form-container {
+  margin: 20px 50px;
+  background-color: rgb(214, 209, 209);
+  border-radius: 30px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  position: relative;
+}
+
+#main-form {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 40px 10px;
+  background-color: #f8f6f0;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(255, 255, 255, 0.1);
+}
+
+.info:nth-of-type(1) {
+  background: linear-gradient(135deg, #ffffff, #d3d3d3);
+}
+
+.info:nth-of-type(2) {
+  background: linear-gradient(135deg, #ffffff, #d3d3d3);
+}
+
+.info:nth-of-type(3) {
+  background: linear-gradient(135deg, #ffffff, #d3d3d3);
+}
+
+.head {
+  grid-column: 1 / -1;
+  text-align: center;
+  border: none;
+  display: flex;
+  justify-content: center;
+}
+
+.head div {
+  height: 150px;
+  aspect-ratio: 1;
+  margin-top: -60px;
+  border-radius: 50%;
+  border-right: 1px dotted white;
+  background-color: rgb(224, 209, 208);
+}
+
+.head div i {
+  margin-top: 25px;
+  font-size: 20px;
+  color: black;
+}
+
+.head div h3 {
+  margin-top: -4px;
+}
+
+.ip {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 50px;
+}
+
+.ip input {
+  margin-top: 3px;
+  height: 35px;
+  border-radius: 5px;
+  border: 0.7px solid grey;
+  outline: none;
+  padding-left: 7px;
+}
+
+#map {
+  height: 400px;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  grid-column: 1 / -1;
+}
+
+#lat,
+#lng {
+  width: 150px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  margin-top: 5px;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+.ip.mapcontainer {
+  grid-column: 1 / -1;
+}
+
+.coord-inputs {
+  display: flex;
+  gap: 10px;
+  padding: 0 50px;
+}
+
+.coord-inputs input {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px dotted #aaa;
+  font-style: italic;
+  color: #333;
+  width: 100px;
+  text-align: center;
+}
+
+.image-preview {
+  width: 100px;
+  height: 100px;
+  max-width: 300px;
+  margin-top: 10px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+#menu {
+  display: inline-block;
+  padding: 10px 15px;
+  background-color: rgb(197, 194, 194);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#menu:hover {
+  background-color: rgb(245, 252, 245);
+}
+
+.btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.btn button {
+  border: none;
+  border-radius: 5px;
+  height: 50px;
+  width: 100px;
+  background-color: rgb(250, 50, 36);
+  color: white;
+}
+
+.btn button:hover {
+  background-color: rgb(236, 16, 53);
+  cursor: pointer;
+}
+
+.form-step {
+  display: none;
+}
+.form-step.active {
+  display: block;
+}
+
+#business-plan-header {
+  text-align: center;
+  font-family: "florisha";
+}
+
+#business-plan-header h3 {
+  font-size: 30px;
+  color: white;
+}
+
+#business-plan-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  gap: 20px;
+}
+
+#business-plan-body label {
+  padding: 20px 20px;
+  background-color: white;
+  border-radius: 20px;
+  position: relative;
+  z-index: 999;
+}
+
+#business-plan-body label:first-child {
+  background: linear-gradient(135deg, #6a11cb, #2575fc);
+}
+
+#business-plan-body label:last-child {
+  background: linear-gradient(135deg, #ffeb99, #ffd700, #ffcc33);
+}
+
+#business-plan-body label:first-child:hover {
+  background: linear-gradient(135deg, #c21e56, #f78da7);
+}
+
+#business-plan-body label:last-child:hover {
+  background: linear-gradient(135deg, #8e2de2, #ff6ec4);
+}
+
+#business-plan-body input[type="radio"] {
+  transform: scale(1.5);
+}
+
+.plan-box h4 {
+  font-size: 30px;
+  text-align: center;
+  font-family: "Qurova";
+  font-weight: 800;
+  font-style: normal;
+}
+
+.icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  transform: translate(-50px, -50px);
+}
+
+.icon i {
+  font-size: 120px;
+  color: white;
+}

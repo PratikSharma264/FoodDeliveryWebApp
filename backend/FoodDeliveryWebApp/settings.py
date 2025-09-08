@@ -77,7 +77,7 @@ INSTALLED_APPS = [
     'channels'
 ]
 
-ASGI_APPLICATION = 'mywebsite.asgi.application'
+ASGI_APPLICATION = 'FoodDeliveryWebApp.asgi.application'
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
@@ -88,6 +88,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "FoodDeliveryWebApp.urls"
@@ -169,7 +170,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-
+STATIC_ROOT = BASE_DIR / "staticfiles_build"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -230,6 +232,13 @@ JAZZMIN_UI_TWEAKS = {
     },
 
 }
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
 
 LOGIN_URL = 'merchant-signin'
 
