@@ -227,12 +227,12 @@ h4 {
   letter-spacing: 0.5px;
 }
 
-#todashboard-wrapper div:first-child > span {
+#enabled-wrapper > span > i {
   color: #54ca1dff;
   font-size: 20px;
 }
 
-#todashboard-wrapper div:last-child > span {
+#disabled-wrapper > span > i {
   color: rgb(248, 24, 24);
   font-size: 20px;
 }

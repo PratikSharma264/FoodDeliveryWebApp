@@ -12,3 +12,7 @@ backend/media/bill_book_files/banana.jpg
 backend/media/bill_book_files/banana_VGMGaFP.jpg
 backend/media/user_images/banana.jpg
 backend/media/user_images/banana_ItaPe8m.jpg
+
+
+backend/media/restaurant/profile_pics/mango.webp
+backend/static/scripts/restaurant_dashboard.js

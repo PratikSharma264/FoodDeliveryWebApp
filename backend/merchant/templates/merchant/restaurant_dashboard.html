@@ -11,7 +11,7 @@
     />
     <link rel="stylesheet" href="{%static 'css/restaurant_dashboard.css'%}" />
     {% block styles %}{% endblock  %}
-    <script src="{%static 'css/restaurant_dashboard.js'%}" defer></script>
+    <script src="{%static 'scripts/restaurant_dashboard.js'%}" defer></script>
   </head>
   <body>
     <header>
@@ -64,7 +64,7 @@
           </li>
         </ul>
       </nav>
-      <div id="logout">
+      <div id="logout-container">
         <div id="circle">
           <img
             src="{%static 'images/burgerstill.png' %}"
@@ -74,12 +74,10 @@
           />
         </div>
         
-        <button>
-          <a href="{%url 'merchant-logout'%}">
+        <button type="button" id="logout">
           <span class="logout-icon"
             ><i class="fa-solid fa-right-from-bracket"></i></span
           ><span>logout</span>
-          </a >
         </button>
       
       </div>
@@ -103,18 +101,28 @@
         </div>
         <div>
           <div id="pp-container"> 
-            <img
-            src="{% static 'images/profilepic.png' %}"
-            alt="profilepic"
-            height="50"
-            width="50"
-          /></div>
+          {% if restaurant.profile_picture %}
+    <img
+      src="{{ restaurant.profile_picture.url }}"
+      alt="profilepic"
+      height="50"
+      width="50"
+    />
+  {% else %}
+    <img
+      src="{% static 'images/profilepic.png' %}"
+      alt="default profilepic"
+      height="50"
+      width="50"
+    />
+  {% endif %} 
+          </div>
          
           <h4>{{restaurant.restaurant_name}}</h4>
         </div>
       </div>
       {% block mainspace %}
-       <dv id="container-body">
+       <div id="container-body">
         <div id="business-statistics">
           <div class="statistics">
             <h4>Total Menus</h4>
@@ -167,42 +175,21 @@
             </div>
           </div>
         </div>
-        <!-- <div id="popular">
-          <h3>Popular Menu Dishes</h3>
-          <div id="popular-body">
-          <div class="popular-container">
-            <div><img src="../images/burger.jpg" alt="bug"></div>
-            <div>
-              <p>124</p>
-              <span
-                ><i class="fa-solid fa-up-long fa-increase"></i>
-                <span>12.5%</span></span
-              >
-            </div>
-          </div>
-             <div class="popular-container">
-            <div><img src="../images/dounut.jpg" alt="bug"></div>
-            <div>
-              <p>124</p>
-              <span
-                ><i class="fa-solid fa-up-long fa-increase"></i>
-                <span>12.5%</span></span
-              >
-            </div>
-             </div>
-             <div class="popular-container">
-            <div><img src="../images/food.png" alt="bug"></div>
-            <div>
-              <p>124</p>
-              <span
-                ><i class="fa-solid fa-up-long fa-increase"></i>
-                <span>12.5%</span></span
-              >
-            </div>
-          </div>
-          </div>
-        </div> -->
-      </dv> {% endblock %}
+      </div> {% endblock %}
+    </div>
+      <div id="revalidate-logout" class="hidden">
+      <div id="revalidate-content">
+        <p>Are you sure you want to logout?</p>
+        <form
+          id="decision-btn"
+          method="POST"
+          action="{% url 'merchant-logout' %}"
+        >
+          {% csrf_token %}
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
+      </div>
     </div>
     {% block scripts %}{% endblock  %}
   </body>
