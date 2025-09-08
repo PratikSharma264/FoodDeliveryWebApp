@@ -4,20 +4,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="{% static 'css/m_home.css' %}" />
     <title>Grubmate</title>
   </head>
   <body>
-    {% if messages %}
-    {% for message in messages %}
-      <div id="success-card" class="success-card">
-        <div class="card-content">
-          <p>{{ message }}</p>
-        </div>
+    {% if messages %} {% for message in messages %}
+    <div id="success-card" class="success-card">
+      <div class="card-content">
+        <p>{{ message }}</p>
       </div>
-    {% endfor %}
-  {% endif %}
+    </div>
+    {% endfor %} {% endif %}
 
     <header>
       <a href="{% url 'home' %}" id="logowrapper-link">
@@ -34,10 +35,10 @@
       </a>
       <div id="auth-registration">
         {% if user.is_authenticated %}
-          <a id="logout" href="{% url 'merchant-logout' %}">LogOut</a>
+        <button id="logout">LogOut</button>
         {% else %}
-          <a id="signin" href="{% url 'merchant-signin' %}">Sign in</a>
-          <a id="signup" href="{% url 'merchant-signup' %}">Sign up</a>
+        <a id="signin" href="{% url 'merchant-signin' %}">Sign in</a>
+        <a id="signup" href="{% url 'merchant-signup' %}">Sign up</a>
         {% endif %}
       </div>
     </header>
@@ -56,10 +57,16 @@
           <span>& Fresh Food</span>
         </h2>
         <p id="heroinfo-text">
-          Just confirm your order and enjoy our delicious <br />fastest delivery.
+          Just confirm your order and enjoy our delicious <br />fastest
+          delivery.
         </p>
         <div id="learnbtn">
-          <a href="#whyus-container"><button><span><i class="fa-solid fa-circle-info"></i></span> Learn about us</button></a>
+          <a href="#whyus-container"
+            ><button>
+              <span><i class="fa-solid fa-circle-info"></i></span> Learn about
+              us
+            </button></a
+          >
           <a href="#footer">
             <span>View Contact info</span>
             <span id="contacticon"><i class="fa-solid fa-message"></i></span>
@@ -82,12 +89,16 @@
       </div>
       <div id="registration-wrapper">
         <div id="register-merchant">
-          <a href="{% url 'merchant_register' %}?role=restaurant">Join as Restaurant</a>
+          <a href="{% url 'merchant_register' %}?role=restaurant"
+            >Join as Restaurant</a
+          >
           <p>Partner with Grubmate and grow your business</p>
           <p>0% commission for 1st month</p>
         </div>
         <div id="register-deliveryboy">
-          <a href="{% url 'merchant_register' %}?role=deliveryman">Join as Deliveryman</a>
+          <a href="{% url 'merchant_register' %}?role=deliveryman"
+            >Join as Deliveryman</a
+          >
           <p>Ride with pride</p>
           <p>Join our delivery fleet today and start earning weekly</p>
         </div>
@@ -98,23 +109,43 @@
         <h3>Why join Grubmate?</h3>
         <div id="aboutus">
           <p>
-            At <span>GrubMate</span> , we believe that great food brings people together. Founded in the heart of Nepal, our mission is to connect food lovers with their favorite local restaurants, cafes, and eateries—delivering delicious meals right to your doorstep, wherever you are. We understand the unique flavors and culinary diversity that Nepal has to offer, from the bustling streets of Kathmandu to the serene towns of Pokhara and beyond.
+            At <span>GrubMate</span> , we believe that great food brings people
+            together. Founded in the heart of Nepal, our mission is to connect
+            food lovers with their favorite local restaurants, cafes, and
+            eateries—delivering delicious meals right to your doorstep, wherever
+            you are. We understand the unique flavors and culinary diversity
+            that Nepal has to offer, from the bustling streets of Kathmandu to
+            the serene towns of Pokhara and beyond.
           </p>
-          <p>Our platform is designed to celebrate this diversity, making it easy for you to explore and enjoy a wide range of cuisines, whether you’re craving momos, dal bhat, Newari specialties, or international dishes.</p>
+          <p>
+            Our platform is designed to celebrate this diversity, making it easy
+            for you to explore and enjoy a wide range of cuisines, whether
+            you’re craving momos, dal bhat, Newari specialties, or international
+            dishes.
+          </p>
         </div>
         <div id="whyus-features">
           <div>
-            <span class="feature-logo"><i class="fa-solid fa-people-group"></i></span>
+            <span class="feature-logo"
+              ><i class="fa-solid fa-people-group"></i
+            ></span>
             <h4>Attract new customers</h4>
             <p>Reach the millions of people ordering on Grubmate</p>
           </div>
           <div>
-            <span class="feature-logo"><i class="fa-solid fa-truck-fast"></i></span>
+            <span class="feature-logo"
+              ><i class="fa-solid fa-truck-fast"></i
+            ></span>
             <h4>Safe delivery</h4>
-            <p>Easily get your orders delivered through our trained delivery personnel with realtime tracking.</p>
+            <p>
+              Easily get your orders delivered through our trained delivery
+              personnel with realtime tracking.
+            </p>
           </div>
           <div>
-            <span class="feature-logo"><i class="fa-solid fa-envelope"></i></span>
+            <span class="feature-logo"
+              ><i class="fa-solid fa-envelope"></i
+            ></span>
             <h4>Onboarding support</h4>
             <p>For any suppor, email us at supportgru8b@gmail.com</p>
           </div>
@@ -165,6 +196,20 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+    <div id="revalidate-logout" class="hidden">
+      <div id="revalidate-content">
+        <p>Are you sure you want to logout?</p>
+        <form
+          id="decision-btn"
+          method="POST"
+          action="{% url 'merchant-logout' %}"
+        >
+          {% csrf_token %}
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
       </div>
     </div>
     <footer id="footer">

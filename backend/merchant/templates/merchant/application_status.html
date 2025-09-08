@@ -5,58 +5,81 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Grubmate Application Status</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
     <link rel="stylesheet" href="{% static 'css/application_status.css' %}" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   </head>
   <body>
-    <div id="container">
-      <div id="main">
-        <div id="top">
-          <h4>#community</h4>
-          <span><i class="fa-solid fa-bell"></i></span>
-        </div>
-        <h1 id="status-info">
-          <!-- userid -->
-          {% if profile.approved %}
-            <span id="userid">#{{ profile.user }}</span>Your application <br />has been approved
-            <br />
-          {% else %}
-            <span id="userid">#{{ profile.user }}</span> We're still <br />processing
-            <br />Your application.
-          {% endif %}
-        </h1>
-        <div id="extra-info">
-          <div id="state">
-            {% if profile.approved %}
+    <main>
+      <div id="container">
+        <div id="main-content">
+          <div id="goback">
+            <a href="{% url 'home'%}"
+              ><i class="fa-solid fa-circle-arrow-left"></i
+            ></a>
+          </div>
+          <div id="top">
+            <h4>#community</h4>
+            <span><i class="fa-solid fa-bell"></i></span>
+          </div>
+          <div id="status-info-container">
+            <h1 id="status-info">
+              {% if profile.approved %}
+              <span id="userid">#{{ profile.user }}</span>Your application
+              <br />has been approved
+              <br />
+              {% else %}
+              <span id="userid">#{{profile.user}}</span> We're still processing
+              <br />Your application. {% endif %}
+            </h1>
+          </div>
+
+          <div id="extra-info">
+            <div id="state">
+              {% if profile.approved %}
               <div id="approved">
                 <span>Approved</span>
                 <span><i class="fa-solid fa-check"></i></span>
               </div>
-            {% else %}
+              {% else %}
               <div id="pending">
                 <span>Pending</span>
-                <span><span><i class="fa-solid fa-spinner fa-spin"></i></span></span>
+                <span
+                  ><span><i class="fa-solid fa-spinner fa-spin"></i></span>
+                </span>
               </div>
-            {% endif %}
+              {% endif %}
+            </div>
+            <div id="form-submitted-date">
+              <h3>Submitted Date: <span id="date">2082-01-25</span></h3>
+            </div>
           </div>
 
-          <h3>Submitted Date: <span id="date">{{ profile.created_at|date:'Y-m-d' }}</span></h3>
+          <div id="todashboard-wrapper">
+            {% if profile.approved %}
+            <div class="enabled-wrapper">
+              <a href="{%url 'deliveryman-dashboard'%}">Go to dashboard</a>
+              <span><i class="fa-solid fa-square-check"></i></span>
+            </div>
+            {% else %}
+            <div class="disabled-wrapper">
+              <a href="">Go to dashboard</a>
+              <span><i class="fa-solid fa-ban"></i></span>
+            </div>
+            {% endif %}
+          </div>
         </div>
-        <!-- email display -->
-        <div id="email">
-          <span><i class="fa-solid fa-circle-exclamation"></i></span>
-          <h3>check your email:</h3>
-          {% if profile.approved %}
-           <span><a href="{%url 'deliveryman-dashboard'%}">click here to go to dashboard</a></span>
-           {%else%}
-          <span>"{{ profile.user }}"</span>
-          {% endif %}
-               
+        <div id="vid-content">
+          <video
+            src="{% static 'videos/loading.mp4' %}"
+            autoplay
+            loop
+            muted
+          ></video>
         </div>
       </div>
-      <div id="vid">
-        <video src="{% static 'videos/loading.mp4' %}" autoplay loop muted></video>
-      </div>
-    </div>
+    </main>
   </body>
 </html>

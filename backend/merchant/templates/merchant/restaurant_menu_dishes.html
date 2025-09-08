@@ -1,6 +1,8 @@
 {% extends "merchant/restaurant_dashboard.html" %}
 {% load static %}
-{% block styles %} <link rel="stylesheet" href="{%static 'css/restaurant_menu_dishes.css'%}" />{% endblock  %}
+{% block styles %}
+ <link rel="stylesheet" href="{%static 'css/restaurant_menu_dishes.css'%}" />
+ {% endblock  %}
 {% block headcontent %}
 <div id="head-content">
           <h2>Your Menus</h2>
@@ -206,7 +208,7 @@
      
           
     {% endblock %}
-     {% block scripts %}<script src="{%static 'scripts/restaurant_menu_dishes.js'%}" defer></script>{% endblock  %}
+     {% block scripts %}<script src="{%static 'scripts/restaurant_menu_dishes.js'%}"></script>{% endblock  %}
 
 
 
