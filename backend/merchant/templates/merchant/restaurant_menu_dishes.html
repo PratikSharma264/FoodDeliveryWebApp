@@ -77,8 +77,21 @@
           <h2>Add New Item</h2>
           <form id="item-form" method="post" enctype="multipart/form-data" action="{% url 'restaurant-menu-dishes' %}">
   {% csrf_token %}
-  {{ form.non_field_errors }}
 
+  {% if form.errors %}
+  <div class="field-errors">
+    <ul>
+      {% for field in form %}
+        {% for error in field.errors %}
+          <li>{{ field.label }}: {{ error }}</li>
+        {% endfor %}
+      {% endfor %}
+      {% for error in form.non_field_errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
 
   <div class="form-body">
 
@@ -94,7 +107,6 @@
           value="{{ form.name.value|default_if_none:'' }}"
           required
         />
-        {% if form.name.errors %}<div class="field-errors">{{ form.name.errors }}</div>{% endif %}
       </div>
     </div>
 
@@ -110,7 +122,6 @@
           value="{{ form.price.value|default_if_none:'' }}"
           required
         />
-        {% if form.price.errors %}<div class="field-errors">{{ form.price.errors }}</div>{% endif %}
       </div>
     </div>
 
@@ -127,7 +138,6 @@
           value="{{ form.discount.value|default_if_none:'' }}"
           required
         />
-        {% if form.discount.errors %}<div class="field-errors">{{ form.discount.errors }}</div>{% endif %}
       </div>
     </div>
 
@@ -139,7 +149,6 @@
           <option value="nonveg" {% if form.veg_nonveg.value == "nonveg" %}selected{% endif %}>Non-veg</option>
         </select>
         <i class="fa-solid fa-square-caret-down"></i>
-        {% if form.veg_nonveg.errors %}<div class="field-errors">{{ form.veg_nonveg.errors }}</div>{% endif %}
       </div>
     </div>
 
@@ -152,7 +161,6 @@
           <option value="OUT_OF_STOCK" {% if form.availability_status.value == "OUT_OF_STOCK" %}selected{% endif %}>Out of Stock</option>
         </select>
         <i class="fa-solid fa-square-caret-down"></i>
-        {% if form.availability_status.errors %}<div class="field-errors">{{ form.availability_status.errors }}</div>{% endif %}
       </div>
     </div>
 
@@ -166,9 +174,7 @@
           accept="image/*"
           {% if not form.instance.pk %}required{% endif %}
         />
-        {% if form.profile_picture.errors %}<div class="field-errors">{{ form.profile_picture.errors }}</div>{% endif %}
 
-        <!-- optional preview for edit -->
         <div id="image-preview">
           {% if form.instance.profile_picture %}
             <img src="{{ form.instance.profile_picture.url }}" alt="{{ form.name.value }}" style="max-width:200px;display:block;margin-top:8px;">
@@ -186,11 +192,9 @@
           rows="4"
           required
         >{{ form.description.value|default_if_none:'' }}</textarea>
-        {% if form.description.errors %}<div class="field-errors">{{ form.description.errors }}</div>{% endif %}
       </div>
     </div>
 
-    <!-- hidden id for editing -->
     <div>
       <input type="hidden" id="item-id" name="item_id" value="{{ form.instance.pk|default_if_none:'' }}" />
     </div>
@@ -201,6 +205,7 @@
     <button id="additem-submit-btn" type="submit">Submit</button>
   </div>
 </form>
+
 
         </div>
       </div>

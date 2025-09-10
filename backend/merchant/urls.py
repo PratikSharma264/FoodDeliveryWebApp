@@ -11,9 +11,11 @@ urlpatterns = [
          name='merchant_reset_password'),
 
     #     path('dummy/', views.restaurant_register_view, name='dummy'),
-    path("restaurant-dashboard/", views.restaurant_dashboard, name='restaurant-dashboard'),
-       path("deliveryman-dashboard/", views.deliveryman_dashboard, name='deliveryman-dashboard'),
-  
+    path("restaurant-dashboard/", views.restaurant_dashboard,
+         name='restaurant-dashboard'),
+    path("deliveryman-dashboard/", views.deliveryman_dashboard,
+         name='deliveryman-dashboard'),
+
     path("register-merchant/", views.merchant_form_register_view,
          name='merchant_register'),
 
@@ -24,9 +26,17 @@ urlpatterns = [
     path("merchant/login/", views.merchant_login_view, name="merchant-signin"),
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
     path("lobby/", views.lobby_view, name='lobby'),
-     path('order-receive/', views.order_receive_view, name='order-receive'),
+    path('order-receive/', views.order_receive_view, name='order-receive'),
     path("restaurant-orders/", views.restaurant_orders, name='restaurant-orders'),
-    path("restaurant-menu-dishes/", views.restaurant_menu_dishes, name='restaurant-menu-dishes'),
-    path("restaurant-customers/", views.restaurant_customers, name='restaurant-customers'),
-    path("restaurant-settings/", views.restaurant_settings, name='restaurant-settings'),
+    path("restaurant-menu-dishes/", views.restaurant_menu_dishes,
+         name='restaurant-menu-dishes'),
+    path("restaurant-customers/", views.restaurant_customers,
+         name='restaurant-customers'),
+    path("restaurant-settings/", views.restaurant_settings,
+         name='restaurant-settings'),
+    path("check-deliveryman/", views.check_deliveryman_status,
+         name="check-deliveryman"),
+    path("update-restaurant-bio/<int:id>/",
+         views.update_restaurant_bio, name="update-restaurant-bio")
+
 ]

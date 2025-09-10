@@ -3,21 +3,21 @@
 
 @font-face {
   font-family: "rocketThunder";
-  src: url("../assests/fonts/RocketThunder.ttf") format("truetype");
+  src: url("../fonts/RocketThunder.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "heyam";
-  src: url("../assests/fonts/Heyam.ttf") format("truetype");
+  src: url("../fonts/Heyam.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "epic";
-  src: url("../assests/fonts/EpicPro.ttf") format("truetype");
+  src: url("../fonts/EpicPro.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
@@ -462,7 +462,6 @@ a#logowrapper-link {
   display: flex;
   align-items: center;
   margin-top: 50px;
-  display: none;
 }
 
 #emptymenu > div:last-child {

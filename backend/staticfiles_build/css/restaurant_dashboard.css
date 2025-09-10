@@ -3,41 +3,41 @@
 
 @font-face {
   font-family: "bulgatti";
-  src: url("../assests/fonts/Bulgatti.ttf") format("truetype");
+  src: url("../fonts/Bulgatti.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
 
 @font-face {
   font-family: "florisha";
-  src: url("../assests/fonts/florisha.otf") format("opentype");
+  src: url("../fonts/florisha.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "rocketThunder";
-  src: url("../assests/fonts/RocketThunder.ttf") format("truetype");
+  src: url("../fonts/RocketThunder.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "heyam";
-  src: url("../assests/fonts/Heyam.ttf") format("truetype");
+  src: url("../fonts/Heyam.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 
 @font-face {
   font-family: "epic";
-  src: url("../assests/fonts/EpicPro.ttf") format("truetype");
+  src: url("../fonts/EpicPro.ttf") format("truetype");
   font-weight: 500;
   font-style: normal;
 }
 @font-face {
   font-family: "eger";
-  src: url("../assests/fonts/EgerRegular.otf") format("opentype");
+  src: url("../fonts/EgerRegular.otf") format("opentype");
   font-weight: 500;
   font-style: normal;
 }
@@ -188,7 +188,7 @@ a#logowrapper-link {
   color: #fa0d0dff;
 }
 
-#logout {
+#logout-container {
   height: 300px;
   display: flex;
   position: relative;
@@ -216,7 +216,7 @@ a#logowrapper-link {
   z-index: -1;
 }
 
-#logout button {
+#logout-container button {
   padding: 15px;
   width: 120px;
   border: none;
@@ -228,11 +228,11 @@ a#logowrapper-link {
   font-size: 20px;
 }
 
-#logout button:hover {
+#logout-container button:hover {
   background-color: #ffffff;
 }
 
-#logout button:active {
+#logout-container button:active {
   background-color: #e0e0e0;
   box-shadow: inset 2px 2px 5px #aaa9a9ff, inset -1px -2px 10px #ffffff;
 }
@@ -240,6 +240,75 @@ a#logowrapper-link {
 .logout-icon {
   margin-right: 5px;
 }
+
+/* ------------------------- */
+
+#revalidate-logout.hidden {
+  display: none;
+}
+
+#revalidate-logout {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100vw;
+  background-color: rgba(0, 0, 0, 0.5); /* dark overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+#revalidate-content {
+  background-color: #fff;
+  width: 350px;
+  height: 300px;
+  border-radius: 15px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  padding: 30px;
+}
+
+#revalidate-content p {
+  font-family: "rocketThunder", sans-serif;
+  font-size: 30px;
+  margin-top: 40px;
+}
+
+#decision-btn button {
+  padding: 15px;
+  width: 120px;
+  border: none;
+  border-radius: 50px;
+  font-family: "Poppins";
+  background-color: #dadadaff;
+  box-shadow: -2px -2px 3px #ffffff, 3px 2px 5px #a5a4a4ff;
+  cursor: pointer;
+  font-family: "rocketThunder";
+  font-size: 20px;
+}
+
+button#yes-btn {
+  background-color: #4bcc47ff;
+}
+button#no-btn {
+  background-color: #f0270cff;
+}
+
+#decision-btn button:hover {
+  background-color: #e7e2e2ff;
+}
+
+#decision-btn button:active {
+  background-color: #e0e0e0;
+  box-shadow: inset 2px 2px 5px #aaa9a9ff, inset -1px -2px 10px #ffffff;
+}
+
+/* ------------------------- */
 
 .container {
   margin-left: 220px;
