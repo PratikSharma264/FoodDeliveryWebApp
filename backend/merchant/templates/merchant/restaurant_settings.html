@@ -1,20 +1,231 @@
-{% extends "merchant/restaurant_dashboard.html" %}
-{% load static %}
-{% block styles %} <link rel="stylesheet" href="{%static 'css/restaurant_settings.css'%}" />{% endblock  %}
+{% extends "merchant/restaurant_dashboard.html" %} 
+{% load static %} 
+{% block styles %}
+ <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="{% static 'css/restaurant_settings.css' %}" />
+{% endblock %} 
 {% block headcontent %}
 <div id="head-content">
-          <h2>Settings</h2>
-          <h4><span>"customize Settings"</span></h4>
+  <h2>Settings</h2>
+  <h4><span>"customize Settings"</span></h4>
+</div>
+{% endblock %} 
+{% block deactivate %}dashboard{% endblock %} 
+{% block activate_settings %}active{% endblock %} 
+{% block mainspace %}
+<div id="main-wrapper">
+  <div id="main-subwrapper">
+    <div id="main-container">
+      <div id="profilepic-container">
+      <div id="profilename-wrapper">
+        <h2>Name of the restaurant</h2>
+      </div>
+      <div id="profilepic">
+        <img src="{% static 'images/profilepic.png' %}" alt="">
+      </div>
+      <div id="changeprofilepic">
+        <button id="profilepicchangebtn">change profile picture</button>
+      </div>
+      </div>
+      <div id="profileinformation-container">
+        <div id="profileinfo-actual">
+          <div id="profileinfo-heading">
+        <h2>Bio and other details</h2>
+        <button id="RESTAURANTID" class="bioupdate-btn">Update Bio</button>
+      </div>
+      <div id="profileinfo-body">
+        <div class="profileinfo">
+          <h4>Owner Name</h4>
+          <h3>Sandesh Pandit Chhetri</h3>
         </div>
-  {% endblock  %}
-  {% block deactivate %}dashboard{% endblock  %}
-  {% block activate_settings %}active{% endblock  %}
-{% block mainspace %}    
-    {% endblock %}
-     {% block scripts %}<script src="{%static 'scripts/restaurant_settings.js'%}" defer></script>{% endblock  %}
+        <div class="profileinfo">
+          <h4>Owner Email</h4>
+          <h3>chhetrizerry7@gmail.com</h3>
+        </div>
+        <div class="profileinfo">
+          <h4>Owner Contact</h4>
+          <h3>9741668427</h3>
+        </div>
+        <div class="profileinfo">
+          <h4>Restaurant Address</h4>
+          <h3>Sanga, Kavre</h3>
+        </div>
+        <div class="profileinfo">
+          <h4>Restaurant Type</h4>
+          <h3>Local</h3>
+        </div>
+        <div class="profileinfo">
+          <h4>About Restaurant</h4>
+          <h3>Description about the resturant</h3>
+        </div>
+      </div>
+      </div>
+      
+      <!-- THIS FORM IS REPLACES THE ABOVE BLOCK -->
+      
+      <div class="profileinfo-hide" id="profileinfo-toupdate">
+          <div id="profileinfo-heading">
+        <h2>Update Bio and other details</h2>
+      </div>
+          <form id="profileinfo-body">
+                <div class="ip">
+                  <div>
+                    <label for="restaurant-name">Restaurant Name</label>
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      id="restaurant-name"
+                      name="restaurant-name"
+                      required
+                    />
+                  </div>
+                </div>
+        
+                <div class="ip">
+                  <div><label for="owner-name">Owner Name</label></div>
+                  <div>
+                    <input
+                      type="text"
+                      id="owner-name"
+                      name="owner-name"
+                      required
+                    />
+                  </div>
+                </div>
 
+                <div class="ip">
+                  <div><label for="email">Email Address</label></div>
+                  <div>
+                    <input type="email" id="email" name="email" required />
+                  </div>
+                </div>
 
+                <div class="ip">
+                  <div><label for="contact">Contact Number</label></div>
+                  <div>
+                    <input type="tel" id="contact" name="contact" required />
+                  </div>
+                </div>
 
+                <div class="ip">
+                  <div><label for="address">Restaurant Address</label></div>
+                  <div>
+                    <input type="text" id="address" name="address" required />
+                  </div>
+                </div>
 
+                <div class="ip">
+                  <div>
+                    <label for="restype">Business Type</label>
+                  </div>
+                  <div class="select-wrapper">
+                    <select id="restype" name="resturant_type" required>
+                      <option value="local">Local</option>
+                      <option value="fine_dining">Fine Dining</option>
+                    </select>
+                    <i class="fa-solid fa-square-caret-down"></i>
+                  </div>
+                </div>
+                <div class="ip description">
+                  <div>
+                    <label for="description">Restaurant Description</label>
+                  </div>
+                  <div>
+                    <textarea
+                      id="description"
+                      name="description"
+                      rows="4"
+                      required
+                    ></textarea>
+                  </div>
+                </div>
+                <div class="submit-wrapper" id="merchant-submit">
+                  <button id="cancel-update">Cancel</button>
+                  <button id="merchant-submit-btn">Submit</button>
+                </div>
+      </form>
+      </div>
+    </div>
+    </div>
+    <div id="map-container">
+      <form>
+         <div id="map-heading">
+        <h2>Address in map</h2>
+        <div>
+          <div class="ip">
+                  <div>
+                    <label for="lat">Latitude</label>
+                  </div>
+                  <div>
+                    <input type="text" id="lat" name="latitude" readonly />
+                  </div>
+                </div>
+               <div class="ip">
+                  <div>
+                    <label for="lng">Longitude</label>
+                  </div>
+                  <div>
+                    <input type="text" id="lng" ngname="longitude" readonly />
+                  </div>
+                </div>
+        </div>
+        <div id="map-update">
+          <button id="map-update-btn" type="button">Update Location</button>
+        </div>
+      </div>
+      </form>
+     
+      <div id="map"></div>
+    </div>
+  </div>
+  <div id="profilepicform-container" class="hidden">
+    <div id="profilepicform">
+      <span id="close-ppmodal">
+        <i class="fa-solid fa-circle-xmark"> </i>
+      </span>
+      <h2>Choose new profile picture</h2>
+       <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div id="image-container">
+                <div id="image-preview">
+                  <div id="previewinfo">
+                    <span><i class="fa-solid fa-image"></i></span>
+                    <h2>Preview</h2>
 
-
+                  </div>
+                  <img id="image-preview-img" src="#" alt="Image Preview" />
+                </div>
+                <div id="imageform">
+                    <label for="profile_picture">"Choose an image"</label>
+                    <input type="file" name="profile_picture" id="profile_picture" accept="image/*">
+                    <div class="picsubmit">
+                     <button type="submit" class="submit-btn">Upload</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+  </div>
+  <div id="revalidate-locationupdate" class="hidden">
+        <div id="revalidate-content">
+          <p>Are you sure you want to update the location?</p>
+          <form
+          id="decision-btn"
+          method="POST"
+        >
+          {% csrf_token %}
+          <input type="hidden" name="lat" id="updated-lat" value="">
+          <input type="hidden" name="lng" id="updated-lng" value="">
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
+        </div>
+      </div>
+  <div id="card-container"></div>
+</div>
+{% endblock %} 
+{% block scripts %}
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="{% static 'scripts/restaurant_settings.js' %}" defer></script>
+{% endblock %}

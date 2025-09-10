@@ -14,9 +14,10 @@ from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
 from .models import Merchant, Deliveryman, Restaurant, FoodItem
 from django.contrib.auth.forms import SetPasswordForm
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from functools import wraps
 from django.shortcuts import redirect
+
 
 
 def profile_none_required(view_func):
@@ -308,6 +309,28 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 @login_required
+def menu_update_view(request, pk):
+    try:
+        profile = Restaurant.objects.get(user=request.user)
+    except Restaurant.DoesNotExist:
+        return JsonResponse({"error": "Unauthorized"}, status=403)
+
+    item = get_object_or_404(FoodItem, pk=pk, restaurant=profile)
+
+    data = {
+        "id": item.id,
+        "name": item.name,
+        "price": str(item.price) if item.price is not None else "",
+        "discount": str(item.discount) if item.discount is not None else "0",
+        "veg_nonveg": item.veg_nonveg,
+        "availability_status": item.availability_status,
+        "profile_picture": item.profile_picture.url if item.profile_picture else None,
+        "description": item.description or "",
+    }
+
+    return JsonResponse(data)
+
+@login_required
 def restaurant_menu_dishes(request):
     try:
         profile = Restaurant.objects.get(user=request.user)
@@ -353,6 +376,23 @@ def restaurant_menu_dishes(request):
         "form": form,
         "foods": foods,
     })
+
+@login_required
+def delete_food_item(request):
+    if request.method == "POST":
+        try:
+            profile = Restaurant.objects.get(user=request.user)
+        except Restaurant.DoesNotExist:
+            return redirect('deliveryman-dashboard')
+
+        item_id = request.POST.get("item_id")
+        item = get_object_or_404(FoodItem, pk=item_id, restaurant=profile)
+        item.delete()
+        messages.success(request, "Item deleted successfully.")
+        return redirect("restaurant-menu-dishes")
+
+    
+    return redirect("restaurant-menu-dishes")
 
 @login_required
 def restaurant_customers(request):

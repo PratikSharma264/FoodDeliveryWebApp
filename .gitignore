@@ -8,11 +8,20 @@ backend/api/migrations/__pycache__/
 backend/merchant/migrations/__pycache__/
 backend/FoodDeliveryWebApp/__pycache__/
 
+backend/media/food_images/banana.jpg
+backend/media/food_images/mango.webp
+backend/media/food_images/mango_EB30bQC.webp
+backend/media/food_images/mango_EvGXZdq.webp
+backend/media/food_images/mango_KScT1Ud.webp
+backend/media/food_images/mango_MmBbT3R.webp
+backend/media/food_images/mango_YDTxw9R.webp
+backend/media/food_images/mango_hzlyEJf.webp
+backend/media/food_images/mango_jk6PRGQ.webp
+backend/media/food_images/mango_jlSuG7H.webp
+backend/media/food_images/mango_kvyskfB.webp
+backend/media/food_images/mango_uMy5kDH.webp
 backend/media/bill_book_files/banana.jpg
 backend/media/bill_book_files/banana_VGMGaFP.jpg
+backend/media/restaurant/profile_pics/mango.webp
 backend/media/user_images/banana.jpg
 backend/media/user_images/banana_ItaPe8m.jpg
-
-
-backend/media/restaurant/profile_pics/mango.webp
-backend/static/scripts/restaurant_dashboard.js

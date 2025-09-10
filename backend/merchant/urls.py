@@ -25,7 +25,9 @@ urlpatterns = [
     path("logout/", views.merchant_logout_view, name='merchant-logout'),
     path("lobby/", views.lobby_view, name='lobby'),
     path("restaurant-orders/", views.restaurant_orders, name='restaurant-orders'),
+    path("menu-dishes/update/<int:pk>/", views.menu_update_view, name="menu-update-view"),
     path("restaurant-menu-dishes/", views.restaurant_menu_dishes, name='restaurant-menu-dishes'),
+     path("menu-dishes/delete/", views.delete_food_item, name="delete-food-item"),
     path("restaurant-customers/", views.restaurant_customers, name='restaurant-customers'),
     path("restaurant-settings/", views.restaurant_settings, name='restaurant-settings'),
 ]
