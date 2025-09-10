@@ -1,222 +1,285 @@
 {% extends "merchant/restaurant_dashboard.html" %}
 {% load static %}
 {% block styles %}
- <link rel="stylesheet" href="{%static 'css/restaurant_menu_dishes.css'%}" />
- {% endblock  %}
+    <link rel="stylesheet" href="{% static 'css/restaurant_menu_dishes.css' %}" />
+{% endblock %}
 {% block headcontent %}
-<div id="head-content">
-          <h2>Your Menus</h2>
-          <h4><span>"customize your menus"</span></h4>
-        </div>
-  {% endblock  %}
-  {% block deactivate %}dashboard{% endblock  %}
-  {% block activate_menu_dishes %}active{% endblock  %}
-{% block mainspace %}    
-     <div id="container-body">
+    <div id="head-content">
+        <h2>Your Menus</h2>
+        <h4>
+            <span>"customize your menus"</span>
+        </h4>
+    </div>
+{% endblock %}
+{% block deactivate %}dashboard{% endblock %}
+{% block activate_menu_dishes %}active{% endblock %}
+{% block mainspace %}
+    <div id="container-body">
         <div id="current-menus-container">
-  <div id="currentmenu-header">
-    <h3>Your current menus</h3>
-    <button type="button" id="add-item-btn">Add items</button>
-  </div>
-
-  <div id="current-menus-wrapper">
-
-    {% if foods %}
-      {% for food in foods %}
-        <div class="current-menu-item">
-          <div class="update-currentitems" data-id="{{ food.id }}">
-            <i class="fa-solid fa-square-pen"></i>
-          </div>
-          <div class="delete-currentitems" data-id="{{ food.id }}">
-            <i class="fa-solid fa-circle-xmark"></i>
-          </div>
-          <h4 class="currentmenuitem-id">#{{ food.id }}</h4>
-          <div class="currentmenuitem-pp">
-            {% if food.profile_picture %}
-              <img src="{{ food.profile_picture }}" alt="{{ food.name }}" />
-            {% else %}
-              <img src="{% static 'images/placeholder.png' %}" alt="No image" />
-            {% endif %}
-          </div>
-          <h3 class="currentmenuitem-name">{{ food.name }}</h3>
-          <div class="currentmenuitem-pricing">
-            <span>{{ food.price }}</span>
-            <span>{{ food.discount }}%</span>
-          </div>
-          <h4 class="currentmenuitem-category">{{ food.veg_nonveg }}</h4>
-          <div class="currentmenuitem-description">
-            <p>{{ food.description }}</p>
-          </div>
-          <h4 class="currentmenuitem-availability">{{ food.availability_status }}</h4>
+            <div id="currentmenu-header">
+                <h3>Your current menus</h3>
+                <button type="button" id="add-item-btn">Add items</button>
+            </div>
+            <div id="current-menus-wrapper">
+                {% if foods %}
+                    {% for food in foods %}
+                        <div class="current-menu-item">
+                            <div class="update-currentitems" id="{{ food.id }}">
+                                <i class="fa-solid fa-square-pen"></i>
+                            </div>
+                            <div class="delete-currentitems" id="{{ food.id }}">
+                                <i class="fa-solid fa-circle-xmark"></i>
+                            </div>
+                            <h4 class="currentmenuitem-id">#{{ food.id }}</h4>
+                            <div class="currentmenuitem-pp">
+                                {% if food.profile_picture %}
+                                    <img src="{{ food.profile_picture }}" alt="{{ food.name }}" />
+                                {% else %}
+                                    <img src="{% static 'images/placeholder.png' %}" alt="No image" />
+                                {% endif %}
+                            </div>
+                            <h3 class="currentmenuitem-name">{{ food.name }}</h3>
+                            <div class="currentmenuitem-pricing">
+                                <span>{{ food.price }}</span>
+                                <span>{{ food.discount }}%</span>
+                            </div>
+                            <h4 class="currentmenuitem-category">{{ food.veg_nonveg }}</h4>
+                            <div class="currentmenuitem-description">
+                                <p>{{ food.description }}</p>
+                            </div>
+                            <h4 class="currentmenuitem-availability">{{ food.availability_status }}</h4>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div id="emptymenu">
+                        <div id="pointingup">
+                            <img src="{% static 'images/pointingup.png' %}" alt="" />
+                        </div>
+                        <div id="crossimg">
+                            <img src="{% static 'images/cross.png' %}" alt="" />
+                        </div>
+                        <div>
+                            <p>No items in your menu! Click on "Add items" button.</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
         </div>
-      {% endfor %}
-    {% else %}
-      <div id="emptymenu">
-        <div id="pointingup">
-          <img src="{% static 'images/pointingup.png' %}" alt="" />
-        </div>
-        <div id="crossimg">
-          <img src="{% static 'images/cross.png' %}" alt="" />
-        </div>
-        <div>
-          <p>
-            No items in your menu! Click on "Add items" button.
-          </p>
-        </div>
-      </div>
-    {% endif %}
-
-  </div>
-        </div>
-      </div>
-      <div id="additem-modal" class="hidden">
+    </div>
+    <div id="additem-modal" class="hidden">
+      <div id="card-container"></div>
         <div id="additem-content">
-          <span id="close-modal">
-            <i class="fa-solid fa-circle-xmark"> </i>
-          </span>
-          <h2>Add New Item</h2>
-          <form id="item-form" method="post" enctype="multipart/form-data" action="{% url 'restaurant-menu-dishes' %}">
-  {% csrf_token %}
-
-  {% if form.errors %}
+            <span id="close-modal">
+                <i class="fa-solid fa-circle-xmark"> </i>
+            </span>
+            <h2>Add New Item</h2>
+            <form id="item-form"
+                  method="post"
+                  enctype="multipart/form-data"
+                  action="{% url 'restaurant-menu-dishes' %}"
+                  novalidate>
+                {% csrf_token %}
+                <!-- {{ form.non_field_errors }} -->
+                <div class="form-body">
+                    <div class="ip">
+                        <div>
+                            <label for="item-name">Item Name</label>
+                        </div>
+                        <div>
+                            <input type="text"
+                                   id="item-name"
+                                   name="name"
+                                   value="{{ form.name.value|default_if_none:'' }}"
+                                   required />
+                            <!-- {% if form.name.errors %}<div class="field-errors">{{ form.name.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <div class="ip">
+                        <div>
+                            <label for="price">Price</label>
+                        </div>
+                        <div>
+                            <input type="number"
+                                   min="0"
+                                   step="0.01"
+                                   id="price"
+                                   name="price"
+                                   value="{{ form.price.value|default_if_none:'' }}"
+                                   required />
+                            <!-- {% if form.price.errors %}<div class="field-errors">{{ form.price.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <div class="ip">
+                        <div>
+                            <label for="discount">Discount percent</label>
+                        </div>
+                        <div>
+                            <input type="number"
+                                   min="0"
+                                   max="100"
+                                   step="0.01"
+                                   id="discount"
+                                   name="discount"
+                                   value="{{ form.discount.value|default_if_none:'' }}"
+                                   required />
+                            <!-- {% if form.discount.errors %}<div class="field-errors">{{ form.discount.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <div class="ip">
+                        <div>
+                            <label for="category">Item Category</label>
+                        </div>
+                        <div class="select-wrapper">
+                            <select name="veg_nonveg" id="category" required>
+                                <option value="veg"
+                                        {% if form.veg_nonveg.value == "veg" %}selected{% endif %}>Veg</option>
+                                <option value="nonveg"
+                                        {% if form.veg_nonveg.value == "nonveg" %}selected{% endif %}>Non-veg</option>
+                            </select>
+                            <i class="fa-solid fa-square-caret-down"></i>
+                            <!-- {% if form.veg_nonveg.errors %}<div class="field-errors">{{ form.veg_nonveg.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <div class="ip">
+                        <div>
+                            <label for="availability">Availability</label>
+                        </div>
+                        <div class="select-wrapper">
+                            <select name="availability_status" id="availability" required>
+                                <option value="AVAILABLE"
+                                        {% if form.availability_status.value == "AVAILABLE" %}selected{% endif %}>
+                                    Available
+                                </option>
+                                <option value="LOW_STOCK"
+                                        {% if form.availability_status.value == "LOW_STOCK" %}selected{% endif %}>
+                                    Low Stock
+                                </option>
+                                <option value="OUT_OF_STOCK"
+                                        {% if form.availability_status.value == "OUT_OF_STOCK" %}selected{% endif %}>
+                                    Out of Stock
+                                </option>
+                            </select>
+                            <i class="fa-solid fa-square-caret-down"></i>
+                            <!-- {% if form.availability_status.errors %}<div class="field-errors">{{ form.availability_status.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <div class="ip">
+                        <div>
+                            <label for="item-image">Item Image</label>
+                        </div>
+                        <div>
+                            <input type="file"
+                                   id="item-image"
+                                   name="profile_picture"
+                                   accept="image/*"
+                                   style=" width: 250px;"
+                                   {% if not form.instance.pk %}required{% endif %} />
+                            <!-- {% if form.profile_picture.errors %}<div class="field-errors">{{ form.profile_picture.errors }}</div>{% endif %} -->
+                            <!-- optional preview for edit -->
+                            <div id="image-preview">
+                                {% if form.instance.profile_picture %}
+                                    <img src="{{ form.instance.profile_picture.url }}"
+                                         alt="{{ form.name.value }}"
+                                         style="max-width:200px;
+                                                display:block;
+                                                margin-top:8px">
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ip description">
+                        <div>
+                            <label for="description">Restaurant Description</label>
+                        </div>
+                        <div>
+                            <textarea id="description" name="description" rows="4" required>{{ form.description.value|default_if_none:'' }}</textarea>
+                            <!-- {% if form.description.errors %}<div class="field-errors">{{ form.description.errors }}</div>{% endif %} -->
+                        </div>
+                    </div>
+                    <!-- hidden id for editing -->
+                    <div>
+                        <input type="hidden"
+                               id="item-id"
+                               name="item_id"
+                               value="{{ form.instance.pk|default_if_none:'' }}" />
+                    </div>
+                </div>
+                <div class="submit-wrapper" id="additem-submit">
+                    <button id="additem-submit-btn" type="submit">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+     <div id="revalidate-delete" class="hidden">
+        <div id="revalidate-content">
+          <span id="close-revalidate-popup"
+            ><i class="fa-solid fa-circle-xmark"></i
+          ></span>
+          <p>Are you sure you want to delete the item?</p>
+          <form
+          id="decision-btn"
+          method="POST"
+          action="{% url 'delete-food-item' %}"
+        >
+        
+          {% csrf_token %}
+          <input type="hidden" name="item_id" id="item-to-delete" value="">
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
+        </div>
+      </div>
+       <div id="revalidate-logout" class="hidden">
+      <div id="revalidate-content">
+        <p>Are you sure you want to logout?</p>
+        <form
+          id="decision-btn"
+          method="POST"
+          action="{% url 'merchant-logout' %}"
+        >
+          {% csrf_token %}
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
+      </div>
+    </div>
+    <!-- {% if form.errors %}
   <div class="field-errors">
     <ul>
       {% for field in form %}
-        {% for error in field.errors %}
-          <li>{{ field.label }}: {{ error }}</li>
-        {% endfor %}
+        {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
       {% endfor %}
-      {% for error in form.non_field_errors %}
-        <li>{{ error }}</li>
-      {% endfor %}
+      {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
     </ul>
   </div>
-  {% endif %}
-
-  <div class="form-body">
-
-    <div class="ip">
-      <div>
-        <label for="item-name">Item Name</label>
-      </div>
-      <div>
-        <input
-          type="text"
-          id="item-name"
-          name="name"
-          value="{{ form.name.value|default_if_none:'' }}"
-          required
-        />
-      </div>
-    </div>
-
-    <div class="ip">
-      <div><label for="price">Price</label></div>
-      <div>
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          id="price"
-          name="price"
-          value="{{ form.price.value|default_if_none:'' }}"
-          required
-        />
-      </div>
-    </div>
-
-    <div class="ip">
-      <div><label for="discount">Discount percent</label></div>
-      <div>
-        <input
-          type="number"
-          min="0"
-          max="100"
-          step="0.01"
-          id="discount"
-          name="discount"
-          value="{{ form.discount.value|default_if_none:'' }}"
-          required
-        />
-      </div>
-    </div>
-
-    <div class="ip">
-      <div><label for="category">Item Category</label></div>
-      <div class="select-wrapper">
-        <select name="veg_nonveg" id="category" required>
-          <option value="veg" {% if form.veg_nonveg.value == "veg" %}selected{% endif %}>Veg</option>
-          <option value="nonveg" {% if form.veg_nonveg.value == "nonveg" %}selected{% endif %}>Non-veg</option>
-        </select>
-        <i class="fa-solid fa-square-caret-down"></i>
-      </div>
-    </div>
-
-    <div class="ip">
-      <div><label for="availability">Availability</label></div>
-      <div class="select-wrapper">
-        <select name="availability_status" id="availability" required>
-          <option value="AVAILABLE" {% if form.availability_status.value == "AVAILABLE" %}selected{% endif %}>Available</option>
-          <option value="LOW_STOCK" {% if form.availability_status.value == "LOW_STOCK" %}selected{% endif %}>Low Stock</option>
-          <option value="OUT_OF_STOCK" {% if form.availability_status.value == "OUT_OF_STOCK" %}selected{% endif %}>Out of Stock</option>
-        </select>
-        <i class="fa-solid fa-square-caret-down"></i>
-      </div>
-    </div>
-
-    <div class="ip">
-      <div><label for="item-image">Item Image</label></div>
-      <div>
-        <input
-          type="file"
-          id="item-image"
-          name="profile_picture"
-          accept="image/*"
-          {% if not form.instance.pk %}required{% endif %}
-        />
-
-        <div id="image-preview">
-          {% if form.instance.profile_picture %}
-            <img src="{{ form.instance.profile_picture.url }}" alt="{{ form.name.value }}" style="max-width:200px;display:block;margin-top:8px;">
+{% endif %} -->
+    
+  {% if form.errors %}
+        {{ form.errors|json_script:"form-errors" }}
+    {% endif %}
+    {% if messages %}
+        <script id="django-messages" type="application/json">
+    {
+      "errors": [
+        {% for message in messages %}
+          {% if message.tags == "error" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
           {% endif %}
-        </div>
-      </div>
-    </div>
-
-    <div class="ip description">
-      <div><label for="description">Restaurant Description</label></div>
-      <div>
-        <textarea
-          id="description"
-          name="description"
-          rows="4"
-          required
-        >{{ form.description.value|default_if_none:'' }}</textarea>
-      </div>
-    </div>
-
-    <div>
-      <input type="hidden" id="item-id" name="item_id" value="{{ form.instance.pk|default_if_none:'' }}" />
-    </div>
-
-  </div>
-
-  <div class="submit-wrapper" id="additem-submit">
-    <button id="additem-submit-btn" type="submit">Submit</button>
-  </div>
-</form>
-
-
-        </div>
-      </div>
-
-     
-          
-    {% endblock %}
-     {% block scripts %}<script src="{%static 'scripts/restaurant_menu_dishes.js'%}"></script>{% endblock  %}
-
-
-
-
-
-
+        {% endfor %}
+      ],
+      "success": [
+        {% for message in messages %}
+          {% if message.tags == "success" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ]
+    }
+        </script>
+    {% endif %}
+{% endblock %}
+{% block scripts %}
+    <script src="{%static 'scripts/restaurant_menu_dishes.js'%}"></script>
+{% endblock %}

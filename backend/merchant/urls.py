@@ -28,6 +28,7 @@ urlpatterns = [
     path("lobby/", views.lobby_view, name='lobby'),
     path('order-receive/', views.order_receive_view, name='order-receive'),
     path("restaurant-orders/", views.restaurant_orders, name='restaurant-orders'),
+<<<<<<< HEAD
     path("restaurant-menu-dishes/", views.restaurant_menu_dishes,
          name='restaurant-menu-dishes'),
     path("restaurant-customers/", views.restaurant_customers,
@@ -39,4 +40,11 @@ urlpatterns = [
     path("update-restaurant-bio/<int:id>/",
          views.update_restaurant_bio, name="update-restaurant-bio")
 
+=======
+    path("menu-dishes/update/<int:pk>/", views.menu_update_view, name="menu-update-view"),
+    path("restaurant-menu-dishes/", views.restaurant_menu_dishes, name='restaurant-menu-dishes'),
+     path("menu-dishes/delete/", views.delete_food_item, name="delete-food-item"),
+    path("restaurant-customers/", views.restaurant_customers, name='restaurant-customers'),
+    path("restaurant-settings/", views.restaurant_settings, name='restaurant-settings'),
+>>>>>>> 6c257125e04be2a2e0d3b2de73084cfd1ab1f3e6
 ]
