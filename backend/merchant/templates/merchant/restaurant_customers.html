@@ -1,4 +1,4 @@
-{% extends "merchant/restaurant_dashboard.html" %}
+{% extends "merchant/merchant_templates_base.html" %}
 {% load static %}
 {% block styles %} <link rel="stylesheet" href="{%static 'css/restaurant_customers.css'%}" />{% endblock  %}
 {% block headcontent %}
@@ -7,7 +7,6 @@
           <h4><span>"Your Customers"</span></h4>
         </div>
   {% endblock  %}
-  {% block deactivate %}dashboard{% endblock  %}
   {% block activate_customers %}active{% endblock  %}
 {% block mainspace %}    
     {% endblock %}

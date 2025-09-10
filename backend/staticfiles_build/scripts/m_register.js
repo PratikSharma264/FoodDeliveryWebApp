@@ -196,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   mform.addEventListener("submit", (e) => {
     mregerrors.length = 0;
-    console.log("there");
+
     const restaurant_name = document
       .getElementById("restaurant-name")
       .value.trim();

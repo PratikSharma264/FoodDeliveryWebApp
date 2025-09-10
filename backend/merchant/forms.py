@@ -141,23 +141,31 @@ class FoodItemForm(forms.ModelForm):
         ]
 
 
+
 class RestaurantBioUpdateForm(forms.ModelForm):
     class Meta:
         model = Restaurant
-        fields = ['restaurant_name', 'restaurant_address',
-                  'description', 'owner_name', 'owner_contact', 'owner_email',  'restaurant_type']
-        exclude = ['user', 'created_at', 'latitude', 'longitude',
-                   'profile_picture', 'cover_photo', 'menu', 'cuisine', 'approved']
+        fields = [
+            'restaurant_name',
+            'restaurant_address',
+            'description',
+            'owner_name',
+            'owner_contact',
+            'owner_email',
+            'restaurant_type',
+        ]
 
 
 class RestaurantProfilePicUpdateForm(forms.ModelForm):
     class Meta:
         model = Restaurant
         fields = ['profile_picture']
-        exclude = ['user', 'created_at', 'latitude', 'longitude',
-                   'cover_photo', 'menu', 'cuisine', 'approved', 'restaurant_name', 'restaurant_address',
-                   'description', 'owner_name', 'owner_contact', 'owner_email',  'restaurant_type']
 
+
+class RestaurantLocationUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Restaurant
+        fields = ['latitude', 'longitude']
 
 # class BusinessPlanForm(forms.ModelForm):
 #     class Meta:

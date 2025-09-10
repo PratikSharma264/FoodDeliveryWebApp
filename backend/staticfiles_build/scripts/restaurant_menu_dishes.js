@@ -1,315 +1,196 @@
-// const foods = [
-//   {
-//     id: 1,
-//     name: "Margherita Pizza",
-//     price: 9.99,
-//     discount: 0,
-//     description: "Classic pizza with tomatoes, mozzarella, and basil",
-//     category: "veg",
-//     image:
-//       "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 2,
-//     name: "Pepperoni Pizza",
-//     price: 11.99,
-//     discount: 0,
-//     description: "Pepperoni, cheese, and tomato sauce",
-//     category: "non-veg",
-//     image:
-//       "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 3,
-//     name: "California Roll",
-//     price: 7.49,
-//     discount: 10,
-//     description: "Crab, avocado, and cucumber",
-//     category: "non-veg",
-//     image:
-//       "https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 4,
-//     name: "Spicy Tuna Roll",
-//     price: 8.99,
-//     discount: 0,
-//     description: "Tuna with spicy mayo",
-//     category: "non-veg",
-//     image:
-//       "https://plus.unsplash.com/premium_photo-1712949141720-6ddee2bde0bf?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "outofstock",
-//   },
-//   {
-//     id: 5,
-//     name: "Beef Taco",
-//     price: 3.99,
-//     discount: 5,
-//     description: "Ground beef, lettuce, cheese, and salsa",
-//     category: "non-veg",
-//     image:
-//       "https://plus.unsplash.com/premium_photo-1664391890333-b6708e34b021?q=80&w=729&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 6,
-//     name: "Chicken Quesadilla",
-//     price: 6.49,
-//     discount: 0,
-//     description: "Grilled chicken with cheese in a tortilla",
-//     category: "non-veg",
-//     image:
-//       "https://images.unsplash.com/photo-1628430044262-fb84cffbb744?q=80&w=871&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 7,
-//     name: "BBQ Chicken Pizza",
-//     price: 12.49,
-//     discount: 0,
-//     description: "Grilled chicken, BBQ sauce, onions, and mozzarella",
-//     category: "non-veg",
-//     image:
-//       "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=481&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "lowstock",
-//   },
-//   {
-//     id: 8,
-//     name: "Shrimp Tempura Roll",
-//     price: 9.25,
-//     discount: 0,
-//     description: "Shrimp tempura, avocado, and eel sauce",
-//     category: "non-veg",
-//     image:
-//       "https://images.unsplash.com/photo-1570078362689-c57c33cca104?q=80&w=436&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 9,
-//     name: "Carnitas Taco",
-//     price: 4.49,
-//     discount: 0,
-//     description: "Slow-cooked pork with onion and cilantro",
-//     category: "non-veg",
-//     image:
-//       "https://plus.unsplash.com/premium_photo-1678051386853-5623e723745a?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "outofstock",
-//   },
-//   {
-//     id: 10,
-//     name: "Veggie Quesadilla",
-//     price: 5.99,
-//     discount: 0,
-//     description: "Grilled vegetables and cheese in a tortilla",
-//     category: "veg",
-//     image:
-//       "https://images.unsplash.com/photo-1708388064941-de7a9f879bf9?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 11,
-//     name: "Four Cheese Pizza",
-//     price: 10.99,
-//     discount: 0,
-//     description: "Mozzarella, cheddar, parmesan, and gorgonzola",
-//     category: "veg",
-//     image:
-//       "https://plus.unsplash.com/premium_photo-1691911162192-f4a5cd1b7403?q=80&w=387&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "available",
-//   },
-//   {
-//     id: 12,
-//     name: "Dragon Roll",
-//     price: 10.49,
-//     discount: 0,
-//     description: "Eel, cucumber, avocado, and tobiko",
-//     category: "non-veg",
-//     image:
-//       "https://images.unsplash.com/photo-1712192674556-4a89f20240c1?q=80&w=774&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-//     availability: "outofstock",
-//   },
-// ];
-
-let itemToDeleteId = null;
-let foodss = null;
-
 const addItemBtn = document.querySelector("#currentmenu-header button");
 const modal = document.getElementById("additem-modal");
 const closeModalBtn = document.getElementById("close-modal");
 
 addItemBtn.addEventListener("click", () => {
+  document.getElementById("item-name").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("discount").value = "";
+  document.getElementById("category").value = "";
+  document.getElementById("availability").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("item-id").value = "";
   modal.classList.remove("hidden");
   document.body.style.overflow = "hidden";
 });
 
 closeModalBtn.addEventListener("click", () => {
+  document.getElementById("item-name").value = "";
+  document.getElementById("price").value = "";
+  document.getElementById("discount").value = "";
+  document.getElementById("category").value = "";
+  document.getElementById("availability").value = "";
+  document.getElementById("description").value = "";
+  document.getElementById("item-id").value = "";
   modal.classList.add("hidden");
   document.body.style.overflow = "auto";
 });
 
-// document.getElementById("item-form").addEventListener("submit", async (e) => {
-//   e.preventDefault();
-//     const name = document.getElementById("item-name").value;
-//     const price = document.getElementById("price").value;
-//     const discount = parseInt(document.getElementById("discount").value);
-//     const category = document.getElementById("category").value;
-//     const availability = document.getElementById("availability").value;
-//     const image = document.getElementById("item-image").value;
-//     const description = document.getElementById("description").value;
+document.addEventListener("DOMContentLoaded", (e) => {
+  const updateBtns = document.querySelectorAll(".update-currentitems");
+  const itemForm = document.getElementById("item-form");
 
-//     const foodItem = {
-//       name,
-//       price,
-//       discount,
-//       description,
-//       category,
-//       image,
-//       availability,
-//     };
-//   });
+  updateBtns.forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      const foodId = parseInt(e.currentTarget.getAttribute("id"));
+      console.log("FOODID:", foodId);
+      const response = await fetch(
+        `http://127.0.0.1:8000/menu-dishes/update/${foodId}`
+      );
+      const data = await response.json();
 
-// const updatebtns = document.querySelectorAll(".update-currentitems");
-
-// updatebtns.forEach((btn) => {
-//   btn.addEventListener("click", (e) => {
-//     const foodId = parseInt(e.currentTarget.dataset.id); // instead of getAttribute("id")
-//     console.log("Edit:", foodId);
-//     // TODO: fetch the food data via Ajax or populate modal with Django form
-//   });
-// });
-
-// deletebtns.forEach((btn) => {
-//   btn.addEventListener("click", (e) => {
-//     const foodId = parseInt(e.currentTarget.dataset.id); // fix here too
-//     console.log("Delete:", foodId);
-//     itemToDeleteId = foodId;
-//     revalidatecontainer.classList.remove("hidden");
-//     document.body.style.overflow = "hidden";
-//   });
-// });
-// Use event delegation on container
-container.addEventListener("click", (e) => {
-  // Edit button
-  if (e.target.closest(".update-currentitems")) {
-    const foodId = parseInt(
-      e.target.closest(".update-currentitems").dataset.id
-    );
-    console.log("Edit:", foodId);
-    // TODO: populate form with foodId’s data and open modal
-  }
-
-  // Delete button
-  if (e.target.closest(".delete-currentitems")) {
-    const foodId = parseInt(
-      e.target.closest(".delete-currentitems").dataset.id
-    );
-    console.log("Delete:", foodId);
-    itemToDeleteId = foodId;
-    revalidatecontainer.classList.remove("hidden");
-    document.body.style.overflow = "hidden";
-  }
-});
-
-document.getElementById("item-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const id = parseInt(document.getElementById("item-id").value);
-  const name = document.getElementById("item-name").value;
-  const price = parseFloat(document.getElementById("price").value);
-  const discount = parseInt(document.getElementById("discount").value);
-  const description = document.getElementById("description").value;
-  const category = document.getElementById("category").value;
-  const image = document.getElementById("item-image").value;
-  const availability = document.getElementById("availability").value;
-
-  const foodItem = {
-    id,
-    name,
-    price,
-    discount,
-    description,
-    category,
-    image,
-    availability,
-  };
-
-  const existingIndex = foods.findIndex((f) => f.id === id);
-
-  if (existingIndex !== -1) {
-    (url = ""), (method = "PUT");
-  } else {
-    (url = ""), (method = "POST");
-  }
-
-  try {
-    const response = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(foodItem),
+      document.getElementById("item-name").value = data.name;
+      document.getElementById("price").value = data.price;
+      document.getElementById("discount").value = data.discount;
+      document.getElementById("category").value = data.veg_nonveg;
+      document.getElementById("availability").value = data.availability_status;
+      document.getElementById("description").value = data.description;
+      document.getElementById("item-id").value = data.id;
+      //   if (data.profile_picture) {
+      //     const imageUrl = data.profile_picture;
+      //     const fileName = imageUrl.split("/").pop();
+      //     document.getElementById("image-preview").innerHTML = fileName;
+      //   }
+      document.getElementById("additem-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
     });
-    if (!response.ok || response.status !== 200) {
-      throw new Error("Failed to save data.");
-    }
-    const updatedData = response.json();
-
-    if (method === "PUT") {
-      foods[existingIndex] = updatedData;
-    } else {
-      foods.push(updatedData);
-    }
-
-    renderFood();
-    modal.classList.add("hidden");
-    document.body.style.overflow = "auto";
-  } catch (err) {
-    console.error("error:", err);
-    alert("there was error saving the item.");
-  }
+  });
 });
 
-const revalidatecontainer = document.getElementById("revalidate-delete");
-const deletebtns = document.querySelectorAll(".delete-currentitems");
-const yesbtn = document.querySelector("#yes-btn");
-const nobtn = document.querySelector("#no-btn");
+document.addEventListener("DOMContentLoaded", (e) => {
+  const revalidatecontainer = document.getElementById("revalidate-delete");
+  const deletebtns = document.querySelectorAll(".delete-currentitems");
+  const nobtn = document.querySelector("#no-btn");
 
-const closerevalidatepopup = document.getElementById("close-revalidate-popup");
+  const closerevalidatepopup = document.getElementById(
+    "close-revalidate-popup"
+  );
 
-closerevalidatepopup.addEventListener("click", () => {
-  revalidatecontainer.classList.add("hidden");
-  document.body.style.overflow = "hidden";
-});
-
-yesbtn.addEventListener("click", async () => {
-  if (itemToDeleteId === null) return;
-  const url = `http://127.0.0.1:8000/delete-item/${itemToDeleteId}/`;
-  try {
-    const response = await fetch(url, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      throw new Error("failed to delete item");
-    }
-    const index = foods.findIndex((food) => food.id === itemToDeleteId);
-    if (index !== -1) {
-      foods.splice(index, 1);
-    }
-    container.innerHTML = "";
-    renderFood();
-    itemToDeleteId = null;
+  closerevalidatepopup.addEventListener("click", () => {
     revalidatecontainer.classList.add("hidden");
-    document.body.style.overflow = "auto";
-  } catch (err) {
-    console.error("error:", err);
+    document.body.style.overflow = "hidden";
+  });
+
+  if (nobtn) {
+    nobtn.addEventListener("click", (e) => {
+      revalidatecontainer.classList.add("hidden");
+      document.body.style.overflow = "auto";
+    });
+  }
+
+  if (deletebtns) {
+    deletebtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        const foodId = parseInt(e.currentTarget.getAttribute("id"));
+        itemToDeleteId = foodId;
+        const hiddenInput = document.getElementById("item-to-delete");
+        hiddenInput.value = foodId;
+        revalidatecontainer.classList.remove("hidden");
+        document.body.style.overflow = "hidden";
+      });
+    });
   }
 });
 
-nobtn.addEventListener("click", () => {
-  revalidatecontainer.classList.add("hidden");
-  itemToDeleteId = null;
-  document.body.style.overflow = "auto";
+function showError(messageobj, condition) {
+  const key = Object.keys(messageobj);
+  const cardContainer = document.getElementById("card-container");
+  const cardDiv = document.createElement("div");
+  const cardSubDiv = document.createElement("div");
+  const i = document.createElement("i");
+
+  if (condition === "error") {
+    i.classList.add("fa-solid", "fa-triangle-exclamation");
+  } else {
+    i.classList.add("fa-solid", "fa-check");
+  }
+
+  cardDiv.appendChild(i);
+  const textNode = document.createTextNode(messageobj[key]);
+  cardSubDiv.appendChild(textNode);
+  cardDiv.appendChild(cardSubDiv);
+  cardDiv.classList.add("card");
+
+  if (condition === "error") {
+    cardDiv.classList.add("error");
+  } else {
+    cardDiv.classList.add("success");
+  }
+
+  cardContainer.prepend(cardDiv);
+
+  setTimeout(() => {
+    cardDiv.classList.add("fade-out");
+    setTimeout(() => {
+      cardContainer.removeChild(cardDiv);
+    }, 500);
+  }, 5000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const additemform = document.getElementById("item-form");
+  let additemerrors = [];
+
+  additemform.addEventListener("submit", (e) => {
+    additemerrors.length = 0;
+
+    const formData = new FormData(additemform);
+
+    const itemName = (formData.get("name") || "").trim();
+    const itemPrice = (formData.get("price") || "").trim();
+    const itemDiscount = (formData.get("discount") || "").trim();
+    const itemCategory = (formData.get("veg_nonveg") || "").trim();
+    const itemAvailabilityStatus = (
+      formData.get("availability_status") || ""
+    ).trim();
+    const itemPicture = formData.get("profile_picture");
+    const itemDescription = (formData.get("description") || "").trim();
+
+    if (!itemName) {
+      additemerrors.push({ itemNameError: "Item Name is required" });
+    }
+
+    if (!itemPrice) {
+      additemerrors.push({ itemPriceError: "Item Price is required" });
+    }
+
+    if (!itemDiscount) {
+      additemerrors.push({ itemDiscountError: "Item Discount is required" });
+    }
+
+    if (!itemCategory) {
+      additemerrors.push({ itemCategoryError: "Item Category is required" });
+    }
+
+    if (!itemAvailabilityStatus) {
+      additemerrors.push({
+        itemAvailabilityStatusError: "Item Availability is required",
+      });
+    }
+
+    if (!itemDescription) {
+      additemerrors.push({
+        itemDescriptionError: "Item Description is required",
+      });
+    }
+
+    if (!itemPicture || itemPicture.size === 0 || !itemPicture.name) {
+      additemerrors.push({
+        itemPictureError: "Item image is required",
+      });
+    } else if (itemPicture.size > 2 * 1024 * 1024) {
+      additemerrors.push({
+        itemPictureError: "Item image must be less than 2MB",
+      });
+    }
+
+    if (additemerrors.length > 0) {
+      e.preventDefault();
+      additemerrors.forEach((err, index) => {
+        setTimeout(() => {
+          showError(err, "error");
+        }, index * 500);
+      });
+    }
+  });
 });
