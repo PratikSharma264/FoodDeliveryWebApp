@@ -11,18 +11,17 @@
   </div>
 {% endblock %}
 
-{% block activate_settings %}
-  active
-{% endblock %}
+{% block activate_settings %}active{% endblock %}
 {% block mainspace %}
-  <div id="main-wrapper">
-    {% if messages %}
+<div id="container-body">
+    <div id="main-wrapper">
+    <!-- {% if messages %}
   <div class="messages">
     {% for message in messages %}
       <div class="alert alert-{{ message.tags }}">{{ message }}</div>
     {% endfor %}
   </div>
-{% endif %}
+{% endif %} -->
 
     <div id="main-subwrapper">
       <div id="main-container">
@@ -82,13 +81,14 @@
             <div id="profileinfo-heading">
               <h2>Update Bio and other details</h2>
             </div>
-            <form id="profileinfo-body">
+            <form id="profileinfo-form" method="post" action="{% url 'update-restaurant-bio' %}" novalidate>
+              {% csrf_token %}
               <div class="ip">
                 <div>
                   <label for="restaurant-name">Restaurant Name</label>
                 </div>
                 <div>
-                  <input type="text" id="restaurant-name" name="restaurant-name" required />
+                  <input type="text" id="restaurant-name" name="restaurant_name" required />
                 </div>
               </div>
 
@@ -97,7 +97,7 @@
                   <label for="owner-name">Owner Name</label>
                 </div>
                 <div>
-                  <input type="text" id="owner-name" name="owner-name" required />
+                  <input type="text" id="owner-name" name="owner_name" required />
                 </div>
               </div>
 
@@ -106,7 +106,7 @@
                   <label for="email">Email Address</label>
                 </div>
                 <div>
-                  <input type="email" id="email" name="email" required />
+                  <input type="email" id="email" name="owner_email" required />
                 </div>
               </div>
 
@@ -115,7 +115,7 @@
                   <label for="contact">Contact Number</label>
                 </div>
                 <div>
-                  <input type="tel" id="contact" name="contact" required />
+                  <input type="tel" id="contact" name="owner_contact" required />
                 </div>
               </div>
 
@@ -124,7 +124,7 @@
                   <label for="address">Restaurant Address</label>
                 </div>
                 <div>
-                  <input type="text" id="address" name="address" required />
+                  <input type="text" id="address" name="restaurant_address" required />
                 </div>
               </div>
 
@@ -133,7 +133,7 @@
                   <label for="restype">Business Type</label>
                 </div>
                 <div class="select-wrapper">
-                  <select id="restype" name="resturant_type" required>
+                  <select id="restype" name="restaurant_type" required>
                     <option value="local">Local</option>
                     <option value="fine_dining">Fine Dining</option>
                   </select>
@@ -148,9 +148,13 @@
                   <textarea id="description" name="description" rows="4" required></textarea>
                 </div>
               </div>
+              
+                <input type="hidden" id="restaurant_id" name="restaurant_id" value="{{restaurant.id}}"/>
+                
+              
               <div class="submit-wrapper" id="merchant-submit">
-                <button id="cancel-update">Cancel</button>
-                <button id="merchant-submit-btn">Submit</button>
+                <button id="cancel-update" type="button">Cancel</button>
+                <button id="merchant-submit-btn" type="submit">Submit</button>
               </div>
             </form>
           </div>
@@ -191,7 +195,7 @@
       <div id="profilepicform">
         <span id="close-ppmodal"><i class="fa-solid fa-circle-xmark"></i></span>
         <h2>Choose new profile picture</h2>
-        <form method="POST" enctype="multipart/form-data">
+        <form id="profilepic-form" method="POST" enctype="multipart/form-data" action="{% url 'update-restaurant-profile-picture' %}" novalidate>
           {% csrf_token %}
           <div id="image-container">
             <div id="image-preview">
@@ -204,6 +208,7 @@
             <div id="imageform">
               <label for="profile_picture">"Choose an image"</label>
               <input type="file" name="profile_picture" id="profile_picture" accept="image/*" />
+              <input type="hidden" name="restaurant_id" id="restaurant_id" value="{{restaurant.id}}" />
               <div class="picsubmit">
                 <button type="submit" class="submit-btn">Upload</button>
               </div>
@@ -215,17 +220,44 @@
     <div id="revalidate-locationupdate" class="hidden">
       <div id="revalidate-content">
         <p>Are you sure you want to update the location?</p>
-        <form id="decision-btn" method="POST">
+        <form id="decision-btn" class="latlngupdate-form" method="POST" action="{% url 'update-restaurant-location' %}" novalidate>
           {% csrf_token %}
-          <input type="hidden" name="lat" id="updated-lat" value="" />
-          <input type="hidden" name="lng" id="updated-lng" value="" />
-          <button id="yes-btn" type="submit">Yes</button>
-          <button id="no-btn" type="button">Cancel</button>
+          <input type="hidden" name="latitude" id="updated-lat" value="" />
+          <input type="hidden" name="longitude" id="updated-lng" value="" />
+          <input type="hidden" name="restaurant_id" id="restaurant_id" value="{{restaurant.id}}" />
+          <button id="yes-locupdatebtn" type="submit">Yes</button>
+          <button id="no-locupdatebtn" type="button">Cancel</button>
         </form>
       </div>
     </div>
     <div id="card-container"></div>
   </div>
+</div>
+ {% if form.errors %}
+        {{ form.errors|json_script:"form-errors" }}
+    {% endif %}
+    {% if messages %}
+        <script id="django-messages" type="application/json">
+    {
+      "errors": [
+        {% for message in messages %}
+          {% if message.tags == "error" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ],
+      "success": [
+        {% for message in messages %}
+          {% if message.tags == "success" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ]
+    }
+        </script>
+    {% endif %}
 {% endblock %}
 {% block scripts %}
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>

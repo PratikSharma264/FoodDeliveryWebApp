@@ -14,7 +14,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
-from .models import Merchant, Deliveryman, Restaurant, FoodItem
+from .models import Merchant, Deliveryman, Restaurant, FoodItem, GoToDashClickCheck, Order
 from django.contrib.auth.forms import SetPasswordForm
 from django.http import Http404, JsonResponse
 from functools import wraps
@@ -36,6 +36,14 @@ def profile_none_required(view_func):
 
 
 def merchant_home_view(request):
+    if request.user.is_authenticated:
+        try:
+            obj = GoToDashClickCheck.objects.get(user=request.user)
+            if obj.go_to_dash_clicked:
+                return redirect('deliveryman-dashboard')
+        except GoToDashClickCheck.DoesNotExist:
+            pass  
+
     return render(request, "merchant/m_home.html")
 
 
@@ -81,17 +89,21 @@ def merchant_login_view(request):
 
     return render(request, "merchant/merchant_login.html", {"next": next_url})
 
-
 @login_required
 def deliveryman_dashboard(request):
+    obj, created = GoToDashClickCheck.objects.get_or_create(user=request.user)
+    if not obj.go_to_dash_clicked:
+        obj.go_to_dash_clicked = True
+        obj.save()
+
     try:
         profile = Deliveryman.objects.get(user=request.user)
     except Deliveryman.DoesNotExist:
         return redirect('restaurant-dashboard')
+
     return render(request, "merchant/deliveryman_dashboard.html", {
         'deliveryman': profile,
     })
-
 
 @login_required
 def merchant_logout_view(request):
@@ -171,9 +183,7 @@ def merchant_res_reg_view(request):
 @login_required
 def bio_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
-
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {
+    data = {
             "restaurant_name": restaurant.restaurant_name,
             "restaurant_address": restaurant.restaurant_address,
             "description": restaurant.description,
@@ -182,19 +192,16 @@ def bio_json_response(request, id):
             "owner_email": restaurant.owner_email,
             "restaurant_type": restaurant.restaurant_type,
         }
-        return JsonResponse({"success": True, "data": data})
-    form = RestaurantBioUpdateForm(instance=restaurant)
-    return render(request, "merchant/restaurant_update_form.html", {"form": form})
+    return JsonResponse({"success": True, "data": data})
+
 
 @login_required
-def update_restaurant_bio(request, id):
-    restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
-
+def update_restaurant_bio(request):
     if request.method == "POST":
-        form = RestaurantBioUpdateForm(
-            request.POST, request.FILES, instance=restaurant
-        )
-        if form.is_valid():
+        restaurant_id = request.POST.get("restaurant_id") 
+        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+        form = RestaurantBioUpdateForm(request.POST, request.FILES, instance=restaurant)
+        if form.is_valid():   
             form.save()
             messages.success(request, "Restaurant updated successfully.")
         else:
@@ -202,14 +209,14 @@ def update_restaurant_bio(request, id):
 
     return redirect("restaurant-settings")
 
-@login_required
-def update_restaurant_profile_picture(request, id):
-    restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
 
+@login_required
+def update_restaurant_profile_picture(request):
     if request.method == "POST":
-        form = RestaurantProfilePicUpdateForm(
-            request.POST, request.FILES, instance=restaurant
-        )
+        restaurant_id = request.POST.get("restaurant_id") 
+        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+
+        form = RestaurantProfilePicUpdateForm(request.POST, request.FILES, instance=restaurant)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile picture updated successfully.")
@@ -218,11 +225,13 @@ def update_restaurant_profile_picture(request, id):
 
     return redirect("restaurant-settings")
 
-@login_required
-def update_restaurant_location(request, id):
-    restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
 
+@login_required
+def update_restaurant_location(request):
     if request.method == "POST":
+        restaurant_id = request.POST.get("restaurant_id") 
+        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+
         form = RestaurantLocationUpdateForm(request.POST, instance=restaurant)
         if form.is_valid():
             form.save()
@@ -234,6 +243,14 @@ def update_restaurant_location(request, id):
 
 @login_required
 def application_status_view(request):
+    if request.user.is_authenticated:
+        try:
+            obj = GoToDashClickCheck.objects.get(user=request.user)
+            if obj.go_to_dash_clicked:
+                return redirect('deliveryman-dashboard')
+        except GoToDashClickCheck.DoesNotExist:
+            pass
+
     profile = (
         getattr(request.user, 'deliveryman_profile', None)
         or getattr(request.user, 'restaurant_profile', None)
@@ -242,8 +259,6 @@ def application_status_view(request):
         messages.error(
             request, "Access Denied! You are neither a deliveryman nor a restaurant owner.")
         return redirect('home')
-
-    model_name = profile._meta.model_name
 
     return render(request, "merchant/application_status.html", {
         'profile': profile,
@@ -330,14 +345,25 @@ def email_sent_view(request):
     return render(request, "merchant/email_sent.html")
 
 
+
 @login_required
 def restaurant_dashboard(request):
+    obj, created = GoToDashClickCheck.objects.get_or_create(user=request.user)
+    if not obj.go_to_dash_clicked:
+        obj.go_to_dash_clicked = True
+        obj.save()
+
     try:
         profile = Restaurant.objects.get(user=request.user)
     except Restaurant.DoesNotExist:
         return redirect('deliveryman-dashboard')
+    fooditem_count = FoodItem.objects.filter(restaurant=profile).count()
+    orders_count = Order.objects.filter(restaurant=profile).count()
+
     return render(request, "merchant/restaurant_dashboard.html", {
         'restaurant': profile,
+        'fooditem_count': fooditem_count,
+        'orders_count': orders_count,
     })
 
 

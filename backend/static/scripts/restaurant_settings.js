@@ -1,44 +1,31 @@
-function showError(messageobj, condition) {
-  console.log(messageobj);
-  const key = Object.keys(messageobj);
-  const cardContainer = document.getElementById("card-container");
+document.addEventListener("DOMContentLoaded",(e)=>{
+const djangoMessages = document.getElementById("django-messages");
+if (djangoMessages) {
+  try {
+    const parsedMessages = JSON.parse(djangoMessages.textContent);
 
-  if (!cardContainer) {
-    console.error("Card container not found in DOM.");
-    return;
+    if (parsedMessages.errors && parsedMessages.errors.length > 0) {
+      parsedMessages.errors.forEach((error, index) => {
+        setTimeout(() => {
+          showError({ error: error }, "error");
+        }, index * 500);
+      });
+    }
+
+    if (parsedMessages.success && parsedMessages.success.length > 0) {
+      parsedMessages.success.forEach((msg, index) => {
+        setTimeout(() => {
+          showError({ success: msg }, "success");
+        }, index * 500);
+      });
+    }
+  } catch (err) {
+    console.error("Error parsing Django messages JSON:", err);
   }
-
-  const cardDiv = document.createElement("div");
-  const cardSubDiv = document.createElement("div");
-  const i = document.createElement("i");
-
-  if (condition === "error") {
-    i.classList.add("fa-solid", "fa-triangle-exclamation");
-  } else {
-    i.classList.add("fa-solid", "fa-check");
-  }
-
-  cardDiv.appendChild(i);
-  const textNode = document.createTextNode(messageobj[key]);
-  cardSubDiv.appendChild(textNode);
-  cardDiv.appendChild(cardSubDiv);
-  cardDiv.classList.add("card");
-
-  if (condition === "error") {
-    cardDiv.classList.add("error");
-  } else {
-    cardDiv.classList.add("success");
-  }
-
-  cardContainer.prepend(cardDiv);
-
-  setTimeout(() => {
-    cardDiv.classList.add("fade-out");
-    setTimeout(() => {
-      cardContainer.removeChild(cardDiv);
-    }, 500);
-  }, 3000);
 }
+
+})
+
 
 function previewImage(event) {
     const reader = new FileReader();
@@ -79,11 +66,8 @@ document.addEventListener("DOMContentLoaded", function () {
   map.setMaxBounds(bhaktapurBounds);
   map.fitBounds(bhaktapurBounds);
 
-    // const lat = parseFloat(document.getElementById("lat").value || 0).toFixed(6);
-    // const lng = parseFloat(document.getElementById("lng").value || 0).toFixed(6);
-    const lat = 27.636;
-    const lng = 85.406;
-
+    const lat = parseFloat(document.getElementById("lat").value);
+    const lng = parseFloat(document.getElementById("lng").value) ;
 
    if (bhaktapurBounds.contains([lat, lng])) {
           map.setView([lat, lng], 13);
@@ -121,25 +105,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const cancelBtn = document.getElementById("cancel-update");
   const submitBtn = document.getElementById("merchant-submit-btn");
   let updateBioErrors = [];
+  let updateProfilePicErrors = [];
+  let latlngError = [];
 
   const profileActual = document.getElementById("profileinfo-actual");
   const profileForm = document.getElementById("profileinfo-toupdate");
 
-  // update btn click for bio update
-  updateBtn.addEventListener("click", () => {
+  
+  updateBtn.addEventListener("click", async (e) => {
     profileActual.classList.add("profileinfo-hide");
     profileForm.classList.remove("profileinfo-hide");
-
-    document.getElementById("restaurant-name").value = "";
-    document.getElementById("owner-name").value = "";
-    document.getElementById("email").value = "";
-    document.getElementById("contact").value = "";
-    document.getElementById("address").value = "";
-    document.getElementById("restype").value = "";
-    document.getElementById("description").value = "";
+    const resid = updateBtn.getAttribute("id");
+ 
+    try{
+      const response = await fetch(`http://127.0.0.1:8000/json/update-restaurant-bio/${resid}/`);
+      const data = await response.json();
+    document.getElementById("restaurant-name").value = data.data.restaurant_name || "";
+    document.getElementById("owner-name").value = data.data.owner_name || "";
+    document.getElementById("email").value = data.data.owner_email || "";
+    document.getElementById("contact").value = data.data.owner_contact || "";
+    document.getElementById("address").value = data.data.restaurant_address || "";
+    document.getElementById("restype").value = data.data.restaurant_type || "";
+    document.getElementById("description").value = data.data.description || "";
+    }catch(err){
+      showError(err.message||"error while fetching resturant data from server","error");
+    }
   });
 
-  // cancel update of bio info
+ 
   cancelBtn.addEventListener("click", (e) => {
     e.preventDefault();
     document.getElementById("restaurant-name").value = "";
@@ -153,8 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
     profileActual.classList.remove("profileinfo-hide");
   });
 
-  // after submit of bio info handle
-  submitBtn.addEventListener("submit",(e)=>{
+
+const profileFormElement = document.getElementById("profileinfo-form");
+
+profileFormElement.addEventListener("submit",(e)=>{
     updateBioErrors.length = 0;
     const restaurantName = document.getElementById("restaurant-name").value.trim();
     const ownerName = document.getElementById("owner-name").value.trim();
@@ -227,8 +222,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   })
 
-
-  // profile change btn handle
   const profilePicChangeBtn = document.getElementById("profilepicchangebtn");
   profilePicChangeBtn.addEventListener("click",(e)=>{
     document.getElementById("profilepicform-container").classList.remove("hidden");
@@ -250,24 +243,87 @@ profilePicCancelBtn.addEventListener("click",(e)=>{
 
 const updateLoctionBtn = document.getElementById("map-update-btn");
 updateLoctionBtn.addEventListener("click",(e)=>{
+   document.getElementById("updated-lat").value = document.getElementById("lat").value;
+   document.getElementById("updated-lng").value = document.getElementById("lng").value;
   document.getElementById("revalidate-locationupdate").classList.remove("hidden");
   document.body.style.overflow = "hidden";
 });
 
-document.getElementById("no-btn").addEventListener("click",(e)=>{
+document.getElementById("no-locupdatebtn").addEventListener("click",(e)=>{
   document.getElementById("revalidate-locationupdate").classList.add("hidden");
   document.body.style.overflow = "auto";
 })
 
-document.getElementById("yes-btn").addEventListener("click", (e) => {
-  const lat = document.getElementById("updated-lat").value;
-  const lng = document.getElementById("updated-lng").value;
+document.querySelector(".latlngupdate-form").addEventListener("submit", (e) => {
+  latlngError.length = 0;
+  const latitude = document.getElementById("updated-lat").value;
+  const longitude = document.getElementById("updated-lng").value;
 
-  if (!lat || !lng) {
-    e.preventDefault();
-    showError({ locationError: "Please select a valid location before submitting." }, "error");
-  }
+   const bhaktapurBounds = {
+      minLat: 27.64, // South
+      maxLat: 27.75, // North
+      minLng: 85.4, // West
+      maxLng: 85.46, // East
+    };
+
+   if (!latitude) {
+      latlngError.push({ latitudeError: "Latitude is required" });
+    }
+    if (!longitude) {
+      latlngError.push({ longitudeError: "Longitude is required" });
+    }
+
+    if (latitude && longitude) {
+      const { minLat, maxLat, minLng, maxLng } = bhaktapurBounds;
+
+      if (
+        latitude < minLat ||
+        latitude > maxLat ||
+        longitude < minLng ||
+        longitude > maxLng
+      ) {
+        latlngError.push({
+          locationError:
+            "Latitude and Longitude must be inside Bhaktapur Valley",
+        });
+      }
+    }
+     if (latlngError.length > 0) {
+      e.preventDefault();
+      latlngError.forEach((err, index) => {
+        setTimeout(() => {
+          showError(err, "error");
+        }, index * 500);
+      });
+    }
 });
+
+const profilePicForm = document.getElementById("profilepic-form")
+profilePicForm.addEventListener("submit",(e)=>{
+  updateProfilePicErrors.length = 0;
+  const forminstance = new FormData(profilePicForm);
+
+  const pp =  forminstance.get("profile_picture");
+
+  if (!pp || pp.size === 0 || !pp.name) {
+      updateProfilePicErrors.push({
+        ppError: "Profile image is required",
+      });
+    } else if (pp.size > 2 * 1024 * 1024) {
+      updateProfilePicErrors.push({
+        ppError: "Profile image must be less than 2MB",
+      });
+    }
+    
+    if (updateProfilePicErrors.length > 0) {
+      e.preventDefault();
+      updateProfilePicErrors.forEach((err, index) => {
+        setTimeout(() => {
+          showError(err, "error");
+        }, index * 500);
+      });
+    }
+})
 
 
 });
