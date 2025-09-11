@@ -23,7 +23,7 @@ urlpatterns = [
     path("restaurant-settings/", views.restaurant_settings, name='restaurant-settings'),
     path("check-deliveryman/", views.check_deliveryman_status, name="check-deliveryman"),
     path("update-restaurant-bio/<int:id>/", views.update_restaurant_bio, name="update-restaurant-bio"),
-    path("json/update-restaurant-bio/<int:id>/", views.bio_json_response, name="update-restaurant-bio-json"),
-    path("update-restaurant-profile-picture/<int:id>/", views.update_restaurant_profile_picture, name="update-restaurant-profile-picture"),
-    path("update-restaurant-location/<int:id>/", views.update_restaurant_location, name="update-restaurant-location"),
+    path("json/update-restaurant-bio/", views.bio_json_response, name="update-restaurant-bio-json"),
+    path("update-restaurant-profile-picture/", views.update_restaurant_profile_picture, name="update-restaurant-profile-picture"),
+    path("update-restaurant-location/", views.update_restaurant_location, name="update-restaurant-location"),
 ]

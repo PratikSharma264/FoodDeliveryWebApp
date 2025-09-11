@@ -489,3 +489,9 @@ class DeliverymanStatus(models.Model):
 
     def __str__(self):
         return f"{self.deliveryman.Firstname} {self.deliveryman.Lastname}"
+
+
+
+class GoToDashClickCheck(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="go_to_dash_check")
+    go_to_dash_clicked = models.BooleanField(default=False)

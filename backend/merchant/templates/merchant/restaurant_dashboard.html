@@ -6,16 +6,14 @@
 {% block styles %}
 <link rel="stylesheet" href="{% static 'css/restaurant_dashboard.css' %}" />
 {% endblock %}
-{% block activate_dashboard %}
-  active
-{% endblock %}
+{% block activate_dashboard %}active{% endblock  %}
 {% block mainspace %}
 <div id="container-body">
   <div id="business-statistics">
     <div class="statistics">
       <h4>Total Menus</h4>
       <div>
-        <p>14</p>
+        <p>{{fooditem_count|default_if_none:"0" }}</p>
         <span>
           <i class="fa-solid fa-up-long fa-increase"></i>
           <span class="percent-change fa-increase">12.5%</span>
@@ -35,7 +33,7 @@
     <div class="statistics">
       <h4>Total Orders</h4>
       <div>
-        <p>57</p>
+       <p>{{ orders_count|default_if_none:"0" }}</p>
         <span>
           <i class="fa-solid fa-down-long fa-decrease"></i>
           <span class="percent-change fa-decrease">-2.34%</span>
