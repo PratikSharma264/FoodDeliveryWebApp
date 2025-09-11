@@ -1,0 +1,12 @@
+{% extends "merchant/deliveryman_templates_base.html" %}
+{% load static %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/deliveryman_current_orders.css' %}">{% endblock %}
+{% block activate_current_orders %}active{% endblock %}
+ {% block headcontent %}
+        <div id="head-content">
+          <h2>Orders</h2>
+          <h4>Current Orders</h4>
+        </div>
+      {% endblock %}
+{% block mainspace %}{% endblock %}
+{% block scripts %}<script src="{% static 'scripts/deliveryman_current_orders.js' %}" defer></script>{% endblock %}

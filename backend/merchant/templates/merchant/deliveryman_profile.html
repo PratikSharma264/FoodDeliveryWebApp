@@ -1,0 +1,12 @@
+{% extends "merchant/deliveryman_templates_base.html" %}
+{% load static %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/deliveryman_profile.css' %}">{% endblock %}
+{% block activate_profile %}active{% endblock %}
+ {% block headcontent %}
+        <div id="head-content">
+          <h2>Profile</h2>
+          <h4>Customize Profile</h4>
+        </div>
+      {% endblock %}
+{% block mainspace %}{% endblock %}
+{% block scripts %}<script src="{% static 'scripts/deliveryman_profile.js' %}" defer></script>{% endblock %}

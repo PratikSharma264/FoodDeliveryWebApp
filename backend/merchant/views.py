@@ -389,6 +389,27 @@ def restaurant_orders(request):
     })
 
 
+@login_required
+def deliveryman_new_orders(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')
+    return render(request, "merchant/deliveryman_new_orders.html", {
+        'deliveryman': profile,
+    })
+
+@login_required
+def deliveryman_current_orders(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')
+    return render(request, "merchant/deliveryman_current_orders.html", {
+        'deliveryman': profile,
+    })
+
+
 def serialize_item(request, item):
     return {
         "id": item.id,
@@ -502,6 +523,25 @@ def restaurant_customers(request):
         'restaurant': profile,
     })
 
+@login_required
+def deliveryman_history(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')
+    return render(request, "merchant/deliveryman_history.html", {
+        'deliveryman': profile,
+    })
+
+@login_required
+def deliveryman_profile(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')
+    return render(request, "merchant/deliveryman_profile.html", {
+        'deliveryman': profile,
+    })
 
 @login_required
 def restaurant_settings(request):

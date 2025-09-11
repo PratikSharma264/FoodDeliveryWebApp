@@ -1,94 +1,12 @@
-<!DOCTYPE html>
-
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Merchant Dashboard</title>
-    <link rel="stylesheet" href="/static/css/dashboard.css" />
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  </head>
-  <body>
-    <h1>This is Dashboard</h1>
-    {% comment %} <header>
-      <nav class="navbar">
-        <div class="logo">Grubmate Dashboard</div>
-        <ul class="nav-links">
-          <li>
-            <a href="/">Home</a>
-          </li>
-          <li>
-            <a href="/logout">Logout</a>
-          </li>
-        </ul>
-      </nav>
-    </header>
-
-    <main class="dashboard-container">
-      <h1>Your Deliveryman Profile</h1>
-      <div class="profile-card">
-        <div class="profile-field">
-          <span class="field-label">Name:</span>
-          <span class="field-value">{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</span>
+{% extends "merchant/deliveryman_templates_base.html" %}
+{% load static %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/deliveryman_dashboard.css' %}">{% endblock %}
+{% block activate_dashboard %}active{% endblock %}
+ {% block headcontent %}
+        <div id="head-content">
+          <h2>Dashboard</h2>
+          <h4>welcome <span>{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</span></h4>
         </div>
-        <div class="profile-field">
-          <span class="field-label">Email:</span>
-          <span class="field-value">{{ deliveryman.Email }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Delivery Type:</span>
-          <span class="field-value">{{ deliveryman.DeliveryType }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Zone:</span>
-          <span class="field-value">{{ deliveryman.Zone }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Vehicle:</span>
-          <span class="field-value">{{ deliveryman.Vehicle }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Vehicle Number:</span>
-          <span class="field-value">{{ deliveryman.VehicleNumber }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Duty Time:</span>
-          <span class="field-value">{{ deliveryman.DutyTime }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Date of Birth:</span>
-          <span class="field-value">{{ deliveryman.DateofBirth }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">PAN Number:</span>
-          <span class="field-value">{{ deliveryman.PanNumber }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Identity Type:</span>
-          <span class="field-value">{{ deliveryman.IdentityType }}</span>
-        </div>
-        <div class="profile-field">
-          <span class="field-label">Identity Number:</span>
-          <span class="field-value">{{ deliveryman.IdentityNumber }}</span>
-        </div>
-        <!-- Edited: replaced 'View' button with inline image -->
-        <div class="profile-field">
-          <span class="field-label">Billbook Scan Copy:</span>
-          <img src="{{ deliveryman.BillBookScanCopy.url }}" alt="Billbook Scan" class="profile-img" />
-        </div>
-        <!-- Edited: replaced 'View' button with inline image -->
-        <div class="profile-field">
-          <span class="field-label">Identity Image:</span>
-          <img src="{{ deliveryman.IdentityImage.url }}" alt="Identity Image" class="profile-img" />
-        </div>
-        <!-- Edited: replaced 'View' button with inline image -->
-        <div class="profile-field">
-          <span class="field-label">User Image:</span>
-          <img src="{{ deliveryman.UserImage.url }}" alt="User Image" class="profile-img" />
-        </div>
-      </div>
-    </main> {% endcomment %}
-
-    <script src="/static/js/dashboard.js"></script>
-  </body>
-</html>
+      {% endblock %}
+{% block mainspace %}{% endblock %}
+{% block scripts %}<script src="{% static 'scripts/deliveryman_dashboard.js' %}" defer></script>{% endblock %}

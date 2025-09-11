@@ -1,0 +1,12 @@
+{% extends "merchant/deliveryman_templates_base.html" %}
+{% load static %}
+{% block styles %}<link rel="stylesheet" href="{% static 'css/deliveryman_history.css' %}">{% endblock %}
+{% block activate_history %}active{% endblock %}
+ {% block headcontent %}
+        <div id="head-content">
+          <h2>History</h2>
+          <h4>Your History</h4>
+        </div>
+      {% endblock %}
+{% block mainspace %}{% endblock %}
+{% block scripts %}<script src="{% static 'scripts/deliveryman_history.js' %}" defer></script>{% endblock %}
