@@ -28,14 +28,14 @@
               <span>{{ deliveryman.Lastname }}</span>
             </h2>
           </div>
-          <div id="profilepic">
-            {% if restaurant.profile_picture %}
-  <img src="{{ deliveryman.UserImage.url }}" alt="profile pic" />
-{% else %}
-  <img src="{% static 'images/profilepic.png' %}" alt="default profile pic" />
-{% endif %}
+         <div id="profilepic">
+  {% if deliveryman.UserImage %}
+    <img src="{{ deliveryman.UserImage.url }}" alt="profile pic" />
+  {% else %}
+    <img src="{% static 'images/profilepic.png' %}" alt="default profile pic" />
+  {% endif %}
+</div>
 
-          </div>
           <div id="changeprofilepic">
             <button id="profilepicchangebtn">change profile picture</button>
           </div>
@@ -106,7 +106,7 @@
                   <label for="first-name">First Name</label>
                 </div>
                 <div>
-                  <input type="text" id="first-name" name="FirstName" required />
+                  <input type="text" id="first-name" name="Firstname" required />
                 </div>
               </div>
 
@@ -115,7 +115,7 @@
                   <label for="last-name">Last Name</label>
                 </div>
                 <div>
-                  <input type="text" id="last-name" name="LastName" required />
+                  <input type="text" id="last-name" name="Lastname" required />
                 </div>
               </div>
 

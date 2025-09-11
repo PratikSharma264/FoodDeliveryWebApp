@@ -2,7 +2,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
 from django.contrib.sessions.models import Session
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import MerchantSignUpForm,  RestaurantRegistrationForm, MerchantForgotPasswordForm, DeliverymanForm, FoodItemForm, RestaurantBioUpdateForm, RestaurantProfilePicUpdateForm, RestaurantLocationUpdateForm
+from .forms import MerchantSignUpForm, RestaurantRegistrationForm, MerchantForgotPasswordForm, DeliverymanForm, FoodItemForm, RestaurantBioUpdateForm, RestaurantProfilePicUpdateForm, RestaurantLocationUpdateForm, DeliverymanBioUpdateForm, DeliverymanProfilePicUpdateForm
 from django.contrib import messages
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash, get_user_model
@@ -183,7 +183,7 @@ def merchant_res_reg_view(request):
 
 
 @login_required
-def bio_json_response(request, id):
+def restaurant_bio_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
     data = {
         "restaurant_name": restaurant.restaurant_name,
@@ -234,6 +234,68 @@ def update_restaurant_profile_picture(request):
 
     return redirect("restaurant-settings")
 
+
+
+@login_required
+def deliveryman_bio_json_response(request, id):
+    deliveryman = get_object_or_404(Deliveryman, id=id, user=request.user)
+    try:
+        contact = deliveryman.user.merchant_profile.phone_number
+    except (AttributeError, Merchant.DoesNotExist):
+        contact = None
+    data = {
+        "Firstname": deliveryman.Firstname,
+        "Lastname": deliveryman.Lastname,
+        "Address": deliveryman.Address,
+        "DateofBirth": deliveryman.DateofBirth.isoformat() if deliveryman.DateofBirth else None,
+        "PanNumber": deliveryman.PanNumber,
+        "Email": deliveryman.user.email if deliveryman.user else None,
+        "Contact": contact,
+        "Vehicle": deliveryman.Vehicle,
+        "VehicleNumber": deliveryman.VehicleNumber,
+        "Zone": deliveryman.Zone,
+        "DutyTime": deliveryman.DutyTime,
+        "UserImage": deliveryman.UserImage.url if getattr(deliveryman, 'UserImage') else None,
+    }
+    return JsonResponse({"success": True, "data": data})
+
+
+@login_required
+def update_deliveryman_bio(request):
+    if request.method == "POST":
+        deliveryman_id = request.POST.get("deliveryman_id") or request.POST.get("deliveryman")
+        deliveryman = get_object_or_404(Deliveryman, id=deliveryman_id, user=request.user)
+        form = DeliverymanBioUpdateForm(request.POST, request.FILES, instance=deliveryman, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated successfully.")
+        else:
+            messages.error(request, "Failed to update profile. Please check the form inputs.")
+    return redirect("deliveryman-profile")
+
+
+@login_required
+def update_deliveryman_profile_picture(request):
+    if request.method == "POST":
+        deliveryman_id = request.POST.get("deliveryman") or request.POST.get("deliveryman_id")
+        deliveryman = get_object_or_404(Deliveryman, id=deliveryman_id, user=request.user)
+        if 'UserImage' in request.FILES:
+            form = DeliverymanProfilePicUpdateForm(request.POST, request.FILES, instance=deliveryman)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Profile picture updated successfully.")
+            else:
+                messages.error(request, "Failed to update profile picture. Please try again.")
+        elif 'profile_picture' in request.FILES:
+            deliveryman.UserImage = request.FILES['profile_picture']
+            try:
+                deliveryman.save()
+                messages.success(request, "Profile picture updated successfully.")
+            except Exception:
+                messages.error(request, "Failed to save profile picture. Please try again.")
+        else:
+            messages.error(request, "No image uploaded.")
+    return redirect("deliveryman-profile")
 
 @login_required
 def update_restaurant_location(request):

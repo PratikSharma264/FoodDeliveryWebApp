@@ -36,7 +36,7 @@ urlpatterns = [
     path("update-restaurant-bio/", views.update_restaurant_bio,
          name="update-restaurant-bio"),
     path("json/update-restaurant-bio/<int:id>/",
-         views.bio_json_response, name="update-restaurant-bio-json"),
+         views.restaurant_bio_json_response, name="update-restaurant-bio-json"),
     path("update-restaurant-profile-picture/", views.update_restaurant_profile_picture,
          name="update-restaurant-profile-picture"),
     path("update-restaurant-location/", views.update_restaurant_location,
@@ -46,4 +46,8 @@ urlpatterns = [
      path("deliveyman-current-orders/", views.deliveryman_current_orders, name='deliveyman-current-orders'),
      path("deliveyman-history/", views.deliveryman_history, name='deliveyman-history'),
      path("deliveyman-profile/", views.deliveryman_profile, name='deliveyman-profile'),
+     path("update-deliveryman-bio/", views.update_deliveryman_bio, name="update-deliveryman-bio"),
+     path("json/update-deliveryman-bio/<int:id>/", views.deliveryman_bio_json_response, name="update-deliveryman-bio-json"),
+     path("update-deliveryman-profile-picture/", views.update_deliveryman_profile_picture, name="update-deliveryman-profile-picture"),
+
 ]  

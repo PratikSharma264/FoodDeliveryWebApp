@@ -4,6 +4,10 @@ from django.contrib.auth.forms import UserCreationForm
 from django.core.validators import RegexValidator
 from django.conf import settings
 from .models import Merchant, Restaurant, Deliveryman, FoodItem
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 phone_validator = RegexValidator(
     regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
     message="Enter a valid Nepali mobile or landline number"
@@ -166,6 +170,53 @@ class RestaurantLocationUpdateForm(forms.ModelForm):
     class Meta:
         model = Restaurant
         fields = ['latitude', 'longitude']
+
+
+
+
+class DeliverymanBioUpdateForm(forms.ModelForm):
+    Email = forms.EmailField(required=True)
+    Contact = forms.CharField(required=True, max_length=15)
+
+    class Meta:
+        model = Deliveryman
+        fields = ["Firstname", "Lastname", "Address", "DateofBirth", "PanNumber"]
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['Email'].initial = user.email
+            try:
+                self.fields['Contact'].initial = user.merchant_profile.phone_number
+            except (Merchant.DoesNotExist, AttributeError):
+                self.fields['Contact'].initial = ''
+
+    def save(self, commit=True):
+        deliveryman = super().save(commit=False)
+        email = self.cleaned_data.get('Email')
+        contact = self.cleaned_data.get('Contact')
+        if deliveryman.user:
+            deliveryman.user.email = email
+            deliveryman.user.username = email
+            if commit:
+                deliveryman.user.save()
+            merchant, created = Merchant.objects.get_or_create(
+                user=deliveryman.user,
+                defaults={'phone_number': contact, 'name': f'{deliveryman.Firstname} {deliveryman.Lastname}'}
+            )
+            if not created:
+                merchant.phone_number = contact
+                if commit:
+                    merchant.save()
+        if commit:
+            deliveryman.save()
+        return deliveryman
+
+class DeliverymanProfilePicUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Deliveryman
+        fields = ['UserImage']
 
 # class BusinessPlanForm(forms.ModelForm):
 #     class Meta:

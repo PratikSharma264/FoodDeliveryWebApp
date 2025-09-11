@@ -84,8 +84,8 @@
 
       <div>
         <div id="pp-container">
-          {% if deliveryman.profile_picture %}
-            <img src="{{ deliveryman.profile_picture.url }}" alt="profilepic" height="50" width="50">
+          {% if deliveryman.UserImage %}
+            <img src="{{ deliveryman.UserImage.url }}" alt="profilepic" height="50" width="50">
           {% else %}
             <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50">
           {% endif %}
