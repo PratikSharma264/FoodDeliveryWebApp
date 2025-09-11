@@ -42,7 +42,7 @@ def merchant_home_view(request):
             if obj.go_to_dash_clicked:
                 return redirect('deliveryman-dashboard')
         except GoToDashClickCheck.DoesNotExist:
-            pass  
+            pass
 
     return render(request, "merchant/m_home.html")
 
@@ -89,6 +89,7 @@ def merchant_login_view(request):
 
     return render(request, "merchant/merchant_login.html", {"next": next_url})
 
+
 @login_required
 def deliveryman_dashboard(request):
     obj, created = GoToDashClickCheck.objects.get_or_create(user=request.user)
@@ -104,6 +105,7 @@ def deliveryman_dashboard(request):
     return render(request, "merchant/deliveryman_dashboard.html", {
         'deliveryman': profile,
     })
+
 
 @login_required
 def merchant_logout_view(request):
@@ -183,33 +185,33 @@ def merchant_res_reg_view(request):
 @login_required
 def bio_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
+    data = {
+        "restaurant_name": restaurant.restaurant_name,
+        "restaurant_address": restaurant.restaurant_address,
+        "description": restaurant.description,
+        "owner_name": restaurant.owner_name,
+        "owner_contact": restaurant.owner_contact,
+        "owner_email": restaurant.owner_email,
+        "restaurant_type": restaurant.restaurant_type,
+    }
+    return JsonResponse({"success": True, "data": data})
 
-    if request.headers.get("x-requested-with") == "XMLHttpRequest":
-        data = {
-            "restaurant_name": restaurant.restaurant_name,
-            "restaurant_address": restaurant.restaurant_address,
-            "description": restaurant.description,
-            "owner_name": restaurant.owner_name,
-            "owner_contact": restaurant.owner_contact,
-            "owner_email": restaurant.owner_email,
-            "restaurant_type": restaurant.restaurant_type,
-        }
-        return JsonResponse({"success": True, "data": data})
-    form = RestaurantBioUpdateForm(instance=restaurant)
-    return render(request, "merchant/restaurant_update_form.html", {"form": form})
 
 @login_required
 def update_restaurant_bio(request):
     if request.method == "POST":
-        restaurant_id = request.POST.get("restaurant_id") 
-        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+        restaurant_id = request.POST.get("restaurant_id")
+        restaurant = get_object_or_404(
+            Restaurant, id=restaurant_id, user=request.user)
 
-        form = RestaurantBioUpdateForm(request.POST, request.FILES, instance=restaurant)
+        form = RestaurantBioUpdateForm(
+            request.POST, request.FILES, instance=restaurant)
         if form.is_valid():
             form.save()
             messages.success(request, "Restaurant updated successfully.")
         else:
-            messages.error(request, "Failed to update restaurant. Please check the form inputs.")
+            messages.error(
+                request, "Failed to update restaurant. Please check the form inputs.")
 
     return redirect("restaurant-settings")
 
@@ -217,15 +219,18 @@ def update_restaurant_bio(request):
 @login_required
 def update_restaurant_profile_picture(request):
     if request.method == "POST":
-        restaurant_id = request.POST.get("restaurant_id") 
-        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+        restaurant_id = request.POST.get("restaurant_id")
+        restaurant = get_object_or_404(
+            Restaurant, id=restaurant_id, user=request.user)
 
-        form = RestaurantProfilePicUpdateForm(request.POST, request.FILES, instance=restaurant)
+        form = RestaurantProfilePicUpdateForm(
+            request.POST, request.FILES, instance=restaurant)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile picture updated successfully.")
         else:
-            messages.error(request, "Failed to update profile picture. Please try again.")
+            messages.error(
+                request, "Failed to update profile picture. Please try again.")
 
     return redirect("restaurant-settings")
 
@@ -233,17 +238,20 @@ def update_restaurant_profile_picture(request):
 @login_required
 def update_restaurant_location(request):
     if request.method == "POST":
-        restaurant_id = request.POST.get("restaurant_id") 
-        restaurant = get_object_or_404(Restaurant, id=restaurant_id, user=request.user)
+        restaurant_id = request.POST.get("restaurant_id")
+        restaurant = get_object_or_404(
+            Restaurant, id=restaurant_id, user=request.user)
 
         form = RestaurantLocationUpdateForm(request.POST, instance=restaurant)
         if form.is_valid():
             form.save()
             messages.success(request, "Location updated successfully.")
         else:
-            messages.error(request, "Failed to update location. Please check the values.")
+            messages.error(
+                request, "Failed to update location. Please check the values.")
 
     return redirect("restaurant-settings")
+
 
 @login_required
 def application_status_view(request):
@@ -347,7 +355,6 @@ def merchant_reset_password_view(request, uidb64, token):
 
 def email_sent_view(request):
     return render(request, "merchant/email_sent.html")
-
 
 
 @login_required

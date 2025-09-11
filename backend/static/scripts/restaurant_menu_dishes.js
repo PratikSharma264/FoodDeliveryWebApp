@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
 document.addEventListener("DOMContentLoaded", (e) => {
   const revalidatecontainer = document.getElementById("revalidate-delete");
   const deletebtns = document.querySelectorAll(".delete-currentitems");
-  const nobtn = document.querySelector("#no-btn");
+  const nobtn = document.querySelector("#no-additembtn");
 
   const closerevalidatepopup = document.getElementById(
     "close-revalidate-popup"
@@ -92,40 +92,6 @@ document.addEventListener("DOMContentLoaded", (e) => {
   }
 });
 
-function showError(messageobj, condition) {
-  const key = Object.keys(messageobj);
-  const cardContainer = document.getElementById("card-container");
-  const cardDiv = document.createElement("div");
-  const cardSubDiv = document.createElement("div");
-  const i = document.createElement("i");
-
-  if (condition === "error") {
-    i.classList.add("fa-solid", "fa-triangle-exclamation");
-  } else {
-    i.classList.add("fa-solid", "fa-check");
-  }
-
-  cardDiv.appendChild(i);
-  const textNode = document.createTextNode(messageobj[key]);
-  cardSubDiv.appendChild(textNode);
-  cardDiv.appendChild(cardSubDiv);
-  cardDiv.classList.add("card");
-
-  if (condition === "error") {
-    cardDiv.classList.add("error");
-  } else {
-    cardDiv.classList.add("success");
-  }
-
-  cardContainer.prepend(cardDiv);
-
-  setTimeout(() => {
-    cardDiv.classList.add("fade-out");
-    setTimeout(() => {
-      cardContainer.removeChild(cardDiv);
-    }, 500);
-  }, 5000);
-}
 
 document.addEventListener("DOMContentLoaded", () => {
   const additemform = document.getElementById("item-form");

@@ -31,7 +31,7 @@
             >
           </li>
           <li class="link" id="{% block activate_order %}order{%endblock%}">
-            <a href="{%url 'restaurant-orders'%}"
+            <a href="{% url 'restaurant-orders'%}"
               ><span class="nav-icons"
                 ><i class="fa-solid fa-cart-shopping"></i
               ></span>
@@ -40,19 +40,19 @@
               </a>
           </li>
           <li class="link" id="{% block activate_menu_dishes %}menu_dishes{%endblock%}">
-            <a href="{%url 'restaurant-menu-dishes'%}"
+            <a href="{% url 'restaurant-menu-dishes'%}"
               ><span class="nav-icons"><i class="fa-solid fa-bowl-food"></i></i></span>
               <h4>Menu Dishes</h4></a
             >
           </li>
           <li class="link" id="{% block activate_customers %}customers{%endblock%}">
-            <a href="{%url 'restaurant-customers'%}"
+            <a href="{% url 'restaurant-customers'%}"
               ><span class="nav-icons"><i class="fa-solid fa-people-group"></i></span>
               <h4>Customers</h4></a
             >
           </li>
           <li class="link" id="{% block activate_settings %}settings{%endblock%}">
-            <a href="{%url 'restaurant-settings'%}"
+            <a href="{% url 'restaurant-settings'%}"
               ><span class="nav-icons"><i class="fa-solid fa-gear"></i></span>
               <h4>Setting</h4></a
             >
@@ -111,6 +111,8 @@
     </div>
   </div>
 
-  {% block scripts %}{% endblock %}
+  <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
+  {% block scripts %}
+  {% endblock %}
 </body>
 </html>

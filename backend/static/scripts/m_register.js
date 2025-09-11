@@ -42,8 +42,6 @@ function showError(messageobj, condition) {
 
 document.addEventListener("DOMContentLoaded", function () {
   const errorScript = document.getElementById("form-errors");
-  console.log("i have reached here");
-  console.log(errorScript);
   if (errorScript) {
     const errors = JSON.parse(errorScript.textContent);
     Object.keys(errors).forEach((field, index) => {
