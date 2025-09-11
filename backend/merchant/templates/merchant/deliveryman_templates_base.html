@@ -30,29 +30,30 @@
             <h4>Dashboard</h4>
           </a>
         </li>
-        <li class="link" id="{% block activate_new_orders %}neworders{% endblock %}">
+        <li class="link order" id="{% block activate_new_orders %}neworders{% endblock %}">
           <a href="{% url 'deliveyman-new-orders' %}">
-            <span class="nav-icons"><i class="fa-solid fa-cart-shopping"></i></span>
+            <span class="nav-icons"><i class="fa-solid fa-bell"></i></span>
             <h4>New Orders</h4>
-            <span>0</span>
+            <span id="new-order-count">0</span>
           </a>
         </li>
           <li class="link" id="{% block activate_current_orders %}currentorders{% endblock %}">
           <a href="{% url 'deliveyman-current-orders' %}">
-            <span class="nav-icons"><i class="fa-solid fa-cart-shopping"></i></span>
-            <h4>Current Orders</h4>
-            <span>0</span>
+            <span class="nav-icons"><i class="fa-solid fa-truck"></i></span>
+            <h4>Current Delivery</h4>
           </a>
         </li>
           <li class="link" id="{% block activate_history %}history{% endblock %}">
           <a href="{% url 'deliveyman-history' %}">
-            <span class="nav-icons"><i class="fa-solid fa-cart-shopping"></i></span>
+            <span class="nav-icons">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </span>
             <h4>History</h4>
           </a>
         </li>
         <li class="link" id="{% block activate_profile %}profile{% endblock %}">
           <a href="{% url 'deliveyman-profile' %}">
-            <span class="nav-icons"><i class="fa-solid fa-gear"></i></span>
+            <span class="nav-icons"><i class="fa-solid fa-user"></i></span>
             <h4>Profile</h4>
           </a>
         </li>

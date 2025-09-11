@@ -74,14 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
   let marker;
 
-  const kathmanduValleyPolygon = L.polygon(
+  const bhaktapurPolygon = L.polygon(
     [
-      [27.7167, 85.204],
-      [27.587, 85.2785],
-      [27.609, 85.432],
-      [27.8, 85.4785],
-      [27.806, 85.27],
-      [27.74, 85.2],
+  [27.636, 85.406],
+  [27.636, 85.454],
+  [27.708, 85.454],
+  [27.708, 85.406]
     ],
     {
       color: "#2196f3",
@@ -91,9 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   ).addTo(map);
 
-  const kathmanduBounds = kathmanduValleyPolygon.getBounds();
-  map.setMaxBounds(kathmanduBounds);
-  map.fitBounds(kathmanduBounds);
+  const bhaktapurBounds = bhaktapurPolygon.getBounds();
+  map.setMaxBounds(bhaktapurBounds);
+  map.fitBounds(bhaktapurBounds);
 
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(
@@ -101,23 +99,25 @@ document.addEventListener("DOMContentLoaded", function () {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        if (kathmanduBounds.contains([lat, lng])) {
+        if (bhaktapurBounds.contains([lat, lng])) {
           map.setView([lat, lng], 13);
           marker = L.marker([lat, lng]).addTo(map);
           document.getElementById("lat").value = lat.toFixed(6);
           document.getElementById("lng").value = lng.toFixed(6);
         } else {
-          console.log("User is outside Kathmandu Valley. Using default view.");
+          console.log("User is outside Bhaktapur Valley. Using default view.");
+          showError({locationError:"User is outside Bhaktapur Valley. Using default view."},"error");
         }
       },
       () => {
-        console.log("Geolocation failed. Using default Kathmandu view.");
+        console.log("Geolocation failed. Using default Bhaktapur view.");
+        showError({locationError:"Geolocation failed. Using default Bhaktapur view."},"error");
       }
     );
   }
 
   map.on("click", function (e) {
-    if (kathmanduValleyPolygon.getBounds().contains(e.latlng)) {
+    if (bhaktapurPolygon.getBounds().contains(e.latlng)) {
       const lat = e.latlng.lat.toFixed(6);
       const lng = e.latlng.lng.toFixed(6);
 
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", function () {
       document.getElementById("lat").value = lat;
       document.getElementById("lng").value = lng;
     } else {
-      alert("Please select a location inside Kathmandu Valley.");
+      showError({locationError:"Please select a location inside Bhaktapur Valley."},"error");
     }
   });
 });

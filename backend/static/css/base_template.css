@@ -182,7 +182,8 @@ a#logowrapper-link {
   color: #f72905ff;
 }
 
-#order > a > span:last-child {
+#order > a > span:last-child,
+#currentorders > a > span:last-child {
   font-family: "rocketThunder";
   font-size: 25px;
   color: #fa0d0dff;
@@ -221,6 +222,7 @@ a#logowrapper-link {
   width: 120px;
   border: none;
   border-radius: 50px;
+  display: flex;
   font-family: "Poppins";
   box-shadow: -2px -2px 3px #ffffff, 3px 2px 5px #a5a4a4ff;
   cursor: pointer;

@@ -5,8 +5,229 @@
  {% block headcontent %}
         <div id="head-content">
           <h2>Profile</h2>
-          <h4>Customize Profile</h4>
+          <h4><span>Customize Profile</span></h4>
         </div>
       {% endblock %}
-{% block mainspace %}{% endblock %}
+{% block mainspace %}
+<div id="container-body">
+    <div id="main-wrapper">
+    <!-- {% if messages %}
+  <div class="messages">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endif %} -->
+
+    <div id="main-subwrapper">
+      <div id="main-container">
+        <div id="profilepic-container">
+          <div id="profilename-wrapper">
+            <h2>
+              <span>{{ deliveryman.Firstname }}</span>
+              <span>{{ deliveryman.Lastname }}</span>
+            </h2>
+          </div>
+          <div id="profilepic">
+            {% if restaurant.profile_picture %}
+  <img src="{{ deliveryman.UserImage.url }}" alt="profile pic" />
+{% else %}
+  <img src="{% static 'images/profilepic.png' %}" alt="default profile pic" />
+{% endif %}
+
+          </div>
+          <div id="changeprofilepic">
+            <button id="profilepicchangebtn">change profile picture</button>
+          </div>
+        </div>
+        <div id="profileinformation-container">
+          <div id="profileinfo-actual">
+            <div id="profileinfo-heading">
+              <h2>Bio and other details</h2>
+              <button id="{{deliveryman.id}}" class="bioupdate-btn">Update Bio</button>
+            </div>
+            <div id="profileinfo-body">
+              <div class="profileinfo">
+                <h4>Full Name</h4>
+                <h3>
+                  <span>{{ deliveryman.Firstname }}</span>
+              <span>{{ deliveryman.Lastname }}</span>
+            </h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Address</h4>
+                <h3>{{ deliveryman.Address}}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Email</h4>
+                <h3>{{ deliveryman.user.email}}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Date of Birth</h4>
+                <h3>{{ deliveryman.DateofBirth}}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Contact</h4>
+                <h3>{{ deliveryman.user.merchant_profile.phone_number }}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Vehicle</h4>
+                <h3>{{ deliveryman.Vehicle }}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Vehicle Number</h4>
+                <h3>{{ deliveryman.VehicleNumber }}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>PanNumber</h4>
+                <h3>{{ deliveryman.PanNumber }}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>DeliveryZone</h4>
+                <h3>{{ deliveryman.Zone }}</h3>
+              </div>
+              <div class="profileinfo">
+                <h4>Duty Time</h4>
+                <h3>{{ deliveryman.DutyTime }}</h3>
+              </div>
+            </div>
+          </div>
+
+          <!-- THIS FORM IS REPLACES THE ABOVE BLOCK -->
+
+          <div class="profileinfo-hide" id="profileinfo-toupdate">
+            <div id="profileinfo-heading">
+              <h2>Update Bio and other details</h2>
+            </div>
+            <form id="profileinfo-form" method="post"  novalidate>
+              {% csrf_token %}
+              <div class="ip">
+                <div>
+                  <label for="first-name">First Name</label>
+                </div>
+                <div>
+                  <input type="text" id="first-name" name="FirstName" required />
+                </div>
+              </div>
+
+              <div class="ip">
+                <div>
+                  <label for="last-name">Last Name</label>
+                </div>
+                <div>
+                  <input type="text" id="last-name" name="LastName" required />
+                </div>
+              </div>
+
+              <div class="ip">
+                <div>
+                  <label for="email">Email Address</label>
+                </div>
+                <div>
+                  <input type="email" id="email" name="Email" required />
+                </div>
+              </div>
+
+              <div class="ip">
+                <div>
+                  <label for="contact">Contact Number</label>
+                </div>
+                <div>
+                  <input type="tel" id="contact" name="Contact" required />
+                </div>
+              </div>
+
+              <div class="ip">
+                <div>
+                  <label for="address">Address</label>
+                </div>
+                <div>
+                  <input type="text" id="address" name="Address" required />
+                </div>
+              </div>
+
+                <div class="ip">
+          <div>
+            <label for="dob">Date of Birth</label>
+          </div>
+          <div>
+            <input type="date" name="DateofBirth" id="dob" required />
+          </div>
+        </div>
+              <div class="ip">
+                <div>
+                  <label for="pannumber">Pan Number</label>
+                </div>
+                <div>
+                  <input type="number" id="pannumber" name="PanNumber"  required></input>
+                </div>
+              </div>
+              
+                <input type="hidden" id="deliveryman_id" name="deliveryman_id" value="{{deliveryman.id}}"/>
+                
+              
+              <div class="submit-wrapper" id="merchant-submit">
+                <button id="cancel-update" type="button">Cancel</button>
+                <button id="merchant-submit-btn" type="submit">Submit</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="profilepicform-container" class="hidden">
+      <div id="profilepicform">
+        <span id="close-ppmodal"><i class="fa-solid fa-circle-xmark"></i></span>
+        <h2>Choose new profile picture</h2>
+        <form id="profilepic-form" method="POST" enctype="multipart/form-data" novalidate>
+          {% csrf_token %}
+          <div id="image-container">
+            <div id="image-preview">
+              <div id="previewinfo">
+                <span><i class="fa-solid fa-image"></i></span>
+                <h2>Preview</h2>
+              </div>
+              <img id="image-preview-img" src="#" alt="Image Preview" />
+            </div>
+            <div id="imageform">
+              <label for="profile_picture">"Choose an image"</label>
+              <input type="file" name="profile_picture" id="profile_picture" accept="image/*" />
+              <input type="hidden" name="deliveryman" id="deliveryman" value="{{deliveryman.id}}" />
+              <div class="picsubmit">
+                <button type="submit" class="submit-btn">Upload</button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div id="card-container"></div>
+  </div>
+</div>
+ {% if form.errors %}
+        {{ form.errors|json_script:"form-errors" }}
+    {% endif %}
+    {% if messages %}
+        <script id="django-messages" type="application/json">
+    {
+      "errors": [
+        {% for message in messages %}
+          {% if message.tags == "error" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ],
+      "success": [
+        {% for message in messages %}
+          {% if message.tags == "success" %}
+            "{{ message }}"
+            {% if not forloop.last %},{% endif %}
+          {% endif %}
+        {% endfor %}
+      ]
+    }
+        </script>
+    {% endif %}
+{% endblock %}
 {% block scripts %}<script src="{% static 'scripts/deliveryman_profile.js' %}" defer></script>{% endblock %}
