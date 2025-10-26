@@ -8,5 +8,27 @@
           <h4>welcome <span>{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</span></h4>
         </div>
       {% endblock %}
-{% block mainspace %}{% endblock %}
+{% block mainspace %}
+ {% if messages %} {% for message in messages %}
+    <div id="success-card" class="success-card">
+      <div class="card-content">
+        <p>{{ message }}</p>
+      </div>
+    </div>
+    {% endfor %} {% endif %}
+ <div id="container-body">
+        <div class="summary-card">
+          <h3>Total New Deliveries</h3>
+          <p id="today-deliveries">0</p>
+        </div>
+        <div class="summary-card">
+          <h3>Pending Deliveries</h3>
+          <p id="pending-deliveries">0</p>
+        </div>
+        <div class="summary-card">
+          <h3>Total Completed</h3>
+          <p id="completed-deliveries">0</p>
+        </div>
+      </div>
+{% endblock %}
 {% block scripts %}<script src="{% static 'scripts/deliveryman_dashboard.js' %}" defer></script>{% endblock %}

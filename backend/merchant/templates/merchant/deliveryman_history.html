@@ -8,5 +8,83 @@
           <h4>Your History</h4>
         </div>
       {% endblock %}
-{% block mainspace %}{% endblock %}
+{% block mainspace %}
+<div id="container-body">
+<div class="summary-card">
+    <div class="main-info">
+        <h3> <span><i class="fa-solid fa-tag" id="tag-icon"></i>
+</span>ORDERID</h3>
+        <i class="fa-solid fa-circle-arrow-right view-details"></i>
+        <i class="fa-solid fa-circle-arrow-down view-less hidden"></i>
+    </div>
+    <div class="openclose">
+        <div class="main-body">
+        <div class="customer-info">
+            <h4>Customer info</h4>
+            <p><strong>Customer:</strong> CUSTOMER NAME</p>
+            <p><strong>Address:</strong>CUSTOMER ADDRESS</p>
+            <p><strong>Number:</strong>CUSTOMER NUMBER</p>
+        </div>
+        <div class="merchant-info">
+            <h4>Merchant info</h4>
+            <p><strong>Restaurant Name:</strong> RESTAURANT_NAME</p>
+            <p><strong>Address:</strong>ADDRESS</p>
+            <p><strong>Contact No:</strong>CONTACT_INFO</p>
+        </div>
+    </div> 
+    </div>
+    
+</div>
+<div class="summary-card">
+    <div class="main-info">
+        <h3> <span><i class="fa-solid fa-tag" id="tag-icon"></i>
+</span>ORDERID</h3>
+        <i class="fa-solid fa-circle-arrow-right view-details"></i>
+        <i class="fa-solid fa-circle-arrow-down view-less hidden"></i>
+    </div>
+    <div class="openclose">
+        <div class="main-body">
+        <div class="customer-info">
+            <h4>Customer info</h4>
+            <p><strong>Customer:</strong> CUSTOMER NAME</p>
+            <p><strong>Address:</strong>CUSTOMER ADDRESS</p>
+            <p><strong>Number:</strong>CUSTOMER NUMBER</p>
+        </div>
+        <div class="merchant-info">
+            <h4>Merchant info</h4>
+            <p><strong>Restaurant Name:</strong> RESTAURANT_NAME</p>
+            <p><strong>Address:</strong>ADDRESS</p>
+            <p><strong>Contact No:</strong>CONTACT_INFO</p>
+        </div>
+    </div> 
+    </div>
+    
+</div>
+<div class="summary-card">
+    <div class="main-info">
+        <h3> <span><i class="fa-solid fa-tag" id="tag-icon"></i>
+</span>ORDERID</h3>
+        <i class="fa-solid fa-circle-arrow-right view-details"></i>
+        <i class="fa-solid fa-circle-arrow-down view-less hidden"></i>
+    </div>
+    <div class="openclose">
+        <div class="main-body">
+        <div class="customer-info">
+            <h4>Customer info</h4>
+            <p><strong>Customer:</strong> CUSTOMER NAME</p>
+            <p><strong>Address:</strong>CUSTOMER ADDRESS</p>
+            <p><strong>Number:</strong>CUSTOMER NUMBER</p>
+        </div>
+        <div class="merchant-info">
+            <h4>Merchant info</h4>
+            <p><strong>Restaurant Name:</strong> RESTAURANT_NAME</p>
+            <p><strong>Address:</strong>ADDRESS</p>
+            <p><strong>Contact No:</strong>CONTACT_INFO</p>
+        </div>
+    </div> 
+    </div>
+    
+</div>
+</div>
+{% endblock %}
 {% block scripts %}<script src="{% static 'scripts/deliveryman_history.js' %}" defer></script>{% endblock %}

@@ -1,0 +1,60 @@
+#container-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.summary-card {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  height: 200px;
+  font-family: "Poppins", sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.summary-card:hover {
+  transform: scale(1.06);
+}
+
+.summary-card h3 {
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: #333;
+  margin-bottom: 10px;
+  font-family: "rocketThunder";
+}
+
+.summary-card p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ec600f;
+  font-family: "epic";
+}
+
+.success-card {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 5px solid #28a745;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  transition: all 0.5s ease-in-out;
+  opacity: 1;
+}
+
+@media (max-width: 768px) {
+  #container-body {
+    grid-template-columns: 1fr;
+  }
+}

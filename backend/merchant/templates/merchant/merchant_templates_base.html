@@ -26,34 +26,33 @@
         <ul id="navbar">
           <li class="link" id="{% block activate_dashboard %}dashboard{%endblock%}">
             <a href="{%url 'restaurant-dashboard'%}"
-              ><span class="nav-icons"><i class="fa-solid fa-house"></i></span>
+              ><span class="nav-icons"><i class="fa-solid fa-house fa-beat"></i></span>
               <h4>Dashboard</h4></a
             >
           </li>
           <li class="link" id="{% block activate_order %}order{%endblock%}">
             <a href="{% url 'restaurant-orders'%}"
               ><span class="nav-icons"
-                ><i class="fa-solid fa-cart-shopping"></i
-              ></span>
+                ><i class="fa-solid fa-bell fa-shake" style="--fa-animation-duration: 4s;"></i></span>
               <h4>Orders</h4>
               <span class="new-order-count">0</span>
               </a>
           </li>
           <li class="link" id="{% block activate_menu_dishes %}menu_dishes{%endblock%}">
             <a href="{% url 'restaurant-menu-dishes'%}"
-              ><span class="nav-icons"><i class="fa-solid fa-bowl-food"></i></i></span>
+              ><span class="nav-icons"><i class="fa-solid fa-bowl-food fa-bounce" style="--fa-animation-duration: 3s;"></i></i></span>
               <h4>Menu Dishes</h4></a
             >
           </li>
           <li class="link" id="{% block activate_customers %}customers{%endblock%}">
             <a href="{% url 'restaurant-customers'%}"
-              ><span class="nav-icons"><i class="fa-solid fa-people-group"></i></span>
+              ><span class="nav-icons"><i class="fa-solid fa-people-group fa-fade" style="--fa-animation-duration: 2s;"></i></span>
               <h4>Customers</h4></a
             >
           </li>
           <li class="link" id="{% block activate_settings %}settings{%endblock%}">
             <a href="{% url 'restaurant-settings'%}"
-              ><span class="nav-icons"><i class="fa-solid fa-gear"></i></span>
+              ><span class="nav-icons"><i class="fa-solid fa-gear fa-spin"></i></span>
               <h4>Setting</h4></a
             >
           </li>
