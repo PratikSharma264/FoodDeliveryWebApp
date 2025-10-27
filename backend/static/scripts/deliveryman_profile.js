@@ -53,21 +53,23 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBtn.addEventListener("click", async (e) => {
     profileActual.classList.add("profileinfo-hide");
     profileForm.classList.remove("profileinfo-hide");
-    const delivermanid = updateBtn.getAttribute("id");
- 
-    // try{
-    //   const response = await fetch(`http://127.0.0.1:8000/json/update-restaurant-bio/${delivermanid}/`);
-    //   const data = await response.json();
-    // document.getElementById("first-name").value = data.data.first_name || "";
-    // document.getElementById("last-name").value = data.data.last_name || "";
-    // document.getElementById("email").value = data.data.email || "";
-    // document.getElementById("contact").value = data.data.contact || "";
-    // document.getElementById("address").value = data.data.address || "";
-    // document.getElementById("dob").value = data.data.dob || "";
-    // document.getElementById("pannumber").value = data.data.pan_number|| "";
-    // }catch(err){
-    //   showError(err.message||"error while fetching deliveryman data from server","error");
-    // }
+    const deliverymanid = updateBtn.getAttribute("id");
+    console.log("here");
+    try{
+      console.log("here here");
+      const response = await fetch(`http://127.0.0.1:8000/json/update-deliveryman-bio/${deliverymanid}/`);
+      const data = await response.json();
+      
+    document.getElementById("first-name").value = data.data.Firstname || "";
+    document.getElementById("last-name").value = data.data.Lastname || "";
+    document.getElementById("email").value = data.data.Email || "";
+    document.getElementById("contact").value = data.data.Contact || "";
+    document.getElementById("address").value = data.data.Address || "";
+    document.getElementById("dob").value = data.data.DateofBirth || "";
+    document.getElementById("pannumber").value = data.data.PanNumber || "";
+    }catch(err){
+      showError(err.message||"error while fetching deliveryman data from server","error");
+    }
   });
 
  

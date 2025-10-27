@@ -8,5 +8,32 @@
           <h4>New Orders</h4>
         </div>
       {% endblock %}
-{% block mainspace %}{% endblock %}
-{% block scripts %}<script src="{% static 'scripts/deliveryman_new_orders.js' %}" defer></script>{% endblock %}
+{% block mainspace %}
+<div id="container-body" class="order-list"></div>
+{% endblock %}
+{% block scripts %}
+<script>
+  function showNotification() {
+
+  if (Notification.permission === "granted") {
+    const notification = new Notification("New Order Received", {
+      body: "Click to view details.",
+      icon: "/static/images/bell.png",
+      sound: new Audio("{% static 'audio/new_order.wav' %}"),
+    });
+    
+    new Audio("{% static 'audio/new_order.wav' %}").play().catch(error => {
+      console.error("Failed to play sound:", error);
+    });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        showNotification();
+      }
+    });
+  }
+}
+
+</script>
+<script src="{% static 'scripts/deliveryman_new_orders.js' %}" defer></script>
+{% endblock %}

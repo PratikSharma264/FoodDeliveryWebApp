@@ -99,7 +99,7 @@
             <div id="profileinfo-heading">
               <h2>Update Bio and other details</h2>
             </div>
-            <form id="profileinfo-form" method="post"  novalidate>
+            <form id="profileinfo-form" method="post" action="{% url 'update-deliveryman-bio' %}" novalidate>
               {% csrf_token %}
               <div class="ip">
                 <div>
@@ -179,7 +179,7 @@
       <div id="profilepicform">
         <span id="close-ppmodal"><i class="fa-solid fa-circle-xmark"></i></span>
         <h2>Choose new profile picture</h2>
-        <form id="profilepic-form" method="POST" enctype="multipart/form-data" novalidate>
+        <form id="profilepic-form" method="POST" action="{% url 'update-deliveryman-profile-picture' %}" enctype="multipart/form-data" novalidate>
           {% csrf_token %}
           <div id="image-container">
             <div id="image-preview">

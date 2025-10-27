@@ -8,5 +8,8 @@
           <h4>Current Orders</h4>
         </div>
       {% endblock %}
-{% block mainspace %}{% endblock %}
+{% block mainspace %}
+<div id="container-body" class="delivery-list">
+</div>
+{% endblock %}
 {% block scripts %}<script src="{% static 'scripts/deliveryman_current_orders.js' %}" defer></script>{% endblock %}

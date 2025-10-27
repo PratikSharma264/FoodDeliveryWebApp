@@ -182,12 +182,18 @@ a#logowrapper-link {
   color: #f72905ff;
 }
 
-#order > a > span:last-child,
-#currentorders > a > span:last-child {
+/* .order > a > span:last-child {
   font-family: "rocketThunder";
   font-size: 25px;
   color: #fa0d0dff;
-}
+} */
+
+/* #new-order-count {
+  font-family: "rocketThunder";
+  font-size: 18px;
+  color: #fa0d0d;
+  margin-left: auto;
+} */
 
 #logout-container {
   height: 300px;

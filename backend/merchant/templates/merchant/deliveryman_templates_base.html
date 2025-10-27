@@ -1,114 +1,138 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Dashboard{% endblock %}</title>
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="stylesheet" href="{% static 'css/base_template.css' %}">
-  {% block styles %}{% endblock %}
-</head>
-<body>
-  <header>
-    <a href="#" id="logowrapper-link">
-      <div class="logo-container">
-        <div id="logo">
-          <span><i class="fa-brands fa-glide-g"></i></span>
-          <span><i class="fa-brands fa-meetup"></i></span>
-        </div>
-        <div id="brandname"><span>Grub</span><span>mate</span></div>
-      </div>
-    </a>
-
-    <nav>
-      <ul id="navbar">
-        <li class="link" id="{% block activate_dashboard %}dashboard{% endblock %}">
-          <a href="{% url 'deliveryman-dashboard' %}">
-            <span class="nav-icons"><i class="fa-solid fa-house"></i></span>
-            <h4>Dashboard</h4>
-          </a>
-        </li>
-        <li class="link order" id="{% block activate_new_orders %}neworders{% endblock %}">
-          <a href="{% url 'deliveryman-new-orders' %}">
-            <span class="nav-icons"><i class="fa-solid fa-bell"></i></span>
-            <h4>New Orders</h4>
-            <span id="new-order-count">0</span>
-          </a>
-        </li>
-          <li class="link" id="{% block activate_current_orders %}currentorders{% endblock %}">
-          <a href="{% url 'deliveryman-current-orders' %}">
-            <span class="nav-icons"><i class="fa-solid fa-truck"></i></span>
-            <h4>Current Delivery</h4>
-          </a>
-        </li>
-          <li class="link" id="{% block activate_history %}history{% endblock %}">
-          <a href="{% url 'deliveryman-history' %}">
-            <span class="nav-icons">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-            </span>
-            <h4>History</h4>
-          </a>
-        </li>
-        <li class="link" id="{% block activate_profile %}profile{% endblock %}">
-          <a href="{% url 'deliveryman-profile' %}">
-            <span class="nav-icons"><i class="fa-solid fa-user"></i></span>
-            <h4>Profile</h4>
-          </a>
-        </li>
-      </ul>
-    </nav>
-
-    <div id="logout-container">
-      <div id="circle">
-        <img src="{% static 'images/burgerstill.png' %}" alt="burger" height="80" width="80">
-      </div>
-
-      <button type="button" id="logout">
-        <span class="logout-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
-        <span>Logout</span>
-      </button>
-    </div>
-  </header>
-
-  <div class="container" id="dashboard">
-    <div id="container-head">
-      {% block headcontent %}
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>
+      {% block title %}
+        Dashboard
       {% endblock %}
+    </title>
 
-      <div id="search-subcontainer">
-        <span><i class="fa-brands fa-searchengin"></i></span>
-        <input type="search" name="search" id="search" placeholder="search anything here...">
-      </div>
-
-      <div>
-        <div id="pp-container">
-          {% if deliveryman.UserImage %}
-            <img src="{{ deliveryman.UserImage.url }}" alt="profilepic" height="50" width="50">
-          {% else %}
-            <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50">
-          {% endif %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="{% static 'css/base_template.css' %}" />
+    {% block styles %}
+    {% endblock %}
+  </head>
+  <body>
+    <header>
+      <a href="#" id="logowrapper-link">
+        <div class="logo-container">
+          <div id="logo">
+            <span><i class="fa-brands fa-glide-g"></i></span>
+            <span><i class="fa-brands fa-meetup"></i></span>
+          </div>
+          <div id="brandname">
+            <span>Grub</span><span>mate</span>
+          </div>
         </div>
-        <h4>{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</h4>
+      </a>
+
+      <nav>
+        <ul id="navbar">
+          <li class="link"
+            id="{% block activate_dashboard %}
+              dashboard
+            {% endblock %}">
+            <a href="{% url 'deliveryman-dashboard' %}">
+              <span class="nav-icons"><i class="fa-solid fa-house fa-beat"></i></span>
+              <h4>Dashboard</h4>
+            </a>
+          </li>
+          <li class="link order"
+            id="{% block activate_new_orders %}
+              neworders
+            {% endblock %}">
+            <a href="{% url 'deliveryman-new-orders' %}">
+              <span class="nav-icons"><i class="fa-solid fa-bell fa-shake" style="--fa-animation-duration: 4s;"></i></span>
+              <h4>New Orders</h4>
+              <span id="new-order-count">0</span>
+            </a>
+          </li>
+          <li class="link"
+            id="{% block activate_current_orders %}
+              currentorders
+            {% endblock %}">
+            <a href="{% url 'deliveryman-current-orders' %}">
+              <span class="nav-icons"><i class="fa-solid fa-truck fa-bounce" style="--fa-animation-duration: 3s;"></i></span>
+              <h4>Current Delivery</h4>
+            </a>
+          </li>
+          <li class="link"
+            id="{% block activate_history %}
+              history
+            {% endblock %}">
+            <a href="{% url 'deliveryman-history' %}">
+              <span class="nav-icons"><i class="fa-solid fa-clock-rotate-left fa-spin" style="--fa-animation-direction: reverse;"></i></span>
+              <h4>History</h4>
+            </a>
+          </li>
+          <li class="link"
+            id="{% block activate_profile %}
+              profile
+            {% endblock %}">
+            <a href="{% url 'deliveryman-profile' %}">
+              <span class="nav-icons"><i class="fa-solid fa-user fa-fade"></i></span>
+              <h4>Profile</h4>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div id="logout-container">
+        <div id="circle">
+          <img src="{% static 'images/burgerstill.png' %}" alt="burger" height="80" width="80" />
+        </div>
+
+        <button type="button" id="logout">
+          <span class="logout-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+          <span>Logout</span>
+        </button>
+      </div>
+    </header>
+
+    <div class="container" id="dashboard">
+      <div id="container-head">
+        {% block headcontent %}
+
+        {% endblock %}
+
+        <div id="search-subcontainer">
+          <span><i class="fa-brands fa-searchengin"></i></span>
+          <input type="search" name="search" id="search" placeholder="search anything here..." />
+        </div>
+
+        <div>
+          <div id="pp-container">
+            {% if deliveryman.UserImage %}
+              <img src="{{ deliveryman.UserImage.url }}" alt="profilepic" height="50" width="50" />
+            {% else %}
+              <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50" />
+            {% endif %}
+          </div>
+          <h4>{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</h4>
+        </div>
+      </div>
+
+      {% block mainspace %}
+      {% endblock %}
+    </div>
+
+    <div id="revalidate-logout" class="hidden">
+      <div id="revalidate-content">
+        <p>Are you sure you want to logout?</p>
+        <form id="decision-btn" method="POST" action="{% url 'merchant-logout' %}">
+          {% csrf_token %}
+          <button id="yes-btn" type="submit">Yes</button>
+          <button id="no-btn" type="button">Cancel</button>
+        </form>
       </div>
     </div>
 
-    {% block mainspace %}{% endblock %}
-  </div>
-
-  <div id="revalidate-logout" class="hidden">
-    <div id="revalidate-content">
-      <p>Are you sure you want to logout?</p>
-      <form id="decision-btn" method="POST" action="{% url 'merchant-logout' %}">
-        {% csrf_token %}
-        <button id="yes-btn" type="submit">Yes</button>
-        <button id="no-btn" type="button">Cancel</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
-  {% block scripts %}{% endblock %}
-</body>
+    <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
+    <script src="{% static 'scripts/deliveryman_ws.js' %}" defer></script>
+    {% block scripts %}
+    {% endblock %}
+  </body>
 </html>

@@ -8,7 +8,51 @@
         </div>
   {% endblock  %}
   {% block activate_customers %}active{% endblock  %}
-{% block mainspace %}    
+{% block mainspace %}  
+  <div id="container-body">
+<div class="summary-card">
+    <div class="main-info">
+        <h3> 
+          <span>
+            <i class="fa-solid fa-tag" id="tag-icon"></i>
+          </span>CUSTOMERID</h3>
+        <i class="fa-solid fa-circle-arrow-right view-details"></i>
+        <i class="fa-solid fa-circle-arrow-down view-less hidden"></i>
+    </div>
+    <div class="openclose">
+        <div class="main-body">
+        <div class="customer-info">
+            <h4>Customer info</h4>
+            <p><strong>Customer:</strong> CUSTOMER NAME</p>
+            <p><strong>Address:</strong>CUSTOMER ADDRESS</p>
+            <p><strong>Number:</strong>CUSTOMER NUMBER</p>
+        </div>
+    </div> 
+    </div>
+    
+</div>
+<div class="summary-card">
+    <div class="main-info">
+        <h3> 
+          <span>
+            <i class="fa-solid fa-tag" id="tag-icon"></i>
+          </span>CUSTOMERID</h3>
+        <i class="fa-solid fa-circle-arrow-right view-details"></i>
+        <i class="fa-solid fa-circle-arrow-down view-less hidden"></i>
+    </div>
+    <div class="openclose">
+        <div class="main-body">
+        <div class="customer-info">
+            <h4>Customer info</h4>
+            <p><strong>Customer:</strong> CUSTOMER NAME</p>
+            <p><strong>Address:</strong>CUSTOMER ADDRESS</p>
+            <p><strong>Number:</strong>CUSTOMER NUMBER</p>
+        </div>
+    </div> 
+    </div>
+    
+</div>
+</div>
     {% endblock %}
      {% block scripts %}<script src="{%static 'scripts/restaurant_customers.js'%}" defer></script>{% endblock  %}
 

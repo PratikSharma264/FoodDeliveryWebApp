@@ -1,0 +1,84 @@
+#container-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.delivery-card {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-family: "Poppins", sans-serif;
+  transition: transform 0.2s ease;
+}
+
+.delivery-card:hover {
+  transform: scale(1.06);
+}
+
+.delivery-card h3 {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  letter-spacing: 1px;
+  color: #333;
+  margin-bottom: 10px;
+  font-family: "epic";
+}
+
+.delivery-card p {
+  font-size: clamp(1.2rem, 2vw, 1.5rem);
+  font-weight: bold;
+  color: #ec600f;
+  font-family: "rocketThunder";
+  letter-spacing: 1px;
+}
+
+.delivery-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.delivery-actions button {
+  padding: 5px 10px;
+  width: clamp(120px, 10vw, 160px);
+  height: 55px;
+  border: none;
+  border-radius: 7px;
+  margin-top: 20px;
+  font-family: "Poppins";
+  font-size: 15px;
+  color: #000000;
+  background-color: #b9b9b9ff;
+  cursor: pointer;
+}
+
+.delivery-actions button:hover {
+  background-color: #252525ff;
+  color: #ffffff;
+}
+
+#nonewdelivery {
+  font-size: 30px;
+  font-family: "rocketThunder";
+  letter-spacing: 1px;
+}
+
+#nonewdelivery > span {
+  color: #f54f0eff;
+}
+
+.map-container {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  #container-body {
+    grid-template-columns: 1fr;
+  }
+}
