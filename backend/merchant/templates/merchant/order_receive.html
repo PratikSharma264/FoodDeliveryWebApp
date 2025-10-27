@@ -23,8 +23,11 @@
         orderSocket.onmessage = function(e) {
             const data = JSON.parse(e.data);
             const ordersDiv = document.getElementById('orders');
-            const pretty = JSON.stringify(data, null, 4);
-            ordersDiv.insertAdjacentHTML('beforeend', `<pre>${pretty}</pre>`);
+            // Append only the incoming message part (order) from lobby
+            if (data.order) {
+                const pretty = JSON.stringify(data.order, null, 4);
+                ordersDiv.insertAdjacentHTML('beforeend', `<pre>${pretty}</pre>`);
+            }
         };
     </script>
 </body>

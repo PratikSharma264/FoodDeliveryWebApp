@@ -25,61 +25,156 @@
             border-radius: 6px;
             overflow-x: auto;
         }
+        label { display:block; margin-top:8px; }
+        textarea { width:100%; height:80px; font-family:monospace; }
+        input[type="text"] { width:100%; }
     </style>
 </head>
 <body>
     <h1>Order Sender</h1>
 
     <form id="form">
-        <input type="text" name="username" placeholder="Username" required/>
-        <input type="text" name="room" placeholder="Room" required/>
-        <input type="text" name="message" placeholder="Message" required/>
-        <button type="submit">Send</button>
+        <label>Username
+            <input type="text" name="username" placeholder="Username" required/>
+        </label>
+        <label>Room
+            <input type="text" name="room" placeholder="Room" required/>
+        </label>
+
+        <h3>Order fields</h3>
+        <label>Restaurant ID
+    <input type="text" name="restaurant_id" placeholder="123"/>
+</label>
+<label>Restaurant Name
+    <input type="text" name="restaurant_name" placeholder="Domino's Pizza"/>
+</label>
+        <label>Order ID
+            <input type="text" name="order_id" placeholder="ORD-1002" required/>
+        </label>
+        <label>Customer
+            <input type="text" name="customer" placeholder="Bob Smith" required/>
+        </label>
+        <label>Total
+            <input type="text" name="total" placeholder="NPR 2150" required/>
+        </label>
+        <label>Status
+            <input type="text" name="status" placeholder="Waiting for Delivery" required/>
+        </label>
+
+        <label>Order items (one per line, format: name|qty|price)
+            <textarea name="items" placeholder="Pepperoni Pizza|1|NPR 1200
+Beef Taco|10|NPR 100" required></textarea>
+        </label>
+
+        <h4>Customer details</h4>
+        <label>Email
+            <input type="text" name="email" placeholder="bob.smith@example.com"/>
+        </label>
+        <label>Phone
+            <input type="text" name="phone" placeholder="9808766542"/>
+        </label>
+        <label>Location latitude (optional)
+            <input type="text" name="lat" placeholder="e.g. 27.7172"/>
+        </label>
+        <label>Location longitude (optional)
+            <input type="text" name="lon" placeholder="e.g. 85.3240"/>
+        </label>
+
+        <button type="submit">Send Order</button>
     </form>
 
-    <h2>Messages</h2>
+    <h2>Messages (incoming)</h2>
     <div id="messages"></div>
 
     <script type="text/javascript">
-        let url = `ws://${window.location.host}/ws/socket-server/`
+        let url = `ws://${window.location.host}/ws/socket-server/`;
+        const chatSocket = new WebSocket(url);
 
-        const chatSocket = new WebSocket(url)
+        chatSocket.onopen = () => console.log("WebSocket opened:", url);
 
         chatSocket.onmessage = function(e){
-            let data = JSON.parse(e.data)
-            console.log('Received:', data)
+            let data = JSON.parse(e.data);
+            console.log('Received:', data);
 
-            if(data.type === 'chat'){
-                let messages = document.getElementById('messages')
-
-                // Pretty-print the dictionary
-                let prettyDict = JSON.stringify(data, null, 4)
-
-                messages.insertAdjacentHTML('beforeend', 
-                    `<pre>${prettyDict}</pre>`
-                )
-            }
+            // Pretty-print whatever we receive
+            let messages = document.getElementById('messages');
+            let prettyDict = JSON.stringify(data, null, 4);
+            messages.insertAdjacentHTML('beforeend', `<pre>${prettyDict}</pre>`);
         }
 
-        let form = document.getElementById('form')
+        let form = document.getElementById('form');
         form.addEventListener('submit', (e)=> {
-            e.preventDefault()
+            e.preventDefault();
 
             // Build dictionary from form values
-            let username = e.target.username.value
-            let room = e.target.room.value
-            let message = e.target.message.value
+            let username = e.target.username.value;
+            let room = e.target.room.value;
+            let order_id = e.target.order_id.value;
+            let customer = e.target.customer.value;
+            let total = e.target.total.value;
+            let status = e.target.status.value;
+            let itemsRaw = e.target.items.value.trim();
+            let email = e.target.email.value;
+            let phone = e.target.phone.value;
+            let lat = e.target.lat.value;
+            let lon = e.target.lon.value;
+
+            // Parse items: lines of "name|qty|price"
+            let items = [];
+            if(itemsRaw.length > 0){
+                let lines = itemsRaw.split(/\r?\n/);
+                for(let ln of lines){
+                    let parts = ln.split('|').map(s=>s.trim());
+                    if(parts.length >= 3){
+                        items.push({
+                            'name': parts[0],
+                            'qty': parseInt(parts[1]) || parts[1],
+                            'price': parts[2]
+                        });
+                    } else if(parts.length === 2){
+                        items.push({
+                            'name': parts[0],
+                            'qty': parseInt(parts[1]) || parts[1],
+                            'price': null
+                        });
+                    } else if(parts.length === 1 && parts[0] !== ''){
+                        items.push({ 'name': parts[0], 'qty': 1, 'price': null });
+                    }
+                }
+            }
+let restaurant_id = e.target.restaurant_id.value;
+let restaurant_name = e.target.restaurant_name.value;
+
+let order = {
+    'order_id': order_id,
+    'customer': customer,
+    'total': total,
+    'status': status,
+    'restaurant_id': restaurant_id || null,
+    'restaurant_name': restaurant_name || null,
+    'order_items': items,
+    'customer_details': {
+        'email': email || null,
+        'phone': phone || null,
+        'location': [
+            (lat === '' ? null : (isNaN(parseFloat(lat)) ? lat : parseFloat(lat))),
+            (lon === '' ? null : (isNaN(parseFloat(lon)) ? lon : parseFloat(lon)))
+        ]
+    }
+};
+
+          
 
             let payload = {
                 'username': username,
                 'room': room,
-                'message': message
-            }
+                'order': order
+            };
 
             // Send dictionary to Django consumer
-            chatSocket.send(JSON.stringify(payload))
+            chatSocket.send(JSON.stringify(payload));
 
-            form.reset()
+            form.reset();
         })
     </script>
 </body>
