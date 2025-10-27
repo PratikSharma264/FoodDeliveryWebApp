@@ -31,20 +31,20 @@
           </a>
         </li>
         <li class="link order" id="{% block activate_new_orders %}neworders{% endblock %}">
-          <a href="{% url 'deliveyman-new-orders' %}">
+          <a href="{% url 'deliveryman-new-orders' %}">
             <span class="nav-icons"><i class="fa-solid fa-bell"></i></span>
             <h4>New Orders</h4>
             <span id="new-order-count">0</span>
           </a>
         </li>
           <li class="link" id="{% block activate_current_orders %}currentorders{% endblock %}">
-          <a href="{% url 'deliveyman-current-orders' %}">
+          <a href="{% url 'deliveryman-current-orders' %}">
             <span class="nav-icons"><i class="fa-solid fa-truck"></i></span>
             <h4>Current Delivery</h4>
           </a>
         </li>
           <li class="link" id="{% block activate_history %}history{% endblock %}">
-          <a href="{% url 'deliveyman-history' %}">
+          <a href="{% url 'deliveryman-history' %}">
             <span class="nav-icons">
               <i class="fa-solid fa-clock-rotate-left"></i>
             </span>
@@ -52,7 +52,7 @@
           </a>
         </li>
         <li class="link" id="{% block activate_profile %}profile{% endblock %}">
-          <a href="{% url 'deliveyman-profile' %}">
+          <a href="{% url 'deliveryman-profile' %}">
             <span class="nav-icons"><i class="fa-solid fa-user"></i></span>
             <h4>Profile</h4>
           </a>

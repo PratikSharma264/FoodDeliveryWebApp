@@ -5,15 +5,39 @@
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
     <title>Lobby</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
-
+    <style>
+        body {
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        #messages {
+            margin-top: 20px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        pre {
+            background: #272822;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+    </style>
 </head>
 <body>
     <h1>Order Sender</h1>
 
     <form id="form">
-        <input type="text" name="message"/>
+        <input type="text" name="username" placeholder="Username" required/>
+        <input type="text" name="room" placeholder="Room" required/>
+        <input type="text" name="message" placeholder="Message" required/>
+        <button type="submit">Send</button>
     </form>
 
+    <h2>Messages</h2>
     <div id="messages"></div>
 
     <script type="text/javascript">
@@ -23,27 +47,40 @@
 
         chatSocket.onmessage = function(e){
             let data = JSON.parse(e.data)
-            console.log('Data:', data)
+            console.log('Received:', data)
 
             if(data.type === 'chat'){
                 let messages = document.getElementById('messages')
 
-                messages.insertAdjacentHTML('beforeend', `<div>
-                                        <p>${data.message}</p>
-                                    </div>`)
+                // Pretty-print the dictionary
+                let prettyDict = JSON.stringify(data, null, 4)
+
+                messages.insertAdjacentHTML('beforeend', 
+                    `<pre>${prettyDict}</pre>`
+                )
             }
         }
 
         let form = document.getElementById('form')
         form.addEventListener('submit', (e)=> {
             e.preventDefault()
-            let message = e.target.message.value 
-            chatSocket.send(JSON.stringify({
-                'message':message
-            }))
+
+            // Build dictionary from form values
+            let username = e.target.username.value
+            let room = e.target.room.value
+            let message = e.target.message.value
+
+            let payload = {
+                'username': username,
+                'room': room,
+                'message': message
+            }
+
+            // Send dictionary to Django consumer
+            chatSocket.send(JSON.stringify(payload))
+
             form.reset()
         })
-
     </script>
 </body>
 </html>
