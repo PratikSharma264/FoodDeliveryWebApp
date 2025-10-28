@@ -9,6 +9,7 @@ from django.db import models
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from decimal import Decimal
 
 # Validator for Nepali phone numbers
 phone_validator = RegexValidator(
@@ -62,7 +63,7 @@ class Cuisine(models.Model):
 #         ('commission', 'Commission Base'),
 #         ('subscription', 'Subscription Base'),
 #     ]
-
+#
 #     user = models.OneToOneField(
 #         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
 #     restaurant_name = models.CharField(max_length=100, default='')
@@ -87,7 +88,7 @@ class Cuisine(models.Model):
 #         max_length=10, choices=RESTAURANT_TYPE_CHOICES, default='local')
 #     created_at = models.DateTimeField(default=timezone.now)
 #     approved = models.BooleanField(default=False)
-
+#
 #     def __str__(self):
 #         return self.restaurant_name
 
@@ -99,7 +100,7 @@ class Restaurant(models.Model):
     ]
 
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True
+        User, on_delete=models.CASCADE, related_name='restaurant_profile', null=True
     )
     restaurant_name = models.CharField(max_length=100, default='')
     owner_name = models.CharField(max_length=100, default='')
@@ -192,7 +193,7 @@ class Deliveryman(models.Model):
     ]
 
     user = models.OneToOneField(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
+        User, on_delete=models.CASCADE, related_name='deliveryman_profile', null=True)
     Firstname = models.CharField(max_length=100)
     Lastname = models.CharField(max_length=100)
     Address = models.CharField(max_length=255, null=True)
@@ -288,90 +289,78 @@ class Order(models.Model):
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_profile')
-
     restaurant = models.ForeignKey(
-        'Restaurant',
-        on_delete=models.CASCADE,
-        related_name='orders'
-    )
-    food_item = models.ForeignKey(
+        'Restaurant', on_delete=models.CASCADE, related_name='orders')
+
+    food_item = models.ManyToManyField(
         'FoodItem',
-        on_delete=models.CASCADE,
+        through='OrderItem',
         related_name='orders',
-        null=True,
         blank=True
     )
-    quantity = models.PositiveIntegerField(default=1)
+
     total_price = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        help_text="Total price for this order",
-        null=True,
-        blank=True
-    )
-    is_transited = models.BooleanField(
-        default=True,
-        help_text="Whether the order is in transit/delivered"
-    )
+        max_digits=10, decimal_places=2, null=True, blank=True)
+    is_transited = models.BooleanField(default=True)
     deliveryman = models.ForeignKey(
-        'Deliveryman',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='orders'
-    )
+        'Deliveryman', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default='PENDING'
-    )
+        max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
     class Meta:
         ordering = ['-order_date']
-        verbose_name = "Order"
-        verbose_name_plural = "Orders"
-
-    def save(self, *args, **kwargs):
-        is_new = self.pk is None
-
-        if not self.total_price and self.food_item:
-            self.total_price = self.food_item.price * self.quantity
-
-        if self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']:
-            self.is_transited = True
-        else:
-            self.is_transited = False
-
-        super().save(*args, **kwargs)
-
-        # Update FoodOrderCount when new order is created
-        if is_new and self.food_item:
-            food_order_count, created = FoodOrderCount.objects.get_or_create(
-                food_item=self.food_item
-            )
-            food_order_count.no_of_orders += self.quantity
-            food_order_count.save()
 
     def calculate_total(self):
-        if self.food_item:
-            return self.food_item.price * self.quantity
-        return 0
+        total = Decimal('0.00')
+        for oi in self.order_items.all():           # see related_name on OrderItem below
+            price_each = oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
+            total += (price_each or Decimal('0.00')) * oi.quantity
+        return total
 
     def update_total_price(self):
         self.total_price = self.calculate_total()
         self.save(update_fields=['total_price'])
 
-    def mark_as_transited(self):
-        self.is_transited = True
-        if self.status in ['PENDING', 'PROCESSING']:
-            self.status = 'OUT_FOR_DELIVERY'
-        self.save()
+    def save(self, *args, **kwargs):
+        self.is_transited = self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']
+        super().save(*args, **kwargs)
+        # try to keep total synced if items exist
+        try:
+            self.update_total_price()
+        except Exception:
+            pass
 
     def __str__(self):
-        if self.food_item and self.user:
-            return f"Order #{self.pk} - {self.food_item.name} x{self.quantity} by {self.user.get_full_name() or self.user.username}"
-        return f"Order #{self.pk}"
+        return f"Order #{self.pk} by {self.user.get_full_name() or self.user.username}"
+
+
+class OrderItem(models.Model):
+    order = models.ForeignKey(
+        Order, on_delete=models.CASCADE, related_name='order_items')
+    # keep field named `food_item` here too — consistent naming
+    food_item = models.ForeignKey(
+        'FoodItem', on_delete=models.CASCADE, related_name='order_items')
+    quantity = models.PositiveIntegerField(default=1)
+    price_at_order = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Order Item"
+        verbose_name_plural = "Order Items"
+
+    def save(self, *args, **kwargs):
+        if self.price_at_order is None:
+            self.price_at_order = self.food_item.price
+        super().save(*args, **kwargs)
+        # update parent order total
+        try:
+            self.order.update_total_price()
+        except Exception:
+            pass
+
+    def __str__(self):
+        return f"{self.food_item.name} x{self.quantity} (Order #{self.order.pk})"
 
 
 class FoodOrderCount(models.Model):
@@ -454,7 +443,7 @@ class Delivery(models.Model):
 #         ('FAILED', 'Failed'),
 #         ('CANCELLED', 'Cancelled'),
 #     ]
-
+#
 #     order = models.OneToOneField(
 #         Order, on_delete=models.CASCADE, related_name='delivery_status')
 #     user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
@@ -464,7 +453,7 @@ class Delivery(models.Model):
 #     status = models.CharField(
 #         max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
 #     updated_at = models.DateTimeField(auto_now=True)
-
+#
 #     def __str__(self):
 #         return f"Order #{self.order.id} - {self.status}"
 
@@ -491,7 +480,7 @@ class DeliverymanStatus(models.Model):
         return f"{self.deliveryman.Firstname} {self.deliveryman.Lastname}"
 
 
-
 class GoToDashClickCheck(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="go_to_dash_check")
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="go_to_dash_check")
     go_to_dash_clicked = models.BooleanField(default=False)

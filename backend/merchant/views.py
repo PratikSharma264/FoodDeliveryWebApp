@@ -20,6 +20,8 @@ from django.http import Http404, JsonResponse
 from functools import wraps
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from decimal import Decimal
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 def profile_none_required(view_func):
@@ -235,7 +237,6 @@ def update_restaurant_profile_picture(request):
     return redirect("restaurant-settings")
 
 
-
 @login_required
 def deliveryman_bio_json_response(request, id):
     deliveryman = get_object_or_404(Deliveryman, id=id, user=request.user)
@@ -263,39 +264,51 @@ def deliveryman_bio_json_response(request, id):
 @login_required
 def update_deliveryman_bio(request):
     if request.method == "POST":
-        deliveryman_id = request.POST.get("deliveryman_id") or request.POST.get("deliveryman")
-        deliveryman = get_object_or_404(Deliveryman, id=deliveryman_id, user=request.user)
-        form = DeliverymanBioUpdateForm(request.POST, request.FILES, instance=deliveryman, user=request.user)
+        deliveryman_id = request.POST.get(
+            "deliveryman_id") or request.POST.get("deliveryman")
+        deliveryman = get_object_or_404(
+            Deliveryman, id=deliveryman_id, user=request.user)
+        form = DeliverymanBioUpdateForm(
+            request.POST, request.FILES, instance=deliveryman, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Profile updated successfully.")
         else:
-            messages.error(request, "Failed to update profile. Please check the form inputs.")
+            messages.error(
+                request, "Failed to update profile. Please check the form inputs.")
     return redirect("deliveryman-profile")
 
 
 @login_required
 def update_deliveryman_profile_picture(request):
     if request.method == "POST":
-        deliveryman_id = request.POST.get("deliveryman") or request.POST.get("deliveryman_id")
-        deliveryman = get_object_or_404(Deliveryman, id=deliveryman_id, user=request.user)
+        deliveryman_id = request.POST.get(
+            "deliveryman") or request.POST.get("deliveryman_id")
+        deliveryman = get_object_or_404(
+            Deliveryman, id=deliveryman_id, user=request.user)
         if 'UserImage' in request.FILES:
-            form = DeliverymanProfilePicUpdateForm(request.POST, request.FILES, instance=deliveryman)
+            form = DeliverymanProfilePicUpdateForm(
+                request.POST, request.FILES, instance=deliveryman)
             if form.is_valid():
                 form.save()
-                messages.success(request, "Profile picture updated successfully.")
+                messages.success(
+                    request, "Profile picture updated successfully.")
             else:
-                messages.error(request, "Failed to update profile picture. Please try again.")
+                messages.error(
+                    request, "Failed to update profile picture. Please try again.")
         elif 'profile_picture' in request.FILES:
             deliveryman.UserImage = request.FILES['profile_picture']
             try:
                 deliveryman.save()
-                messages.success(request, "Profile picture updated successfully.")
+                messages.success(
+                    request, "Profile picture updated successfully.")
             except Exception:
-                messages.error(request, "Failed to save profile picture. Please try again.")
+                messages.error(
+                    request, "Failed to save profile picture. Please try again.")
         else:
             messages.error(request, "No image uploaded.")
     return redirect("deliveryman-profile")
+
 
 @login_required
 def update_restaurant_location(request):
@@ -313,6 +326,57 @@ def update_restaurant_location(request):
                 request, "Failed to update location. Please check the values.")
 
     return redirect("restaurant-settings")
+
+
+@login_required
+def restaurant_orders_json_response(request, id):
+    restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
+    customer_id = request.GET.get('customer_id')
+    orders_qs = Order.objects.filter(restaurant=restaurant).select_related(
+        'user').prefetch_related('order_items__food_item')
+    if customer_id:
+        orders_qs = orders_qs.filter(user_id=customer_id)
+    data = []
+    for order in orders_qs:
+        items_display = []
+        computed_total = Decimal('0.00')
+        for oi in order.order_items.all():
+            price_each = oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
+            item_total = (price_each or Decimal('0.00')) * oi.quantity
+            computed_total += item_total
+            items_display.append(
+                f"{oi.food_item.name} (x{oi.quantity}) - NPR {item_total:.2f}")
+        total_value = order.total_price if order.total_price is not None else computed_total
+        user_obj = order.user
+        customer_name = user_obj.get_full_name() or getattr(user_obj, 'username', '')
+        phone = ''
+        for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
+            phone = getattr(user_obj, attr, None)
+            if phone:
+                break
+        if not phone:
+            profile = getattr(user_obj, 'user_profile', None)
+            if profile:
+                phone = getattr(profile, 'phone', '') or getattr(
+                    profile, 'phone_number', '') or ''
+        if not phone:
+            merchant_profile = getattr(user_obj, 'merchant_profile', None)
+            if merchant_profile:
+                phone = getattr(merchant_profile, 'phone_number', '') or ''
+        phone = phone or ''
+        data.append({
+            "order_id": order.pk,
+            "customer": customer_name,
+            "total": f"NPR {total_value:.2f}",
+            "status": order.get_status_display() if hasattr(order, 'get_status_display') else order.status,
+            "order_items": items_display,
+            "customer_details": {
+                "email": getattr(user_obj, 'email', '') or '',
+                "phone": phone,
+            },
+            "order_date": order.order_date.isoformat() if getattr(order, 'order_date', None) else None,
+        })
+    return JsonResponse({"success": True, "data": data}, encoder=DjangoJSONEncoder, safe=True)
 
 
 @login_required
@@ -461,6 +525,7 @@ def deliveryman_new_orders(request):
         'deliveryman': profile,
     })
 
+
 @login_required
 def deliveryman_current_orders(request):
     try:
@@ -585,6 +650,7 @@ def restaurant_customers(request):
         'restaurant': profile,
     })
 
+
 @login_required
 def deliveryman_history(request):
     try:
@@ -595,6 +661,7 @@ def deliveryman_history(request):
         'deliveryman': profile,
     })
 
+
 @login_required
 def deliveryman_profile(request):
     try:
@@ -604,6 +671,7 @@ def deliveryman_profile(request):
     return render(request, "merchant/deliveryman_profile.html", {
         'deliveryman': profile,
     })
+
 
 @login_required
 def restaurant_settings(request):
