@@ -267,146 +267,142 @@
 //   renderOrders();
 // });
 
-const socket = new WebSocket("wss://your-backend.com/orders");
+let socket = null ; 
+const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
+const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
+
+socket = new WebSocket(wsUrl);
 
 document.addEventListener("DOMContentLoaded", () => {
   const orderWrapper = document.querySelector("#current-order-wrapper");
   const emptyOrder = document.querySelector("#emptyorder");
-  //   let orders = [];
+    let orders = [];
 
-  const orders = [
-    {
-      orderId: "ORD-1001",
-      orderDate: "2025-08-08T14:30:00Z",
-      customer: {
-        customerId: "CUST-001",
-        name: "Alice Johnson",
-        email: "alice.johnson@example.com",
-        phone: "9876543211",
-      },
-      items: [
-        {
-          id: 1,
-          name: "Margherita Pizza",
-          price: 1000,
-          discount: 0,
-          quantity: 1,
-          description: "Classic pizza with tomatoes, mozzarella, and basil",
-          category: "veg",
-          image:
-            "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          availability: "available",
-        },
-        {
-          id: 3,
-          name: "California Roll",
-          price: 800,
-          discount: 10,
-          quantity: 2,
-          description: "Crab, avocado, and cucumber",
-          category: "non-veg",
-          image:
-            "https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          availability: "available",
-        },
-      ],
-      totalAmount: 2440,
-      status: "Processing",
-      deliveryman: null,
-      deliveryRequestTime: null,
-      estimatedDeliveryTime: null,
-    },
-    {
-      orderId: "ORD-1002",
-      orderDate: "2025-08-08T15:10:00Z",
-      customer: {
-        customerId: "CUST-002",
-        name: "Bob Smith",
-        email: "bob.smith@example.com",
-        phone: "9808766542",
-      },
-      items: [
-        {
-          id: 2,
-          name: "Pepperoni Pizza",
-          price: 1200,
-          discount: 0,
-          quantity: 1,
-          description: "Pepperoni, cheese, and tomato sauce",
-          category: "non-veg",
-          image:
-            "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          availability: "available",
-        },
-        {
-          id: 5,
-          name: "Beef Taco",
-          price: 100,
-          discount: 5,
-          quantity: 10,
-          description: "Ground beef, lettuce, cheese, and salsa",
-          category: "non-veg",
-          image:
-            "https://plus.unsplash.com/premium_photo-1664391890333-b6708e34b021?q=80&w=729&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          availability: "available",
-        },
-      ],
-      totalAmount: 2150,
-      status: "Waiting for Delivery",
-      deliveryman: {
-        deliverymanId: "DEL-1001",
-        name: "Ravi Kumar",
-        phone: "+1122334455",
-        vehicleType: "Bike",
-      },
-      deliveryRequestTime: "2025-08-08T15:15:00Z",
-      estimatedDeliveryTime: "2025-08-08T15:50:00Z",
-    },
-    {
-      orderId: "ORD-1003",
-      orderDate: "2025-08-08T16:00:00Z",
-      customer: {
-        customerId: "CUST-003",
-        name: "Catherine Lee",
-        email: "catherine.lee@example.com",
-        phone: "+1478523690",
-      },
-      items: [
-        {
-          id: 1,
-          name: "Margherita Pizza",
-          price: 1000,
-          discount: 0,
-          quantity: 1,
-          description: "Classic pizza with tomatoes, mozzarella, and basil",
-          category: "veg",
-          image:
-            "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-          availability: "available",
-        },
-      ],
-      totalAmount: 1000,
-      status: "Delivered",
-      deliveryman: {
-        deliverymanId: "DEL-1001",
-        name: "Rajesh Hamal",
-        phone: "+1122334455",
-        vehicleType: "Bike",
-      },
-      deliveryRequestTime: "2025-08-08T15:15:00Z",
-      estimatedDeliveryTime: "2025-08-08T15:50:00Z",
-    },
-  ];
+    // implement garna baki xa ( request at the initial stage for the current orders)
 
-  //   fetchOrders();
-  renderOrders();
-
-  // Fetch from backend
-  async function fetchOrders() {
-    const res = await fetch("https://your-backend.com/api/merchant/orders");
-    orders = await res.json();
-    renderOrders();
-  }
+  // const orders = [
+  //   {
+  //     orderId: "ORD-1001",
+  //     orderDate: "2025-08-08T14:30:00Z",
+  //     customer: {
+  //       customerId: "CUST-001",
+  //       name: "Alice Johnson",
+  //       email: "alice.johnson@example.com",
+  //       phone: "9876543211",
+  //     },
+  //     items: [
+  //       {
+  //         id: 1,
+  //         name: "Margherita Pizza",
+  //         price: 1000,
+  //         discount: 0,
+  //         quantity: 1,
+  //         description: "Classic pizza with tomatoes, mozzarella, and basil",
+  //         category: "veg",
+  //         image:
+  //           "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //         availability: "available",
+  //       },
+  //       {
+  //         id: 3,
+  //         name: "California Roll",
+  //         price: 800,
+  //         discount: 10,
+  //         quantity: 2,
+  //         description: "Crab, avocado, and cucumber",
+  //         category: "non-veg",
+  //         image:
+  //           "https://images.unsplash.com/photo-1559410545-0bdcd187e0a6?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //         availability: "available",
+  //       },
+  //     ],
+  //     totalAmount: 2440,
+  //     status: "Processing",
+  //     deliveryman: null,
+  //     deliveryRequestTime: null,
+  //     estimatedDeliveryTime: null,
+  //   },
+  //   {
+  //     orderId: "ORD-1002",
+  //     orderDate: "2025-08-08T15:10:00Z",
+  //     customer: {
+  //       customerId: "CUST-002",
+  //       name: "Bob Smith",
+  //       email: "bob.smith@example.com",
+  //       phone: "9808766542",
+  //     },
+  //     items: [
+  //       {
+  //         id: 2,
+  //         name: "Pepperoni Pizza",
+  //         price: 1200,
+  //         discount: 0,
+  //         quantity: 1,
+  //         description: "Pepperoni, cheese, and tomato sauce",
+  //         category: "non-veg",
+  //         image:
+  //           "https://plus.unsplash.com/premium_photo-1733259709671-9dbf22bf02cc?q=80&w=580&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //         availability: "available",
+  //       },
+  //       {
+  //         id: 5,
+  //         name: "Beef Taco",
+  //         price: 100,
+  //         discount: 5,
+  //         quantity: 10,
+  //         description: "Ground beef, lettuce, cheese, and salsa",
+  //         category: "non-veg",
+  //         image:
+  //           "https://plus.unsplash.com/premium_photo-1664391890333-b6708e34b021?q=80&w=729&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //         availability: "available",
+  //       },
+  //     ],
+  //     totalAmount: 2150,
+  //     status: "Waiting for Delivery",
+  //     deliveryman: {
+  //       deliverymanId: "DEL-1001",
+  //       name: "Ravi Kumar",
+  //       phone: "+1122334455",
+  //       vehicleType: "Bike",
+  //     },
+  //     deliveryRequestTime: "2025-08-08T15:15:00Z",
+  //     estimatedDeliveryTime: "2025-08-08T15:50:00Z",
+  //   },
+  //   {
+  //     orderId: "ORD-1003",
+  //     orderDate: "2025-08-08T16:00:00Z",
+  //     customer: {
+  //       customerId: "CUST-003",
+  //       name: "Catherine Lee",
+  //       email: "catherine.lee@example.com",
+  //       phone: "+1478523690",
+  //     },
+  //     items: [
+  //       {
+  //         id: 1,
+  //         name: "Margherita Pizza",
+  //         price: 1000,
+  //         discount: 0,
+  //         quantity: 1,
+  //         description: "Classic pizza with tomatoes, mozzarella, and basil",
+  //         category: "veg",
+  //         image:
+  //           "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?q=80&w=869&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  //         availability: "available",
+  //       },
+  //     ],
+  //     totalAmount: 1000,
+  //     status: "Delivered",
+  //     deliveryman: {
+  //       deliverymanId: "DEL-1001",
+  //       name: "Rajesh Hamal",
+  //       phone: "+1122334455",
+  //       vehicleType: "Bike",
+  //     },
+  //     deliveryRequestTime: "2025-08-08T15:15:00Z",
+  //     estimatedDeliveryTime: "2025-08-08T15:50:00Z",
+  //   },
+  // ];
 
   // Listen to new order push from WebSocket
   socket.addEventListener("message", (event) => {
