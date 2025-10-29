@@ -34,59 +34,37 @@
     <h1>Order Sender</h1>
 
     <form id="form">
-        <label>Username
-            <input type="text" name="username" placeholder="Username" required/>
-        </label>
-        <label>Room
-            <input type="text" name="room" placeholder="Room" required/>
-        </label>
 
-        <h3>Order fields</h3>
-        <label>Restaurant ID
-    <input type="text" name="restaurant_id" placeholder="123"/>
-</label>
-<label>Restaurant Name
-    <input type="text" name="restaurant_name" placeholder="Domino's Pizza"/>
-</label>
-        <label>Order ID
-            <input type="text" name="order_id" placeholder="ORD-1002" required/>
-        </label>
-        <label>Customer
-            <input type="text" name="customer" placeholder="Bob Smith" required/>
-        </label>
-        <label>Total
-            <input type="text" name="total" placeholder="NPR 2150" required/>
-        </label>
-        <label>Status
-            <input type="text" name="status" placeholder="Waiting for Delivery" required/>
-        </label>
+        <label for="userId">User ID:</label><br>
+        <input type="text" id="userId" name="user_id" value="15"><br><br>
+        
+        <label for="restaurantId">Restaurant ID:</label><br>
+        <input type="text" id="restaurantId" name="restaurant_id" value="14"><br><br>
 
-        <label>Order items (one per line, format: name|qty|price)
-            <textarea name="items" placeholder="Pepperoni Pizza|1|NPR 1200
-Beef Taco|10|NPR 100" required></textarea>
-        </label>
-
-        <h4>Customer details</h4>
-        <label>Email
-            <input type="text" name="email" placeholder="bob.smith@example.com"/>
-        </label>
-        <label>Phone
-            <input type="text" name="phone" placeholder="9808766542"/>
-        </label>
-        <label>Location latitude (optional)
-            <input type="text" name="lat" placeholder="e.g. 27.7172"/>
-        </label>
-        <label>Location longitude (optional)
-            <input type="text" name="lon" placeholder="e.g. 85.3240"/>
-        </label>
-
-        <button type="submit">Send Order</button>
+        <div id="food-items">
+            <label>Food IDs:</label><br>
+            <input type="text" name="food_ids[]" placeholder="Enter food ID"><br>
+        </div>
+        <button type="button" onclick="addFood()">Click to Add Another Food</button><br><br>
+        <button type="submit">Submit Order</button>
     </form>
 
     <h2>Messages (incoming)</h2>
     <div id="messages"></div>
 
+
     <script type="text/javascript">
+
+        function addFood() {
+            const container = document.getElementById('food-items');
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = 'food_ids[]';
+            input.placeholder = 'Enter food ID';
+            container.appendChild(document.createElement('br'));
+            container.appendChild(input);
+        }
+
         let url = `ws://${window.location.host}/ws/socket-server/`;
         const chatSocket = new WebSocket(url);
 
@@ -106,69 +84,18 @@ Beef Taco|10|NPR 100" required></textarea>
         form.addEventListener('submit', (e)=> {
             e.preventDefault();
 
-            // Build dictionary from form values
-            let username = e.target.username.value;
-            let room = e.target.room.value;
-            let order_id = e.target.order_id.value;
-            let customer = e.target.customer.value;
-            let total = e.target.total.value;
-            let status = e.target.status.value;
-            let itemsRaw = e.target.items.value.trim();
-            let email = e.target.email.value;
-            let phone = e.target.phone.value;
-            let lat = e.target.lat.value;
-            let lon = e.target.lon.value;
+            const userId = document.getElementById('userId').value.trim();
+            const restaurantId = document.getElementById('restaurantId').value.trim();
+            const foodInputs = document.querySelectorAll('input[name="food_ids[]"]');
 
-            // Parse items: lines of "name|qty|price"
-            let items = [];
-            if(itemsRaw.length > 0){
-                let lines = itemsRaw.split(/\r?\n/);
-                for(let ln of lines){
-                    let parts = ln.split('|').map(s=>s.trim());
-                    if(parts.length >= 3){
-                        items.push({
-                            'name': parts[0],
-                            'qty': parseInt(parts[1]) || parts[1],
-                            'price': parts[2]
-                        });
-                    } else if(parts.length === 2){
-                        items.push({
-                            'name': parts[0],
-                            'qty': parseInt(parts[1]) || parts[1],
-                            'price': null
-                        });
-                    } else if(parts.length === 1 && parts[0] !== ''){
-                        items.push({ 'name': parts[0], 'qty': 1, 'price': null });
-                    }
-                }
-            }
-let restaurant_id = e.target.restaurant_id.value;
-let restaurant_name = e.target.restaurant_name.value;
+            const foodIds = Array.from(foodInputs).map(input => input.value.trim()).filter(v => v !== '');
+            const orderData = { userId, restaurantId, foodIds };
 
-let order = {
-    'order_id': order_id,
-    'customer': customer,
-    'total': total,
-    'status': status,
-    'restaurant_id': restaurant_id || null,
-    'restaurant_name': restaurant_name || null,
-    'order_items': items,
-    'customer_details': {
-        'email': email || null,
-        'phone': phone || null,
-        'location': [
-            (lat === '' ? null : (isNaN(parseFloat(lat)) ? lat : parseFloat(lat))),
-            (lon === '' ? null : (isNaN(parseFloat(lon)) ? lon : parseFloat(lon)))
-        ]
-    }
-};
-
-          
-
+            console.log("orderData:",orderData);
             let payload = {
-                'username': username,
-                'room': room,
-                'order': order
+                // 'username': username,
+                // 'room': 'room',
+                'order': orderData
             };
 
             // Send dictionary to Django consumer

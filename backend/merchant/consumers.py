@@ -9,7 +9,9 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = 'order'
         async_to_sync(self.channel_layer.group_add)(self.room_group_name, self.channel_name)
         self.accept()
-        self.send(text_data=json.dumps({'status': 'connected from django channels'}))
+        self.send(text_data=json.dumps({
+            'type':'status',
+            'status': 'connected from django channels'}))
 
     def receive(self, text_data):
         from django.contrib.auth import get_user_model

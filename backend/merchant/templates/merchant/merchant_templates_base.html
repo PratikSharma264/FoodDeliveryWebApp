@@ -76,7 +76,7 @@
       {% block headcontent %}
         <div id="head-content">
           <h2>Dashboard</h2>
-          <h4>welcome <span>{{ restaurant.restaurant_name }}</span></h4>
+          <h4>welcome <span>{{ restaurant.restaurant_name }} </span></h4>
         </div>
       {% endblock %}
 
@@ -93,7 +93,7 @@
             <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50">
           {% endif %}
         </div>
-        <h4>{{ restaurant.restaurant_name }}</h4>
+        <h4 class="resid" id="{{ restaurant.id }}">{{ restaurant.restaurant_name }}</h4>
       </div>
     </div>
 
