@@ -1,118 +1,177 @@
 import json
-from decimal import Decimal, InvalidOperation
-from django.db import transaction
-from channels.generic.websocket import WebsocketConsumer
+import traceback
+from decimal import Decimal
 from asgiref.sync import async_to_sync
+from channels.generic.websocket import WebsocketConsumer
+from django.db.models import F
+from django.apps import apps
+
 
 class ChatConsumer(WebsocketConsumer):
     def connect(self):
-        self.room_group_name = 'order'
-        async_to_sync(self.channel_layer.group_add)(self.room_group_name, self.channel_name)
+        self.room_group_name = "order"
+        async_to_sync(self.channel_layer.group_add)(
+            self.room_group_name, self.channel_name)
         self.accept()
-        self.send(text_data=json.dumps({
-            'type':'status',
-            'status': 'connected from django channels'}))
+        self.send(text_data=json.dumps(
+            {"type": "status", "status": "connected"}))
 
     def receive(self, text_data):
-        from django.contrib.auth import get_user_model
-        from .models import Order, FoodItem, Restaurant
-
-        User = get_user_model()
         try:
-            data = json.loads(text_data)
-        except:
-            data = {}
+            payload = json.loads(text_data)
+        except Exception:
+            payload = {}
 
-        username = data.get('username')
-        room = data.get('room', self.room_group_name)
-        order_data = data.get('order') or {}
+        order_payload = payload.get("order") or {}
+        uid = order_payload.get("userId") or order_payload.get("user_id")
+        rid = order_payload.get(
+            "restaurantId") or order_payload.get("restaurant_id")
+        food_ids_raw = order_payload.get(
+            "foodIds") or order_payload.get("food_ids") or []
 
-        def parse_decimal(value):
+        try:
+            User = apps.get_model("auth", "User")
+            Order = apps.get_model("merchant", "Order")
+            OrderItem = apps.get_model("merchant", "OrderItem")
+            FoodItem = apps.get_model("merchant", "FoodItem")
+            Restaurant = apps.get_model("merchant", "Restaurant")
+            FoodOrderCount = apps.get_model("merchant", "FoodOrderCount")
+        except Exception as e:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "chat_message", "order": order_payload,
+                    "db_saved": [], "errors": [f"model_import_error: {str(e)}"]},
+            )
+            return
+
+        def to_int(v):
             try:
-                return Decimal(str(value))
-            except:
+                return int(v)
+            except Exception:
                 return None
 
-        def find_user(payload):
-            uid = payload.get('user_id') or payload.get('uid')
-            if uid: return User.objects.filter(pk=uid).first()
-            uname = payload.get('username') or payload.get('user') or payload.get('user_name')
-            if uname: return User.objects.filter(username=uname).first()
-            cd = payload.get('customer_details') or {}
-            email = payload.get('email') or cd.get('email')
-            if email: return User.objects.filter(email=email).first()
-            return None
+        counts = {}
+        for raw in food_ids_raw:
+            fid = to_int(raw)
+            if fid is None:
+                continue
+            counts[fid] = counts.get(fid, 0) + 1
 
-        def find_restaurant(payload):
-            rid = payload.get('restaurant_id') or payload.get('restaurant')
-            if rid: return Restaurant.objects.filter(pk=rid).first()
-            rname = payload.get('restaurant_name')
-            if rname: return Restaurant.objects.filter(name__iexact=rname).first()
-            return None
+        errors = []
+        if not uid:
+            errors.append("user_id_missing")
+        if not rid:
+            errors.append("restaurant_id_missing")
+        if not counts:
+            errors.append("no_valid_food_ids")
 
-        def find_food_item(item_payload, restaurant=None):
-            fid = item_payload.get('food_item_id') or item_payload.get('id')
-            if fid: f = FoodItem.objects.filter(pk=fid).first(); 
-            else: 
-                fname = item_payload.get('name') or item_payload.get('food_item_name')
-                if fname:
-                    qs = FoodItem.objects.filter(name__iexact=fname)
-                    if restaurant: qs = qs.filter(restaurant=restaurant)
-                    f = qs.first()
-                else: f = None
-            return f
+        if errors:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "chat_message", "order": order_payload,
+                    "db_saved": [], "errors": errors},
+            )
+            return
 
-        saved_orders_info = []
+        user = User.objects.filter(pk=uid).first()
+        restaurant = Restaurant.objects.filter(pk=rid).first()
+        if not user:
+            errors.append("user_not_found")
+        if not restaurant:
+            errors.append("restaurant_not_found")
+        if errors:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "chat_message", "order": order_payload,
+                    "db_saved": [], "errors": errors},
+            )
+            return
+
+        found_qs = FoodItem.objects.filter(
+            pk__in=counts.keys(), restaurant=restaurant)
+        found_items = {fi.pk: fi for fi in found_qs}
+        requested_ids = set(counts.keys())
+        found_ids = set(found_items.keys())
+        missing_ids = sorted(list(requested_ids - found_ids))
+
+        if not found_items:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "chat_message", "order": order_payload, "db_saved": [],
+                    "errors": ["no_matching_food_items_for_restaurant"]},
+            )
+            return
+
+        saved = []
+        failed = []
         try:
-            if order_data:
-                with transaction.atomic():
-                    user = find_user(order_data)
-                    restaurant = find_restaurant(order_data)
-                    items_payload = order_data.get('order_items') or []
+            order_obj = Order.objects.create(
+                user=user, restaurant=restaurant, status=order_payload.get("status", "PENDING"))
+            running_total = Decimal("0.00")
+            distinct_created = 0
 
-                    if user and restaurant and items_payload:
-                        total_price = sum(parse_decimal(it.get('price')) or 0 for it in items_payload)
-                        total_qty = sum(int(it.get('qty', 1)) for it in items_payload)
+            for fid, qty in counts.items():
+                fi = found_items.get(fid)
+                if not fi:
+                    failed.append(fid)
+                    continue
+                try:
+                    OrderItem.objects.create(
+                        order=order_obj, food_item=fi, quantity=qty, price_at_order=fi.price)
+                except Exception as e:
+                    failed.append(fid)
+                    traceback.print_exc()
+                    continue
 
-                        order_obj = Order.objects.create(
-                            user=user,
-                            restaurant=restaurant,
-                            quantity=total_qty,
-                            total_price=total_price,
-                            status=order_data.get('status', 'Pending')
-                        )
+                updated = FoodOrderCount.objects.filter(food_item=fi).update(
+                    no_of_orders=F("no_of_orders") + qty)
+                if updated == 0:
+                    try:
+                        FoodOrderCount.objects.create(
+                            food_item=fi, no_of_orders=qty)
+                    except Exception:
+                        # if concurrent create fails, attempt a second update
+                        try:
+                            FoodOrderCount.objects.filter(food_item=fi).update(
+                                no_of_orders=F("no_of_orders") + qty)
+                        except Exception:
+                            traceback.print_exc()
 
-                        for it in items_payload:
-                            fi = find_food_item(it, restaurant=restaurant)
-                            if fi:
-                                order_obj.food_items.add(fi)
+                running_total += (fi.price or Decimal("0.00")) * Decimal(qty)
+                distinct_created += 1
 
-                        saved_orders_info.append({
-                            'order_pk': order_obj.pk,
-                            'items_count': len(items_payload),
-                            'total_price': str(order_obj.total_price)
-                        })
+            order_obj.total_price = running_total
+            order_obj.save(update_fields=["total_price"])
+
+            saved.append({"order_pk": order_obj.pk, "distinct_items_created": distinct_created,
+                         "missing_item_ids": missing_ids, "failed_item_ids": failed, "total_price": str(order_obj.total_price)})
+
         except Exception as e:
-            print("Error saving order:", str(e))
+            traceback.print_exc()
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {"type": "chat_message", "order": order_payload,
+                    "db_saved": [], "errors": [f"db_error: {str(e)}"]},
+            )
+            return
 
         async_to_sync(self.channel_layer.group_send)(
-            room,
-            {
-                'type': 'chat_message',
-                'username': username,
-                'room': room,
-                'order': order_data,
-                'db_saved': saved_orders_info
-            }
+            self.room_group_name,
+            {"type": "chat_message", "order": order_payload,
+                "db_saved": saved, "errors": []},
         )
 
     def chat_message(self, event):
-        payload = {'type': 'chat', 'username': event.get('username'), 'room': event.get('room'), 'order': event.get('order')}
-        if event.get('db_saved'): payload['db_saved'] = event.get('db_saved')
+        payload = {"type": "chat", "order": event.get("order")}
+        if event.get("db_saved"):
+            payload["db_saved"] = event.get("db_saved")
+        if event.get("errors"):
+            payload["errors"] = event.get("errors")
         self.send(text_data=json.dumps(payload))
 
     def disconnect(self, close_code):
         try:
-            async_to_sync(self.channel_layer.group_discard)(self.room_group_name, self.channel_name)
-        except:
+            async_to_sync(self.channel_layer.group_discard)(
+                self.room_group_name, self.channel_name)
+        except Exception:
             pass
