@@ -93,7 +93,22 @@ class CartSerializer(serializers.ModelSerializer):
             'quantity',
             'total_price',
         ]
-
+class CartReadSerializer(serializers.ModelSerializer):
+    cart_id = serializers.IntegerField(
+        read_only=True)  # uses AutoField from model
+#i am going to cnange
+    food_item = FooditemSerial(read_only=True)
+    restaurant = RestaurantSerial(read_only=True)
+    class Meta:
+        model = Cart
+        fields = [
+            'cart_id',
+            'user',
+            'restaurant',
+            'food_item',
+            'quantity',
+            'total_price',
+        ]
 
 class FoodOrderCountSerializer(serializers.ModelSerializer):
     food_item = FooditemSerial(read_only=True)
