@@ -667,6 +667,33 @@ def update_order_status(request):
     #     status=status.HTTP_200_OK
     # )
 
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_all_status(request):
+    user = request.user
+    cart_ids = request.data.get('cart_ids')  # list of IDs
+    checked = request.data.get('checked')    # true/false
+
+    if not cart_ids or checked is None:
+        return Response({"message": "cart_ids and checked are required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if isinstance(checked, str):
+        checked = checked.lower() == 'true'
+
+    cart_items = Cart.objects.filter(cart_id__in=cart_ids, user=user)
+    if not cart_items.exists():
+        return Response({"message": "No cart items found."}, status=status.HTTP_404_NOT_FOUND)
+
+    cart_items.update(checked=checked)
+    serializer = CartSerializer(cart_items, many=True)
+
+    return Response({
+        "message": f"Checked status updated for {cart_items.count()} items.",
+        "cart": serializer.data
+    }, status=status.HTTP_200_OK)
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_restaurant_by_id(request, id):
