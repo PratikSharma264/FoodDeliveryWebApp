@@ -250,6 +250,7 @@ class Cart(models.Model):
         help_text="Total price for this cart item"
     )
     created_at = models.DateTimeField(default=timezone.now)
+    checked = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
