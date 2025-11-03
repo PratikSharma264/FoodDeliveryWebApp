@@ -18,7 +18,7 @@ from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
 
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer,Restaurantlistserial
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer,Restaurantlistserial,CartReadSerializer
 from merchant.models import FoodItem, Restaurant, Order, Cart
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
@@ -303,8 +303,6 @@ def addtocart(request):
         return Response({"message": "Invalid food or restaurant ID."}, status=status.HTTP_404_NOT_FOUND)
 
     total_price = food.price * quantity
-    if total_price < 300:
-        return Response({"message": "Minimum order amount is 300."}, status=status.HTTP_400_BAD_REQUEST)
 
     cart_data = {
         "user": user.id,
@@ -333,7 +331,7 @@ def addtocart(request):
 def view_cart(request):
     user = request.user
     cart_items = Cart.objects.filter(user=user)
-    serializer = CartSerializer(cart_items, many=True)
+    serializer = CartReadSerializer(cart_items, many=True)
 
     return Response({
         "cart": serializer.data
