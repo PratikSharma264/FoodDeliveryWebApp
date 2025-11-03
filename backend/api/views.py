@@ -536,12 +536,6 @@ def update_cart(request):
                         status=status.HTTP_404_NOT_FOUND)
 
     cart_item.quantity = quantity
-    cart_item.total_price = cart_item.food_item.price * quantity
-
-    if cart_item.total_price < 300:
-        return Response({"message": "Minimum order amount is 300."},
-                        status=status.HTTP_400_BAD_REQUEST)
-
     cart_item.save()
     serializer = CartSerializer(cart_item)
     return Response({'message': 'Cart updated successfully.', 'cart': serializer.data},
