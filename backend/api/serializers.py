@@ -92,6 +92,7 @@ class CartSerializer(serializers.ModelSerializer):
             'food_item',
             'quantity',
             'total_price',
+            'checked',
         ]
 class CartReadSerializer(serializers.ModelSerializer):
     cart_id = serializers.IntegerField(
@@ -108,6 +109,7 @@ class CartReadSerializer(serializers.ModelSerializer):
             'food_item',
             'quantity',
             'total_price',
+            'checked',
         ]
 
 class FoodOrderCountSerializer(serializers.ModelSerializer):
