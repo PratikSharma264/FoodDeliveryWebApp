@@ -541,6 +541,131 @@ def update_cart(request):
     return Response({'message': 'Cart updated successfully.', 'cart': serializer.data},
                     status=status.HTTP_200_OK)
 
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_order_status(request):
+    user = request.user
+    cart_id = request.data.get('cart_id')     # example: 10
+    checked = request.data.get('checked')     # example: true / false
+
+    # Validate inputs
+    if cart_id is None or checked is None:
+        return Response(
+            {"message": "cart_id and checked are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Ensure 'checked' is boolean
+    if isinstance(checked, str):
+        if checked.lower() == 'true':
+            checked = True
+        elif checked.lower() == 'false':
+            checked = False
+        else:
+            return Response(
+                {"message": "checked must be true or false."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+    # Get the cart item for this user
+    try:
+        cart_item = Cart.objects.get(cart_id=cart_id, user=user)
+    except Cart.DoesNotExist:
+        return Response(
+            {"message": "Cart not found."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    # ✅ Set checked field exactly as frontend sends
+    cart_item.checked = checked
+    cart_item.save()
+
+    serializer = CartSerializer(cart_item)
+
+    return Response(
+        {
+            'message': f'Cart status updated to {checked}.',
+            'order': serializer.data
+        },
+        status=status.HTTP_200_OK
+    )
+    # user = request.user
+    # cart_id = request.data.get('cart_id')
+    # checked = request.data.get('checked')  # expecting True/False from frontend
+
+    # if not all([cart_id, checked is not None]):
+    #     return Response(
+    #         {"message": "cart_id and status are required."},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    # # Validate status value (must be boolean-like)
+    # if str(checked).lower() not in ['true', 'false']:
+    #     return Response(
+    #         {"message": "Status must be true or false."},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    # try:
+    #     cart_item = Cart.objects.get(cart_id=cart_id, user=user)
+    # except Cart.DoesNotExist:
+    #     return Response({"message": "cart not found."},
+    #                     status=status.HTTP_404_NOT_FOUND)
+
+    # cart_item.checked = checked
+    # cart_item.save()
+
+    # serializer = CartSerializer(cart_item) 
+
+    # return Response(
+    #     {'message': 'Cart status updated successfully.', 'order': serializer.data},
+    #     status=status.HTTP_200_OK
+    # )
+
+    # user = request.user
+    # cart_id = request.data.get('cart_id')  # expect a list like [1, 2, 3]
+    # checked = request.data.get('checked')    # true/false from frontend
+    # print(cart_id, checked)
+    # if not cart_id or checked is None:
+    #     return Response(
+    #         {"message": "cart_id (list) and checked are required."},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    # # Validate input
+    # if not isinstance(cart_id, list):
+    #     return Response(
+    #         {"message": "cart_ids must be a list."},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    # if str(checked).lower() not in ['true', 'false']:
+    #     return Response(
+    #         {"message": "checked must be true or false."},
+    #         status=status.HTTP_400_BAD_REQUEST
+    #     )
+
+    # # Get all matching cart items
+    # cart_items = Cart.objects.filter(cart_id__in=cart_id, user=user)
+    # if not cart_items.exists():
+    #     return Response(
+    #         {"message": "No matching cart items found."},
+    #         status=status.HTTP_404_NOT_FOUND
+    #     )
+
+    # # Update all statuses
+    # new_status = str(checked).lower() == 'true'
+    # cart_items.update(checked=new_status)
+
+    # serializer = CartSerializer(cart_items, many=True)
+
+    # return Response(
+    #     {
+    #         'message': f'Status updated for {cart_items.count()} cart item(s).',
+    #         'cart': serializer.data
+    #     },
+    #     status=status.HTTP_200_OK
+    # )
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
