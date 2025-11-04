@@ -267,8 +267,8 @@
 //   renderOrders();
 // });
 
-let socket = null ; 
-const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
+let socket = null;
+const wsProtocol = location.protocol === "https" ? "wss" : "ws";
 const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -276,22 +276,24 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderWrapper = document.querySelector("#current-order-wrapper");
   const emptyOrder = document.querySelector("#emptyorder");
   const resid = document.querySelector(".resid").id;
-  console.log("resid:",resid);
-    let orders = [];
+  console.log("resid:", resid);
+  let orders = [];
 
-    async function getCurrentOrders(){
-      try{
-        const response = await fetch(`http://127.0.0.1:8000/json/restaurant-orders-response/${resid}`);
-        const {data} = await response.json();
-        console.log("response:",data);
-        orders = [...data];
-      } catch(err){
-        console.error("error: ",err);
-        showError({message:`${err?.message}`});
-      }
+  async function getCurrentOrders() {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/json/restaurant-orders-response/${resid}`
+      );
+      const { data } = await response.json();
+      console.log("response:", data);
+      orders = [...data];
+    } catch (err) {
+      console.error("error: ", err);
+      showError({ message: `${err?.message}` });
     }
-    getCurrentOrders();
-    renderOrders();
+  }
+  getCurrentOrders();
+  renderOrders();
 
   // const orders = [
   //   {
@@ -418,25 +420,25 @@ document.addEventListener("DOMContentLoaded", () => {
   // ];
 
   // Listen to new order push from WebSocket
-  
+
   socket.addEventListener("message", (event) => {
     const msg = JSON.parse(event.data);
     if (msg.type === "status") {
-    console.log("Server status:", msg.status);
-    return; 
-  }
+      console.log("Server status:", msg.status);
+      return;
+    }
 
-  if (msg.type === "chat_message") {
-    console.log("New order received:", msg.data);
-    orders.unshift(msg.order);
-    orderWrapper.innerHTML = "";
-    renderOrders();
-  }
+    if (msg.type === "chat_message") {
+      console.log("New order received:", msg.data);
+      orders.unshift(msg.order);
+      orderWrapper.innerHTML = "";
+      renderOrders();
+    }
   });
 
   function renderOrders() {
     let len = orders.length;
-    console.log("orderlen:",len);
+    console.log("orderlen:", len);
     if (!orders.length) {
       emptyOrder.style.display = "flex";
       return;
