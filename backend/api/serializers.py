@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart
+from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -94,12 +94,15 @@ class CartSerializer(serializers.ModelSerializer):
             'total_price',
             'checked',
         ]
+
+
 class CartReadSerializer(serializers.ModelSerializer):
     cart_id = serializers.IntegerField(
         read_only=True)  # uses AutoField from model
-#i am going to cnange
+# i am going to cnange
     food_item = FooditemSerial(read_only=True)
     restaurant = RestaurantSerial(read_only=True)
+
     class Meta:
         model = Cart
         fields = [
@@ -112,6 +115,7 @@ class CartReadSerializer(serializers.ModelSerializer):
             'checked',
         ]
 
+
 class FoodOrderCountSerializer(serializers.ModelSerializer):
     food_item = FooditemSerial(read_only=True)
 
@@ -120,28 +124,33 @@ class FoodOrderCountSerializer(serializers.ModelSerializer):
         fields = ['food_item']
 
 
-class PlaceOrderSerializer(serializers.ModelSerializer):
+class OrderItemSerializer(serializers.ModelSerializer):
     food_item_name = serializers.CharField(
         source='food_item.name', read_only=True)
+    restaurant_name = serializers.CharField(
+        source='food_item.restaurant.name', read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'food_item', 'food_item_name',
+                  'restaurant_name', 'quantity', 'total_price']
+        read_only_fields = ['id', 'total_price']
+
+
+class PlaceOrderSerializer(serializers.ModelSerializer):
+    order_items = OrderItemSerializer(
+        many=True, read_only=True, source='orderitem_set')
     restaurant_name = serializers.CharField(
         source='restaurant.name', read_only=True)
 
     class Meta:
         model = Order
-        fields = [
-            'id',
-            'user',
-            'restaurant',
-            'restaurant_name',
-            'food_item',
-            'food_item_name',
-            'quantity',
-            'total_price',
-            'order_date',
-            'status',
-        ]
+        fields = ['id', 'user', 'restaurant', 'restaurant_name',
+                  'order_items', 'total_price', 'order_date', 'status']
         read_only_fields = ['id', 'order_date', 'status']
-class  Restaurantlistserial(serializers.ModelSerializer):
+
+
+class Restaurantlistserial(serializers.ModelSerializer):
     class Meta:
         model = Restaurant
         fields = [

@@ -11,18 +11,16 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.serializers import AuthTokenSerializer
-
 from rest_framework_simplejwt.tokens import RefreshToken
-
 from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
-
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer,Restaurantlistserial,CartReadSerializer
-from merchant.models import FoodItem, Restaurant, Order, Cart
+from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer, Restaurantlistserial, CartReadSerializer
+from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
 from rest_framework.permissions import IsAuthenticated
 from django.core.paginator import Paginator
 import math
+from decimal import Decimal
 
 
 def api_overview(request):
@@ -125,9 +123,13 @@ class login_user_knox(KnoxLoginView):
         token_data['full_name'] = user.first_name
 
         return Response(token_data)
+
+
 class ShopPagination(PageNumberPagination):
     page_size = 5
     page_size_query_param = 'per_page'
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_restaurant_list(request):
@@ -149,6 +151,7 @@ def get_restaurant_list(request):
     response = Response(serializer.data)
     response['X-Total-Count'] = pag.count
     return response
+
 
 class ShopPagination(PageNumberPagination):
     page_size = 6
@@ -541,6 +544,7 @@ def update_cart(request):
     return Response({'message': 'Cart updated successfully.', 'cart': serializer.data},
                     status=status.HTTP_200_OK)
 
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_order_status(request):
@@ -615,7 +619,7 @@ def update_order_status(request):
     # cart_item.checked = checked
     # cart_item.save()
 
-    # serializer = CartSerializer(cart_item) 
+    # serializer = CartSerializer(cart_item)
 
     # return Response(
     #     {'message': 'Cart status updated successfully.', 'order': serializer.data},
@@ -677,7 +681,7 @@ def update_all_status(request):
 
     if not cart_ids or checked is None:
         return Response({"message": "cart_ids and checked are required."}, status=status.HTTP_400_BAD_REQUEST)
-    
+
     if isinstance(checked, str):
         checked = checked.lower() == 'true'
 
@@ -712,27 +716,44 @@ def get_restaurant_by_id(request, id):
 @permission_classes([IsAuthenticated])
 def place_order_api(request):
     user = request.user
-    cart_items = Cart.objects.filter(user=user)
+    cart_ids = request.data.get('cart_ids', None)
+
+    if not cart_ids or not isinstance(cart_ids, list):
+        return Response({"detail": "cart_ids must be provided as a list."},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    cart_items = Cart.objects.filter(cart_id__in=cart_ids, user=user)
 
     if not cart_items.exists():
-        return Response(
-            {"detail": "Your cart is empty."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "No valid cart items found."},
+                        status=status.HTTP_400_BAD_REQUEST)
 
     created_orders = []
+    restaurant_orders = {}
 
-    # Removed transaction.atomic() block
-    for item in cart_items:
-        order = Order.objects.create(
-            user=user,
-            restaurant=item.restaurant,
-            food_item=item.food_item,
-            quantity=item.quantity,
-            total_price=item.total_price,
-            order_date=timezone.now(),
+    for cart in cart_items:
+        restaurant = cart.restaurant
+
+        if restaurant.id not in restaurant_orders:
+            order = Order.objects.create(
+                user=user,
+                restaurant=restaurant,
+                order_date=timezone.now(),
+            )
+            restaurant_orders[restaurant.id] = order
+            created_orders.append(order)
+        else:
+            order = restaurant_orders[restaurant.id]
+
+        OrderItem.objects.create(
+            order=order,
+            food_item=cart.food_item,
+            quantity=cart.quantity,
+            price_at_order=cart.food_item.price if cart.food_item.price else Decimal(
+                '0.00')
         )
-        created_orders.append(order)
+
+        order.update_total_price()
 
     cart_items.delete()
 
