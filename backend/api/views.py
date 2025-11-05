@@ -730,10 +730,10 @@ def get_restaurant_by_id(request, id):
  
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def place_order_api(request):
     try:
-        user = User.objects.get(username="admin")
+        user = request.user
     except User.DoesNotExist:
         return Response(
             {"detail": "Test user 'admin' not found."},

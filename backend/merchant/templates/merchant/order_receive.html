@@ -1,24 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8'>
+    <meta charset="utf-8" />
     <title>Order Receiver</title>
     <style>
         body { font-family: monospace; background: #f5f5f5; padding: 20px; }
-        #orders { background: #fff; padding: 10px; border-radius: 8px; }
-        .card { border: 1px solid #ddd; padding: 12px; margin: 12px 0; border-radius: 8px; background: #fff; }
-        pre { background: #272822; color: #f8f8f2; padding: 10px; border-radius: 6px; }
+        #orders { background: #fff; padding: 10px; border-radius: 8px; max-width:900px; margin:0 auto; }
+        .card { border: 1px solid #ddd; padding: 12px; margin: 12px 0; border-radius: 8px; background: #fff; box-shadow:0 2px 6px rgba(0,0,0,0.04); }
+        pre { background: #272822; color: #f8f8f2; padding: 10px; border-radius: 6px; overflow-x:auto; }
     </style>
 </head>
 <body>
-    <h1>Order Receiver</h1>
+    <h1 style="text-align:center">Order Receiver</h1>
     <div id="orders"></div>
 
     <script>
-    (function() {
+    (function () {
         const ordersDiv = document.getElementById('orders');
 
         function log(...args) { console.log('[OrderSocket]', ...args); }
+
+        function userNameFromOrder(order) {
+            return (order.user && order.user.username) || order.customer_name || order.username || '—';
+        }
 
         function renderOrderCard(order) {
             const card = document.createElement('div');
@@ -31,13 +35,9 @@
 
             const cust = document.createElement('div');
             cust.style.marginTop = '8px';
-            const customerName = order.customer_name ?? order.username ?? '—';
-            const customerEmail = order.customer_email ?? order.email ?? '—';
-            const customerPhone = order.customer_phone ?? order.phone_number ?? order.phone ?? '—';
-            const restaurantName = order.restaurant ?? (order.restaurant_name ?? '—');
+            const customerName = userNameFromOrder(order);
+            const restaurantName = order.restaurant_name ?? order.restaurant ?? '—';
             cust.innerHTML = `<strong>Customer:</strong> ${customerName}<br>
-                              <strong>Email:</strong> ${customerEmail}<br>
-                              <strong>Phone:</strong> ${customerPhone}<br>
                               <strong>Restaurant:</strong> ${restaurantName}`;
             card.appendChild(cust);
 
@@ -51,10 +51,12 @@
             payment.innerHTML = `<strong>Payment Method:</strong> ${order.payment_method ?? '—'}`;
             card.appendChild(payment);
 
-            if (order.location && (order.location.lat || order.location.long)) {
+            const lat = order.latitude ?? order.location?.lat ?? null;
+            const long = order.longitude ?? order.location?.long ?? null;
+            if (lat || long) {
                 const loc = document.createElement('div');
                 loc.style.marginTop = '4px';
-                loc.innerHTML = `<strong>Location:</strong> Lat: ${order.location.lat ?? '—'}, Long: ${order.location.long ?? '—'}`;
+                loc.innerHTML = `<strong>Location:</strong> Lat: ${lat ?? '—'}, Long: ${long ?? '—'}`;
                 card.appendChild(loc);
             }
 
@@ -80,24 +82,21 @@
         }
 
         function showPayload(payload) {
-            ordersDiv.innerHTML = '';
             if (!payload) return;
+            ordersDiv.innerHTML = '';
 
             const candidates = [];
-
             if (Array.isArray(payload.orders) && payload.orders.length) {
-                payload.orders.forEach(o => candidates.push(o));
+                candidates.push(...payload.orders);
             } else if (Array.isArray(payload.db_saved) && payload.db_saved.length) {
-                payload.db_saved.forEach(o => candidates.push(o));
+                candidates.push(...payload.db_saved);
             } else if (Array.isArray(payload.order) && payload.order.length) {
-                payload.order.forEach(o => candidates.push(o));
+                candidates.push(...payload.order);
             } else if (payload.order && typeof payload.order === 'object') {
                 candidates.push(payload.order);
             } else if (Array.isArray(payload) && payload.length) {
-                payload.forEach(o => candidates.push(o));
-            }
-
-            if (candidates.length === 0) {
+                candidates.push(...payload);
+            } else {
                 const pre = document.createElement('pre');
                 pre.textContent = JSON.stringify(payload, null, 4);
                 ordersDiv.appendChild(pre);
