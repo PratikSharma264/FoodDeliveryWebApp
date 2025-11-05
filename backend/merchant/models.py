@@ -287,6 +287,9 @@ class Order(models.Model):
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     ]
+    PAYMENT_CHOICES = [
+        ('CashOnDelivery', 'CashOnDelivery'),
+    ]
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_profile')
@@ -309,12 +312,20 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='PENDING')
 
+    payment_method = models.CharField(
+        max_length=50,
+        choices=PAYMENT_CHOICES,
+        default='CashOnDelivery'
+    )
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+
     class Meta:
         ordering = ['-order_date']
 
     def calculate_total(self):
         total = Decimal('0.00')
-        for oi in self.order_items.all():           # see related_name on OrderItem below
+        for oi in self.order_items.all():
             price_each = oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
             total += (price_each or Decimal('0.00')) * oi.quantity
         return total

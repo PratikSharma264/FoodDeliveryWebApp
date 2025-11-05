@@ -6,143 +6,147 @@
     <style>
         body { font-family: monospace; background: #f5f5f5; padding: 20px; }
         #orders { background: #fff; padding: 10px; border-radius: 8px; }
+        .card { border: 1px solid #ddd; padding: 12px; margin: 12px 0; border-radius: 8px; background: #fff; }
         pre { background: #272822; color: #f8f8f2; padding: 10px; border-radius: 6px; }
     </style>
 </head>
 <body>
     <h1>Order Receiver</h1>
-
     <div id="orders"></div>
 
     <script>
-(function() {
-    const ordersDiv = document.getElementById('orders');
+    (function() {
+        const ordersDiv = document.getElementById('orders');
 
-    function log(...args) { console.log('[OrderSocket]', ...args); }
+        function log(...args) { console.log('[OrderSocket]', ...args); }
 
-    function renderOrderCard(order) {
-        const card = document.createElement('div');
-        card.style.border = '1px solid #ddd';
-        card.style.padding = '12px';
-        card.style.margin = '12px 0';
-        card.style.borderRadius = '8px';
-        card.style.background = '#fff';
-        const id = order.id ?? order.order_pk ?? '—';
-        const header = document.createElement('div');
-        header.innerHTML = `<strong>Order ID:</strong> ${id} <span style="float:right"><strong>Status:</strong> ${order.status ?? '—'}</span>`;
-        card.appendChild(header);
+        function renderOrderCard(order) {
+            const card = document.createElement('div');
+            card.className = 'card';
 
-        const cust = document.createElement('div');
-        cust.style.marginTop = '8px';
-cust.innerHTML = `<strong>Customer:</strong> ${order.username ?? '—'}<br>
-                  <strong>Email:</strong> ${order.email ?? '—'}<br>
-                  <strong>Phone:</strong> ${order.phone ?? '—'}<br>
-                  <strong>Restaurant:</strong> ${order.restaurant ?? (order.restaurant_name ?? '—')}`;
+            const id = order.id ?? order.order_pk ?? '—';
+            const header = document.createElement('div');
+            header.innerHTML = `<strong>Order ID:</strong> ${id} <span style="float:right"><strong>Status:</strong> ${order.status ?? '—'}</span>`;
+            card.appendChild(header);
 
-        card.appendChild(cust);
+            const cust = document.createElement('div');
+            cust.style.marginTop = '8px';
+            const customerName = order.customer_name ?? order.username ?? '—';
+            const customerEmail = order.customer_email ?? order.email ?? '—';
+            const customerPhone = order.customer_phone ?? order.phone_number ?? order.phone ?? '—';
+            const restaurantName = order.restaurant ?? (order.restaurant_name ?? '—');
+            cust.innerHTML = `<strong>Customer:</strong> ${customerName}<br>
+                              <strong>Email:</strong> ${customerEmail}<br>
+                              <strong>Phone:</strong> ${customerPhone}<br>
+                              <strong>Restaurant:</strong> ${restaurantName}`;
+            card.appendChild(cust);
 
-        const total = document.createElement('div');
-        total.style.marginTop = '8px';
-        total.innerHTML = `<strong>Total:</strong> ${order.total_display ?? ('NPR ' + (order.total_price ?? '0.00'))}`;
-        card.appendChild(total);
+            const total = document.createElement('div');
+            total.style.marginTop = '8px';
+            total.innerHTML = `<strong>Total:</strong> ${order.total_display ?? ('NPR ' + (order.total_price ?? '0.00'))}`;
+            card.appendChild(total);
 
-        if (Array.isArray(order.order_items) && order.order_items.length) {
-            const itemsTitle = document.createElement('div');
-            itemsTitle.style.marginTop = '10px';
-            itemsTitle.innerHTML = '<strong>Order Items:</strong>';
-            card.appendChild(itemsTitle);
+            const payment = document.createElement('div');
+            payment.style.marginTop = '8px';
+            payment.innerHTML = `<strong>Payment Method:</strong> ${order.payment_method ?? '—'}`;
+            card.appendChild(payment);
 
-            const ul = document.createElement('ul');
-            order.order_items.forEach(it => {
-                const li = document.createElement('li');
-                const name = it.food_item_name ?? ('Item ' + (it.food_item ?? ''));
-                const qty = it.quantity ?? it.qty ?? 1;
-                const price = it.price_at_order ?? it.price ?? null;
-                li.textContent = `${name} (x${qty})${price ? ' - NPR ' + price : ''}`;
-                ul.appendChild(li);
+            if (order.location && (order.location.lat || order.location.long)) {
+                const loc = document.createElement('div');
+                loc.style.marginTop = '4px';
+                loc.innerHTML = `<strong>Location:</strong> Lat: ${order.location.lat ?? '—'}, Long: ${order.location.long ?? '—'}`;
+                card.appendChild(loc);
+            }
+
+            if (Array.isArray(order.order_items) && order.order_items.length) {
+                const itemsTitle = document.createElement('div');
+                itemsTitle.style.marginTop = '10px';
+                itemsTitle.innerHTML = '<strong>Order Items:</strong>';
+                card.appendChild(itemsTitle);
+
+                const ul = document.createElement('ul');
+                order.order_items.forEach(it => {
+                    const li = document.createElement('li');
+                    const name = it.food_item_name ?? ('Item ' + (it.food_item ?? ''));
+                    const qty = it.quantity ?? it.qty ?? 1;
+                    const price = it.price_at_order ?? it.price ?? null;
+                    li.textContent = `${name} (x${qty})${price ? ' - NPR ' + price : ''}`;
+                    ul.appendChild(li);
+                });
+                card.appendChild(ul);
+            }
+
+            return card;
+        }
+
+        function showPayload(payload) {
+            ordersDiv.innerHTML = '';
+            if (!payload) return;
+
+            const candidates = [];
+
+            if (Array.isArray(payload.orders) && payload.orders.length) {
+                payload.orders.forEach(o => candidates.push(o));
+            } else if (Array.isArray(payload.db_saved) && payload.db_saved.length) {
+                payload.db_saved.forEach(o => candidates.push(o));
+            } else if (Array.isArray(payload.order) && payload.order.length) {
+                payload.order.forEach(o => candidates.push(o));
+            } else if (payload.order && typeof payload.order === 'object') {
+                candidates.push(payload.order);
+            } else if (Array.isArray(payload) && payload.length) {
+                payload.forEach(o => candidates.push(o));
+            }
+
+            if (candidates.length === 0) {
+                const pre = document.createElement('pre');
+                pre.textContent = JSON.stringify(payload, null, 4);
+                ordersDiv.appendChild(pre);
+                return;
+            }
+
+            candidates.forEach(item => {
+                const card = renderOrderCard(item);
+                ordersDiv.appendChild(card);
             });
-            card.appendChild(ul);
         }
 
-        return card;
-    }
+        const protocol = (location.protocol === 'https:') ? 'wss' : 'ws';
+        const url = `${protocol}://${window.location.host}/ws/socket-server/`;
+        log('Connecting to', url);
 
-    function showPayload(payload) {
-        ordersDiv.innerHTML = '';
-        if (!payload) return;
-
-        const candidates = [];
-
-        if (Array.isArray(payload.orders) && payload.orders.length) {
-            payload.orders.forEach(o => candidates.push(o));
-        } else if (Array.isArray(payload.db_saved) && payload.db_saved.length) {
-            payload.db_saved.forEach(o => candidates.push(o));
-        } else if (Array.isArray(payload.order) && payload.order.length) {
-            payload.order.forEach(o => candidates.push(o));
-        } else if (payload.order && typeof payload.order === 'object') {
-            candidates.push(payload.order);
-        } else if (Array.isArray(payload) && payload.length) {
-            payload.forEach(o => candidates.push(o));
-        }
-
-        if (candidates.length === 0) {
-            const pre = document.createElement('pre');
-            pre.textContent = JSON.stringify(payload, null, 4);
-            ordersDiv.appendChild(pre);
-            return;
-        }
-
-        candidates.forEach(item => {
-            const card = renderOrderCard(item);
-            ordersDiv.appendChild(card);
-        });
-    }
-
-    const protocol = (location.protocol === 'https:') ? 'wss' : 'ws';
-    const url = `${protocol}://${window.location.host}/ws/socket-server/`;
-    log('Connecting to', url);
-
-    let socket;
-    try {
-        socket = new WebSocket(url);
-    } catch (err) {
-        log('WebSocket constructor error', err);
-        const pre = document.createElement('pre');
-        pre.textContent = 'WebSocket constructor error: ' + err;
-        ordersDiv.appendChild(pre);
-        return;
-    }
-
-    socket.onopen = () => {
-        log('Connected');
-    };
-
-    socket.onclose = (ev) => {
-        log('Closed', ev);
-    };
-
-    socket.onerror = (err) => {
-        log('Error', err);
-    };
-
-    socket.onmessage = (e) => {
-        log('Raw message', e.data);
-        let data;
+        let socket;
         try {
-            data = JSON.parse(e.data);
+            socket = new WebSocket(url);
         } catch (err) {
-            log('Invalid JSON', err);
+            log('WebSocket constructor error', err);
             const pre = document.createElement('pre');
-            pre.textContent = e.data;
+            pre.textContent = 'WebSocket constructor error: ' + err;
             ordersDiv.appendChild(pre);
             return;
         }
-        log('Parsed message', data);
-        showPayload(data);
-    };
 
-    window._orderSocket = socket;
-})();
-</script>
+        socket.onopen = () => { log('Connected'); };
+        socket.onclose = (ev) => { log('Closed', ev); };
+        socket.onerror = (err) => { log('Error', err); };
+
+        socket.onmessage = (e) => {
+            log('Raw message', e.data);
+            let data;
+            try {
+                data = JSON.parse(e.data);
+            } catch (err) {
+                log('Invalid JSON', err);
+                const pre = document.createElement('pre');
+                pre.textContent = e.data;
+                ordersDiv.appendChild(pre);
+                return;
+            }
+            log('Parsed message', data);
+            showPayload(data);
+        };
+
+        window._orderSocket = socket;
+    })();
+    </script>
 </body>
 </html>
