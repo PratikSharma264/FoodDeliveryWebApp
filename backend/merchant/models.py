@@ -306,14 +306,12 @@ class Order(models.Model):
         User, on_delete=models.CASCADE, related_name='order_profile')
     restaurant = models.ForeignKey(
         'Restaurant', on_delete=models.CASCADE, related_name='orders')
-
     food_item = models.ManyToManyField(
         'FoodItem',
         through='OrderItem',
         related_name='orders',
         blank=True
     )
-
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True)
     is_transited = models.BooleanField(default=True)
@@ -322,7 +320,6 @@ class Order(models.Model):
     order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='PENDING')
-
     payment_method = models.CharField(
         max_length=50,
         choices=PAYMENT_CHOICES,
@@ -348,11 +345,13 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         self.is_transited = self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']
         super().save(*args, **kwargs)
-        # try to keep total synced if items exist
-        try:
-            self.update_total_price()
-        except Exception:
-            pass
+
+        def update_total():
+            try:
+                self.update_total_price()
+            except Exception:
+                pass
+        transaction.on_commit(update_total)
 
     def __str__(self):
         return f"Order #{self.pk} by {self.user.get_full_name() or self.user.username}"

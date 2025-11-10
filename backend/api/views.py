@@ -36,6 +36,8 @@ from .serializers import (
 from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
 from django.core.exceptions import ObjectDoesNotExist
 from typing import List, Optional
+from django.db.models import Prefetch
+from .serializers import OrderWithItemsSerializer
 
 
 def api_overview(request):
@@ -61,6 +63,7 @@ def api_overview(request):
         'Orders': {
             'Show User Orders': "/api/showuserorders/",
             'Place Order': "/api/place-order",
+            'Order Details': "/api/order-details"
         },
         'Products': {
             'List Products': "/api/products/",
@@ -973,3 +976,22 @@ def restaurant_locations(request):
 
     except Exception as e:
         return Response({'error': f'Unexpected error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+EXCLUDED_STATUSES = ['DELIVERED', 'CANCELLED']
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def order_details_api(request):
+    user = request.user
+    queryset = (
+        Order.objects
+        .filter(user=user)
+        .exclude(status__in=EXCLUDED_STATUSES)
+        .select_related('restaurant', 'deliveryman')
+        .prefetch_related(Prefetch('order_items', queryset=OrderItem.objects.select_related('food_item')))
+        .order_by('-order_date')
+    )
+    serializer = OrderWithItemsSerializer(queryset, many=True)
+    return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
