@@ -22,22 +22,20 @@ import math
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from .serializers import (
-AppUserSerializer,
-RegisterSerializer,
-EmailAuthTokenSerializer,
-FooditemSerial,
-Orderserializer,
-RestaurantSerial,
-CartSerializer,
-PlaceOrderSerializer,
-Restaurantlistserial,
-CartReadSerializer
+    AppUserSerializer,
+    RegisterSerializer,
+    EmailAuthTokenSerializer,
+    FooditemSerial,
+    Orderserializer,
+    RestaurantSerial,
+    CartSerializer,
+    PlaceOrderSerializer,
+    Restaurantlistserial,
+    CartReadSerializer
 )
 from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
 from django.core.exceptions import ObjectDoesNotExist
 from typing import List, Optional
-
-
 
 
 def api_overview(request):
@@ -727,7 +725,6 @@ def get_restaurant_by_id(request, id):
             {"error": "Restaurant not found"},
             status=status.HTTP_404_NOT_FOUND)
 
- 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -821,7 +818,8 @@ def place_order_api(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
 
-    serializer = PlaceOrderSerializer(created_orders, many=True, context={'request': request})
+    serializer = PlaceOrderSerializer(
+        created_orders, many=True, context={'request': request})
     serialized = serializer.data
 
     db_saved = [
@@ -858,7 +856,6 @@ def place_order_api(request):
         },
         status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR
     )
-
 
 
 @api_view(['GET'])
