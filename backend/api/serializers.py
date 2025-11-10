@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem
+from decimal import Decimal
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -161,3 +162,35 @@ class Restaurantlistserial(serializers.ModelSerializer):
             'menu',
             'review_rating'
         ]
+
+
+class OrderItemDetailSerializer(serializers.ModelSerializer):
+    food_item_name = serializers.CharField(
+        source='food_item.name', read_only=True)
+    restaurant_name = serializers.CharField(
+        source='food_item.restaurant.name', read_only=True)
+    total_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'food_item', 'food_item_name',
+                  'restaurant_name', 'quantity', 'price_at_order', 'total_price']
+        read_only_fields = ['id', 'total_price']
+
+    def get_total_price(self, obj):
+        price = obj.price_at_order if obj.price_at_order is not None else obj.food_item.price
+        price = price or Decimal('0.00')
+        return price * obj.quantity
+
+
+class OrderWithItemsSerializer(serializers.ModelSerializer):
+    cart_id = serializers.IntegerField(source='id', read_only=True)
+    order_items = OrderItemDetailSerializer(many=True, read_only=True)
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['cart_id', 'user', 'restaurant', 'is_transited', 'total_price',
+                  'order_items', 'order_date', 'status', 'payment_method', 'latitude', 'longitude']
+        read_only_fields = ['cart_id', 'user',
+                            'total_price', 'order_items', 'order_date']

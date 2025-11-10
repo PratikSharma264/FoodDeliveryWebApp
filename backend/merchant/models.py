@@ -10,6 +10,8 @@ from django.conf import settings
 from django.core.validators import RegexValidator
 from django.utils import timezone
 from decimal import Decimal
+from django.core.exceptions import ValidationError
+from django.db import transaction
 
 # Validator for Nepali phone numbers
 phone_validator = RegexValidator(
@@ -257,14 +259,23 @@ class Cart(models.Model):
         ordering = ['-created_at']
         verbose_name = "Cart Item"
         verbose_name_plural = "Cart Items"
-        # Ensure user can't add same item from same restaurant twice
         unique_together = ['user', 'restaurant', 'food_item']
 
+    def clean(self):
+        if self.food_item and self.restaurant:
+            if self.food_item.restaurant_id != self.restaurant_id:
+                raise ValidationError({
+                    'food_item': "This food item does not belong to the selected restaurant."
+                })
+        if self.quantity < 1:
+            raise ValidationError({'quantity': "Quantity must be at least 1."})
+
     def save(self, *args, **kwargs):
-        # Auto-calculate total price
+        self.full_clean()
         if self.food_item:
             self.total_price = self.food_item.price * self.quantity
-        super().save(*args, **kwargs)
+        with transaction.atomic():
+            super().save(*args, **kwargs)
 
     def calculate_total(self):
         if self.food_item:
@@ -287,19 +298,20 @@ class Order(models.Model):
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
     ]
+    PAYMENT_CHOICES = [
+        ('CashOnDelivery', 'CashOnDelivery'),
+    ]
 
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_profile')
     restaurant = models.ForeignKey(
         'Restaurant', on_delete=models.CASCADE, related_name='orders')
-
     food_item = models.ManyToManyField(
         'FoodItem',
         through='OrderItem',
         related_name='orders',
         blank=True
     )
-
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True)
     is_transited = models.BooleanField(default=True)
@@ -308,13 +320,20 @@ class Order(models.Model):
     order_date = models.DateTimeField(default=timezone.now)
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default='PENDING')
+    payment_method = models.CharField(
+        max_length=50,
+        choices=PAYMENT_CHOICES,
+        default='CashOnDelivery'
+    )
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
 
     class Meta:
         ordering = ['-order_date']
 
     def calculate_total(self):
         total = Decimal('0.00')
-        for oi in self.order_items.all():           # see related_name on OrderItem below
+        for oi in self.order_items.all():
             price_each = oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
             total += (price_each or Decimal('0.00')) * oi.quantity
         return total
@@ -326,11 +345,13 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         self.is_transited = self.status in ['OUT_FOR_DELIVERY', 'DELIVERED']
         super().save(*args, **kwargs)
-        # try to keep total synced if items exist
-        try:
-            self.update_total_price()
-        except Exception:
-            pass
+
+        def update_total():
+            try:
+                self.update_total_price()
+            except Exception:
+                pass
+        transaction.on_commit(update_total)
 
     def __str__(self):
         return f"Order #{self.pk} by {self.user.get_full_name() or self.user.username}"

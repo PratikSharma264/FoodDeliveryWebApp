@@ -1,26 +1,43 @@
 from django.utils import timezone
-from math import radians, sin, cos, sqrt, atan2
+from django.db import transaction
 from django.db.models import F
 from django.contrib.auth.models import User
 from django.contrib.auth import login
 from django.shortcuts import render
-from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator
 from rest_framework import generics, permissions, status, response
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from knox.auth import TokenAuthentication
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
-from .serializers import AppUserSerializer, RegisterSerializer, EmailAuthTokenSerializer, FooditemSerial, Orderserializer, RestaurantSerial, CartSerializer, PlaceOrderSerializer, Restaurantlistserial, CartReadSerializer
-from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
-from rest_framework.permissions import IsAuthenticated
-from django.core.paginator import Paginator
+from decimal import Decimal, InvalidOperation
+from math import radians, sin, cos, sqrt, atan2
 import math
-from decimal import Decimal
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from .serializers import (
+    AppUserSerializer,
+    RegisterSerializer,
+    EmailAuthTokenSerializer,
+    FooditemSerial,
+    Orderserializer,
+    RestaurantSerial,
+    CartSerializer,
+    PlaceOrderSerializer,
+    Restaurantlistserial,
+    CartReadSerializer
+)
+from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
+from django.core.exceptions import ObjectDoesNotExist
+from typing import List, Optional
+from django.db.models import Prefetch
+from .serializers import OrderWithItemsSerializer
 
 
 def api_overview(request):
@@ -46,6 +63,7 @@ def api_overview(request):
         'Orders': {
             'Show User Orders': "/api/showuserorders/",
             'Place Order': "/api/place-order",
+            'Order Details': "/api/order-details"
         },
         'Products': {
             'List Products': "/api/products/",
@@ -708,60 +726,139 @@ def get_restaurant_by_id(request, id):
     except Restaurant.DoesNotExist:
         return Response(
             {"error": "Restaurant not found"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+            status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def place_order_api(request):
-    user = request.user
-    cart_ids = request.data.get('cart_ids', None)
+    try:
+        user = request.user
+    except User.DoesNotExist:
+        return Response(
+            {"detail": "Test user 'admin' not found."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    cart_ids = request.data.get('cart_ids')
+    payment_method = request.data.get('payment_method')
+    latitude = request.data.get('latitude')
+    longitude = request.data.get('longitude')
 
     if not cart_ids or not isinstance(cart_ids, list):
-        return Response({"detail": "cart_ids must be provided as a list."},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "cart_ids must be provided as a list."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
-    cart_items = Cart.objects.filter(cart_id__in=cart_ids, user=user)
+    if payment_method is None or latitude is None or longitude is None:
+        return Response(
+            {"detail": "payment_method, latitude and longitude are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        lat_dec = Decimal(str(latitude))
+        lon_dec = Decimal(str(longitude))
+    except (InvalidOperation, TypeError, ValueError):
+        return Response(
+            {"detail": "latitude and longitude must be numeric."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    cart_items = Cart.objects.filter(
+        cart_id__in=cart_ids,
+        user=user
+    ).select_related('food_item', 'restaurant')
 
     if not cart_items.exists():
-        return Response({"detail": "No valid cart items found."},
-                        status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"detail": "No valid cart items found."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
     created_orders = []
     restaurant_orders = {}
+    errors = []
 
     for cart in cart_items:
-        restaurant = cart.restaurant
+        try:
+            restaurant = cart.restaurant
+            if restaurant.id not in restaurant_orders:
+                order = Order.objects.create(
+                    user=user,
+                    restaurant=restaurant,
+                    order_date=timezone.now(),
+                    payment_method=payment_method,
+                    latitude=lat_dec,
+                    longitude=lon_dec,
+                )
+                restaurant_orders[restaurant.id] = order
+                created_orders.append(order)
+            else:
+                order = restaurant_orders[restaurant.id]
 
-        if restaurant.id not in restaurant_orders:
-            order = Order.objects.create(
-                user=user,
-                restaurant=restaurant,
-                order_date=timezone.now(),
+            OrderItem.objects.create(
+                order=order,
+                food_item=cart.food_item,
+                quantity=cart.quantity,
+                price_at_order=cart.food_item.price or Decimal('0.00')
             )
-            restaurant_orders[restaurant.id] = order
-            created_orders.append(order)
-        else:
-            order = restaurant_orders[restaurant.id]
+            order.update_total_price()
 
-        OrderItem.objects.create(
-            order=order,
-            food_item=cart.food_item,
-            quantity=cart.quantity,
-            price_at_order=cart.food_item.price if cart.food_item.price else Decimal(
-                '0.00')
-        )
+        except Exception as exc:
+            errors.append({
+                "cart_id": cart.cart_id,
+                "error": str(exc)
+            })
 
-        order.update_total_price()
-
+    # Delete processed cart items (ignore failures)
     cart_items.delete()
 
-    serializer = PlaceOrderSerializer(created_orders, many=True)
-    return Response({
-        "message": "Order(s) placed successfully.",
-        "orders": serializer.data
-    }, status=status.HTTP_201_CREATED)
+    if not created_orders:
+        return Response(
+            {"detail": "No orders could be placed.", "errors": errors},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    serializer = PlaceOrderSerializer(
+        created_orders, many=True, context={'request': request})
+    serialized = serializer.data
+
+    db_saved = [
+        {
+            "order_pk": order.pk,
+            "restaurant": getattr(order.restaurant, "id", None),
+            "total_price": str(order.total_price if order.total_price is not None else "0.00"),
+            "status": order.status,
+            "payment_method": getattr(order, "payment_method", None),
+            "latitude": str(getattr(order, "latitude", None)),
+            "longitude": str(getattr(order, "longitude", None)),
+        }
+        for order in created_orders
+    ]
+
+    try:
+        channel_layer = get_channel_layer()
+        payload = {
+            "type": "chat_message",
+            "order": serialized,
+            "db_saved": db_saved,
+            "errors": errors
+        }
+        async_to_sync(channel_layer.group_send)("order", payload)
+    except Exception as exc:
+        # Log the error or continue, since orders are already created
+        errors.append({"channel_error": str(exc)})
+
+    return Response(
+        {
+            "message": "Order(s) placed successfully." if created_orders else "Order placement failed.",
+            "orders": serialized,
+            "errors": errors
+        },
+        status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
 
 
 @api_view(['GET'])
@@ -879,3 +976,22 @@ def restaurant_locations(request):
 
     except Exception as e:
         return Response({'error': f'Unexpected error: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+EXCLUDED_STATUSES = ['DELIVERED', 'CANCELLED']
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def order_details_api(request):
+    user = request.user
+    queryset = (
+        Order.objects
+        .filter(user=user)
+        .exclude(status__in=EXCLUDED_STATUSES)
+        .select_related('restaurant', 'deliveryman')
+        .prefetch_related(Prefetch('order_items', queryset=OrderItem.objects.select_related('food_item')))
+        .order_by('-order_date')
+    )
+    serializer = OrderWithItemsSerializer(queryset, many=True)
+    return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
