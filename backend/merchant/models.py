@@ -327,6 +327,13 @@ class Order(models.Model):
     )
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
+    delivery_charge = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        null=True,
+        blank=True
+    )
 
     class Meta:
         ordering = ['-order_date']

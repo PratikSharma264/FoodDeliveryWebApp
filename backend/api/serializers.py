@@ -164,6 +164,31 @@ class Restaurantlistserial(serializers.ModelSerializer):
         ]
 
 
+class RestaurantDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Restaurant
+        fields = [
+            'id',
+            'user',
+            'restaurant_name',
+            'owner_name',
+            'owner_email',
+            'owner_contact',
+            'restaurant_address',
+            'latitude',
+            'longitude',
+            'cuisine',
+            'description',
+            'restaurant_type',
+            'profile_picture',
+            'cover_photo',
+            'menu',
+            'created_at',
+            'approved',
+        ]
+        read_only_fields = fields
+
+
 class OrderItemDetailSerializer(serializers.ModelSerializer):
     food_item_name = serializers.CharField(
         source='food_item.name', read_only=True)
@@ -184,13 +209,28 @@ class OrderItemDetailSerializer(serializers.ModelSerializer):
 
 
 class OrderWithItemsSerializer(serializers.ModelSerializer):
-    cart_id = serializers.IntegerField(source='id', read_only=True)
+    order_id = serializers.IntegerField(source='id', read_only=True)
+    restaurant_id = serializers.IntegerField(
+        source='restaurant.id', read_only=True)
+    restaurant = RestaurantDetailSerializer(read_only=True)
     order_items = OrderItemDetailSerializer(many=True, read_only=True)
     user = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['cart_id', 'user', 'restaurant', 'is_transited', 'total_price',
-                  'order_items', 'order_date', 'status', 'payment_method', 'latitude', 'longitude']
-        read_only_fields = ['cart_id', 'user',
-                            'total_price', 'order_items', 'order_date']
+        fields = [
+            'order_id',
+            'user',
+            'restaurant_id',
+            'restaurant',
+            'is_transited',
+            'total_price',
+            'order_items',
+            'order_date',
+            'status',
+            'payment_method',
+            'latitude',
+            'longitude',
+        ]
+        read_only_fields = ['order_id', 'user', 'restaurant_id',
+                            'restaurant', 'total_price', 'order_items', 'order_date']

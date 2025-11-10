@@ -734,48 +734,38 @@ def get_restaurant_by_id(request, id):
 def place_order_api(request):
     try:
         user = request.user
-    except User.DoesNotExist:
-        return Response(
-            {"detail": "Test user 'admin' not found."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    except Exception:
+        return Response({"detail": "Authenticated user not found."}, status=status.HTTP_400_BAD_REQUEST)
 
     cart_ids = request.data.get('cart_ids')
     payment_method = request.data.get('payment_method')
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
+    delivery_charge = request.data.get('delivery_charge', 0)
 
     if not cart_ids or not isinstance(cart_ids, list):
-        return Response(
-            {"detail": "cart_ids must be provided as a list."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "cart_ids must be provided as a list."}, status=status.HTTP_400_BAD_REQUEST)
 
     if payment_method is None or latitude is None or longitude is None:
-        return Response(
-            {"detail": "payment_method, latitude and longitude are required."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "payment_method, latitude and longitude are required."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         lat_dec = Decimal(str(latitude))
         lon_dec = Decimal(str(longitude))
     except (InvalidOperation, TypeError, ValueError):
-        return Response(
-            {"detail": "latitude and longitude must be numeric."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "latitude and longitude must be numeric."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        del_charge_dec = Decimal(
+            str(delivery_charge)) if delivery_charge is not None else Decimal('0.00')
+    except (InvalidOperation, TypeError, ValueError):
+        return Response({"detail": "delivery_charge must be numeric."}, status=status.HTTP_400_BAD_REQUEST)
 
     cart_items = Cart.objects.filter(
-        cart_id__in=cart_ids,
-        user=user
-    ).select_related('food_item', 'restaurant')
+        cart_id__in=cart_ids, user=user).select_related('food_item', 'restaurant')
 
     if not cart_items.exists():
-        return Response(
-            {"detail": "No valid cart items found."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "No valid cart items found."}, status=status.HTTP_400_BAD_REQUEST)
 
     created_orders = []
     restaurant_orders = {}
@@ -792,6 +782,7 @@ def place_order_api(request):
                     payment_method=payment_method,
                     latitude=lat_dec,
                     longitude=lon_dec,
+                    delivery_charge=del_charge_dec
                 )
                 restaurant_orders[restaurant.id] = order
                 created_orders.append(order)
@@ -805,31 +796,38 @@ def place_order_api(request):
                 price_at_order=cart.food_item.price or Decimal('0.00')
             )
             order.update_total_price()
+            order.total_price = (order.total_price or Decimal(
+                '0.00')) + (order.delivery_charge or Decimal('0.00'))
+            order.save(update_fields=['total_price'])
 
         except Exception as exc:
-            errors.append({
-                "cart_id": cart.cart_id,
-                "error": str(exc)
-            })
+            errors.append({"cart_id": cart.cart_id, "error": str(exc)})
 
-    # Delete processed cart items (ignore failures)
     cart_items.delete()
 
     if not created_orders:
-        return Response(
-            {"detail": "No orders could be placed.", "errors": errors},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return Response({"detail": "No orders could be placed.", "errors": errors}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     serializer = PlaceOrderSerializer(
         created_orders, many=True, context={'request': request})
     serialized = serializer.data
+
+    for idx, order in enumerate(created_orders):
+        try:
+            if isinstance(serialized[idx], dict):
+                serialized[idx]['delivery_charge'] = str(
+                    order.delivery_charge if order.delivery_charge is not None else "0.00")
+                serialized[idx]['total_price'] = str(
+                    order.total_price if order.total_price is not None else "0.00")
+        except Exception:
+            pass
 
     db_saved = [
         {
             "order_pk": order.pk,
             "restaurant": getattr(order.restaurant, "id", None),
             "total_price": str(order.total_price if order.total_price is not None else "0.00"),
+            "delivery_charge": str(order.delivery_charge if order.delivery_charge is not None else "0.00"),
             "status": order.status,
             "payment_method": getattr(order, "payment_method", None),
             "latitude": str(getattr(order, "latitude", None)),
@@ -840,25 +838,13 @@ def place_order_api(request):
 
     try:
         channel_layer = get_channel_layer()
-        payload = {
-            "type": "chat_message",
-            "order": serialized,
-            "db_saved": db_saved,
-            "errors": errors
-        }
+        payload = {"type": "chat_message", "order": serialized,
+                   "db_saved": db_saved, "errors": errors}
         async_to_sync(channel_layer.group_send)("order", payload)
     except Exception as exc:
-        # Log the error or continue, since orders are already created
         errors.append({"channel_error": str(exc)})
 
-    return Response(
-        {
-            "message": "Order(s) placed successfully." if created_orders else "Order placement failed.",
-            "orders": serialized,
-            "errors": errors
-        },
-        status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR
-    )
+    return Response({"message": "Order(s) placed successfully." if created_orders else "Order placement failed.", "orders": serialized, "errors": errors}, status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['GET'])
