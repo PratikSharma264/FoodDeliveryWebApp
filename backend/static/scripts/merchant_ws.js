@@ -9,7 +9,7 @@ function connectWS(){
     ws = new WebSocket(wsUrl);
 
     ws.addEventListener('open',()=>{
-        console.log("Connected to Deliveryman WS");
+        console.log("Connected to Merchant WS");
     })
 
     ws.addEventListener('close',()=>{
@@ -30,20 +30,10 @@ function onMessage(evt) {
     const msg = JSON.parse(evt.data);
     console.log("msg:",msg);
     const {action,data} = msg;
-    if (wsHandlers[action]) {
-        wsHandlers[action].forEach(fn => fn(data));
-    }
   } catch (e) {
     console.error('Invalid delivery WS message', e);
   }
 }
-
-
-function registerWSHandler(action, callback) {
-    if (!wsHandlers[action]) wsHandlers[action] = [];
-    wsHandlers[action].push(callback);
-}
-
 
 function sendWSMessage(action, data) {
     if (ws && ws.readyState === WebSocket.OPEN) {
