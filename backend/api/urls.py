@@ -20,7 +20,7 @@ urlpatterns = [
     path('addtocart/', views.addtocart, name='add-to-cart'),
     path('deletecartitem/', views.delete_cart, name='delete-cart'),
     path('updatecart/', views.update_cart, name='update-cart'),
-    path('updatestatus/', views.update_order_status, name='update-status'),
+    path('updatestatus/', views.update_cart_status, name='update-status'),
     path('updateallstatus/', views.update_all_status, name='update-all-status'),
     path('products/', views.product_list_view),
     path('products/<int:pk>', views.get_product_by_id),
@@ -31,6 +31,8 @@ urlpatterns = [
     path('restaurant-locations/', views.restaurant_locations,
          name='restaurant-locations'),
     path('place-order/', views.place_order_api, name='place-order'),
+    path('update-order-status/', views.update_order_status_api,
+         name="update-order-status"),
     path('order-details/', views.order_details_api, name='order-details'),
     path('resraurant-list/', views.get_restaurant_list),
 ]

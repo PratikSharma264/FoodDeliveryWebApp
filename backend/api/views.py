@@ -63,7 +63,8 @@ def api_overview(request):
         'Orders': {
             'Show User Orders': "/api/showuserorders/",
             'Place Order': "/api/place-order",
-            'Order Details': "/api/order-details"
+            'Order Details': "/api/order-details",
+            'Update Order Status': "api/update-order-status/"
         },
         'Products': {
             'List Products': "/api/products/",
@@ -565,7 +566,7 @@ def update_cart(request):
 
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
-def update_order_status(request):
+def update_cart_status(request):
     user = request.user
     cart_id = request.data.get('cart_id')     # example: 10
     checked = request.data.get('checked')     # example: true / false
@@ -845,6 +846,43 @@ def place_order_api(request):
         errors.append({"channel_error": str(exc)})
 
     return Response({"message": "Order(s) placed successfully." if created_orders else "Order placement failed.", "orders": serialized, "errors": errors}, status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_order_status_api(request):
+    user = request.user
+
+    order_id = request.data.get('order_id')
+    new_status = request.data.get('status')
+
+    if not order_id or not new_status:
+        return Response(
+            {"detail": "Both 'order_id' and 'status' are required."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        order = Order.objects.get(pk=order_id)
+    except Order.DoesNotExist:
+        return Response(
+            {"detail": f"Order with id {order_id} does not exist."},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+    if new_status not in dict(Order.STATUS_CHOICES):
+        return Response(
+            {"detail": f"Invalid status '{new_status}'. Must be one of: {[s[0] for s in Order.STATUS_CHOICES]}."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    order.status = new_status
+    order.save(update_fields=['status'])
+
+    return Response(
+        {"detail": f"Order #{order_id} status updated to '{new_status}'."},
+        status=status.HTTP_200_OK
+    )
 
 
 @api_view(['GET'])
