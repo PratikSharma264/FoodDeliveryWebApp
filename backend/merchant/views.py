@@ -329,6 +329,13 @@ def update_restaurant_location(request):
     return redirect("restaurant-settings")
 
 
+def safe_url(field):
+    try:
+        return field.url if field and getattr(field, 'name', '') else None
+    except Exception:
+        return None
+
+
 @login_required
 def restaurant_orders_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
@@ -427,10 +434,10 @@ def restaurant_orders_json_response(request, id):
             "cuisine": order.restaurant.cuisine,
             "description": order.restaurant.description,
             "restaurant_type": order.restaurant.restaurant_type,
-            "profile_picture": getattr(order.restaurant.profile_picture, 'url', None),
-            "cover_photo": getattr(order.restaurant.cover_photo, 'url', None),
-            "menu": getattr(order.restaurant.menu, 'url', None),
-            "created_at": order.restaurant.created_at.isoformat() if order.restaurant.created_at else None,
+            "profile_picture": safe_url(order.restaurant.profile_picture),
+            "cover_photo": safe_url(order.restaurant.cover_photo),
+            "menu": safe_url(order.restaurant.menu),
+            "created_at": order.restaurant.created_at.isoformat() if getattr(order.restaurant, 'created_at', None) else None,
             "approved": order.restaurant.approved,
         }
 
