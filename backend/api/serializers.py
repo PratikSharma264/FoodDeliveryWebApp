@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework import serializers
-from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem
+from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem, Deliveryman
 from decimal import Decimal
 from django.contrib.auth import get_user_model
 
@@ -269,6 +269,12 @@ class OrderItemDetailSerializer(serializers.ModelSerializer):
         return price * obj.quantity
 
 
+class DeliverymanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Deliveryman
+        fields = ['id', 'name', 'email', 'phone']
+
+
 class OrderWithItemsSerializer(serializers.ModelSerializer):
     order_id = serializers.IntegerField(source='id', read_only=True)
     restaurant_id = serializers.IntegerField(
@@ -276,6 +282,7 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
     restaurant = RestaurantDetailSerializer(read_only=True)
     order_items = OrderItemDetailSerializer(many=True, read_only=True)
     user = UserBriefSerializer(read_only=True)
+    deliveryman = DeliverymanSerializer(read_only=True)  # Added field
     delivery_charge = serializers.DecimalField(
         max_digits=10, decimal_places=2, read_only=True)
 
@@ -284,6 +291,7 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
         fields = [
             'order_id',
             'user',
+            'deliveryman',  # Added
             'restaurant_id',
             'restaurant',
             'is_transited',
@@ -296,5 +304,5 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
         ]
-        read_only_fields = ['order_id', 'user', 'restaurant_id', 'restaurant',
+        read_only_fields = ['order_id', 'user', 'deliveryman', 'restaurant_id', 'restaurant',
                             'delivery_charge', 'total_price', 'order_items', 'order_date']

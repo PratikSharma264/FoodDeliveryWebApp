@@ -31,50 +31,49 @@ class ChatConsumer(WebsocketConsumer):
 
     def _build_order_detail(self, order_obj):
         user = getattr(order_obj, "user", None)
+        deliveryman = getattr(order_obj, "deliveryman", None)  # Added
+
         username = getattr(user, "username", "—") if user else "—"
         total = getattr(order_obj, "total_price", 0)
-        try:
-            total_display = f"NPR {total:.2f}"
-        except Exception:
-            total_display = f"NPR {total}"
+        total_display = f"NPR {total:.2f}" if total else f"NPR 0.00"
+
         delivery_charge = getattr(order_obj, "delivery_charge", 0)
-        try:
-            delivery_charge_display = f"NPR {delivery_charge:.2f}"
-        except Exception:
-            delivery_charge_display = f"NPR {delivery_charge}"
-        payment_method = getattr(order_obj, "payment_method", "—")
-        latitude = getattr(order_obj, "latitude", None)
-        longitude = getattr(order_obj, "longitude", None)
-        location = {
-            "lat": str(latitude) if latitude is not None else None,
-            "long": str(longitude) if longitude is not None else None,
-        }
+        delivery_charge_display = f"NPR {delivery_charge:.2f}" if delivery_charge else f"NPR 0.00"
+
         items = []
         try:
             order_items_qs = order_obj.order_items.select_related(
                 "food_item").all()
         except Exception:
             order_items_qs = []
+
         for oi in order_items_qs:
             fi = getattr(oi, "food_item", None)
-            item_name = getattr(fi, "name", "") or ""
+            price = getattr(oi, "price_at_order", getattr(fi, "price", 0))
             qty = getattr(oi, "quantity", 0)
-            price = oi.price_at_order if getattr(
-                oi, "price_at_order", None) is not None else getattr(fi, "price", 0)
-            try:
-                line_total = (price or 0) * qty
-            except Exception:
-                line_total = price
+            line_total = (price or 0) * qty
             items.append({
-                "food_item_name": item_name,
+                "food_item_name": getattr(fi, "name", "") if fi else "",
                 "quantity": qty,
                 "price_at_order": str(price),
                 "line_total": str(line_total),
             })
+
+        # Deliveryman info dict
+        deliveryman_data = None
+        if deliveryman:
+            deliveryman_data = {
+                "id": getattr(deliveryman, "id", None),
+                "name": getattr(deliveryman, "name", ""),
+                "email": getattr(deliveryman, "email", ""),
+                "phone": getattr(deliveryman, "phone", ""),
+            }
+
         return {
             "id": order_obj.pk,
             "user": {"username": username},
             "customer_name": username,
+            "deliveryman": deliveryman_data,  # Added
             "total_price": str(total),
             "total_display": total_display,
             "delivery_charge": str(delivery_charge),
@@ -82,10 +81,9 @@ class ChatConsumer(WebsocketConsumer):
             "status": getattr(order_obj, "status", "PENDING"),
             "restaurant": getattr(getattr(order_obj, "restaurant", None), "name",
                                   str(getattr(getattr(order_obj, "restaurant", None), "pk", ""))),
-            "payment_method": payment_method,
-            "latitude": str(latitude) if latitude is not None else None,
-            "longitude": str(longitude) if longitude is not None else None,
-            "location": location,
+            "payment_method": getattr(order_obj, "payment_method", "—"),
+            "latitude": str(getattr(order_obj, "latitude", None)),
+            "longitude": str(getattr(order_obj, "longitude", None)),
             "order_items": items,
         }
 

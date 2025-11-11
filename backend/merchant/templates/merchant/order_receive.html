@@ -63,7 +63,7 @@
           const customerName = userNameFromOrder(order)
           const restaurantName = order.restaurant_name ?? order.restaurant ?? '—'
           cust.innerHTML = `<strong>Customer:</strong> ${customerName}<br>
-                                    <strong>Restaurant:</strong> ${restaurantName}`
+                                          <strong>Restaurant:</strong> ${restaurantName}`
           card.appendChild(cust)
       
           const total = document.createElement('div')
@@ -107,7 +107,14 @@
             })
             card.appendChild(ul)
           }
-      
+          if (order.deliveryman) {
+            const delManDiv = document.createElement('div')
+            delManDiv.style.marginTop = '8px'
+            delManDiv.innerHTML = `<strong>Deliveryman:</strong> ${order.deliveryman.name ?? '—'}${order.deliveryman.phone ? ' (' + order.deliveryman.phone + ')' : ''}`
+            card.appendChild(delManDiv)
+          } else {
+            console.log(`Order ID ${id} has no deliveryman assigned`)
+          }
           return card
         }
       

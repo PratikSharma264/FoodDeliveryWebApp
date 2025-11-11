@@ -22,6 +22,7 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db.models import Prefetch
 
 
 def profile_none_required(view_func):
@@ -333,48 +334,123 @@ def restaurant_orders_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
     customer_id = request.GET.get('customer_id')
     orders_qs = Order.objects.filter(restaurant=restaurant).select_related(
-        'user').prefetch_related('order_items__food_item')
+        'user', 'restaurant', 'deliveryman').prefetch_related('order_items__food_item')
     if customer_id:
         orders_qs = orders_qs.filter(user_id=customer_id)
     data = []
     for order in orders_qs:
-        items_display = []
+        items = []
         computed_total = Decimal('0.00')
         for oi in order.order_items.all():
-            price_each = oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
+            fi = getattr(oi, 'food_item', None)
+            price_each = oi.price_at_order if oi.price_at_order is not None else (
+                getattr(fi, 'price', Decimal('0.00')) if fi is not None else Decimal('0.00'))
             item_total = (price_each or Decimal('0.00')) * oi.quantity
             computed_total += item_total
-            items_display.append(
-                f"{oi.food_item.name} (x{oi.quantity}) - NPR {item_total:.2f}")
+            image_url = None
+            if fi:
+                try:
+                    if getattr(fi, 'profile_picture', None):
+                        image_url = getattr(fi.profile_picture, 'url', None)
+                except Exception:
+                    image_url = None
+                if not image_url:
+                    image_url = getattr(fi, 'external_image_url', None)
+            items.append({
+                "id": oi.pk,
+                "food_item": getattr(fi, 'pk', None),
+                "food_item_name": getattr(fi, 'name', ''),
+                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name', getattr(order.restaurant, 'restaurant_name', '')),
+                "food_item_image": image_url,
+                "quantity": oi.quantity,
+                "price_at_order": str(price_each),
+                "total_price": float(item_total) if isinstance(item_total, Decimal) else item_total,
+            })
         total_value = order.total_price if order.total_price is not None else computed_total
-        user_obj = order.user
-        customer_name = user_obj.get_full_name() or getattr(user_obj, 'username', '')
+        user_obj = getattr(order, 'user', None)
+        customer_name = user_obj.get_full_name() if user_obj else ''
         phone = ''
-        for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
-            phone = getattr(user_obj, attr, None)
-            if phone:
-                break
-        if not phone:
-            profile = getattr(user_obj, 'user_profile', None)
-            if profile:
-                phone = getattr(profile, 'phone', '') or getattr(
-                    profile, 'phone_number', '') or ''
-        if not phone:
-            merchant_profile = getattr(user_obj, 'merchant_profile', None)
-            if merchant_profile:
-                phone = getattr(merchant_profile, 'phone_number', '') or ''
+        if user_obj:
+            for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
+                phone = getattr(user_obj, attr, None)
+                if phone:
+                    break
+            if not phone:
+                profile = getattr(user_obj, 'user_profile', None)
+                if profile:
+                    phone = getattr(profile, 'phone', '') or getattr(
+                        profile, 'phone_number', '') or ''
+            if not phone:
+                merchant_profile = getattr(user_obj, 'merchant_profile', None)
+                if merchant_profile:
+                    phone = getattr(merchant_profile, 'phone_number', '') or ''
         phone = phone or ''
+
+        # Deliveryman info
+        deliveryman_obj = getattr(order, 'deliveryman', None)
+        deliveryman_data = None
+        if deliveryman_obj:
+            deliveryman_data = {
+                "id": getattr(deliveryman_obj, 'id', None),
+                "name": getattr(deliveryman_obj, 'name', ''),
+                "email": getattr(deliveryman_obj, 'email', ''),
+                "phone": getattr(deliveryman_obj, 'phone', ''),
+            }
+
+        restaurant_user = getattr(order.restaurant, 'user', None)
+        restaurant_user_data = None
+        if restaurant_user:
+            restaurant_user_data = {
+                "id": getattr(restaurant_user, 'id', None),
+                "username": getattr(restaurant_user, 'username', ''),
+                "first_name": getattr(restaurant_user, 'first_name', ''),
+                "last_name": getattr(restaurant_user, 'last_name', ''),
+                "email": getattr(restaurant_user, 'email', ''),
+            }
+        restaurant_data = {
+            "id": order.restaurant.pk,
+            "user": restaurant_user_data,
+            "restaurant_name": order.restaurant.restaurant_name,
+            "owner_name": order.restaurant.owner_name,
+            "owner_email": order.restaurant.owner_email,
+            "owner_contact": order.restaurant.owner_contact,
+            "restaurant_address": order.restaurant.restaurant_address,
+            "latitude": order.restaurant.latitude,
+            "longitude": order.restaurant.longitude,
+            "cuisine": order.restaurant.cuisine,
+            "description": order.restaurant.description,
+            "restaurant_type": order.restaurant.restaurant_type,
+            "profile_picture": getattr(getattr(order.restaurant, 'profile_picture', None), 'url', None),
+            "cover_photo": getattr(getattr(order.restaurant, 'cover_photo', None), 'url', None),
+            "menu": getattr(getattr(order.restaurant, 'menu', None), 'url', None),
+            "created_at": order.restaurant.created_at.isoformat() if getattr(order.restaurant, 'created_at', None) else None,
+            "approved": order.restaurant.approved,
+        }
         data.append({
             "order_id": order.pk,
-            "customer": customer_name,
-            "total": f"NPR {total_value:.2f}",
-            "status": order.get_status_display() if hasattr(order, 'get_status_display') else order.status,
-            "order_items": items_display,
+            "user": {
+                "id": getattr(user_obj, 'id', None),
+                "username": getattr(user_obj, 'username', '') if user_obj else '',
+                "first_name": getattr(user_obj, 'first_name', '') if user_obj else '',
+                "last_name": getattr(user_obj, 'last_name', '') if user_obj else '',
+                "email": getattr(user_obj, 'email', '') if user_obj else '',
+            },
+            "deliveryman": deliveryman_data,
+            "restaurant_id": order.restaurant.pk,
+            "restaurant": restaurant_data,
+            "is_transited": order.is_transited,
+            "delivery_charge": f"{(order.delivery_charge if order.delivery_charge is not None else Decimal('0.00')):.2f}",
+            "total_price": f"{(total_value if total_value is not None else Decimal('0.00')):.2f}",
+            "order_items": items,
+            "order_date": order.order_date.isoformat() if getattr(order, 'order_date', None) else None,
+            "status": order.status,
+            "payment_method": (order.payment_method or '').lower(),
+            "latitude": str(order.latitude) if getattr(order, 'latitude', None) is not None else None,
+            "longitude": str(order.longitude) if getattr(order, 'longitude', None) is not None else None,
             "customer_details": {
                 "email": getattr(user_obj, 'email', '') or '',
                 "phone": phone,
             },
-            "order_date": order.order_date.isoformat() if getattr(order, 'order_date', None) else None,
         })
     return JsonResponse({"success": True, "data": data}, encoder=DjangoJSONEncoder, safe=True)
 
