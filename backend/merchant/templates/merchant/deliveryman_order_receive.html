@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Deliveryman Orders</title>
+    <style>
+      body {
+        font-family: monospace;
+        background: #f5f5f5;
+        padding: 20px;
+      }
+      #orders {
+        background: #fff;
+        padding: 10px;
+        border-radius: 8px;
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      .card {
+        border: 1px solid #ddd;
+        padding: 12px;
+        margin: 12px 0;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      }
+      .meta {
+        font-size: 0.9rem;
+        color: #555;
+        margin-top: 6px;
+      }
+      .items {
+        margin-top: 8px;
+      }
+      .items li {
+        margin-bottom: 4px;
+      }
+      pre {
+        background: #272822;
+        color: #f8f8f2;
+        padding: 10px;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+      .small {
+        font-size: 0.85rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 style="text-align:center">Deliveryman — Incoming Orders</h1>
+    <div id="orders"></div>
+
+    <script>
+      ;(function () {
+        const ordersDiv = document.getElementById('orders')
+      
+        function log(...args) {
+          console.log('[DeliverySocket]', ...args)
+        }
+      
+        function formatUser(u) {
+          if (!u) return '—'
+          const name = u.username || (u.first_name ? u.first_name + (u.last_name ? ' ' + u.last_name : '') : '—')
+          return `${name} (${u.email || 'no-email'})`
+        }
+      
+        function renderOrderCard(order) {
+          const card = document.createElement('div')
+          card.className = 'card'
+      
+          const header = document.createElement('div')
+          header.innerHTML = `<strong>Order ID:</strong> ${order.order_id || order.id || '—'} <span style="float:right"><strong>Status:</strong> ${order.status || '—'}</span>`
+          card.appendChild(header)
+      
+          const userBlock = document.createElement('div')
+          userBlock.className = 'meta'
+          userBlock.innerHTML = `<strong>Customer:</strong> ${formatUser(order.user)} <span class="small"> | Phone: ${order.user?.phone || order.user?.mobile || '—'}</span>`
+          card.appendChild(userBlock)
+      
+          const rest = order.restaurant || {}
+          const restBlock = document.createElement('div')
+          restBlock.className = 'meta'
+          restBlock.innerHTML = `<strong>Restaurant:</strong> ${rest.name || rest.restaurant_name || '—'} <span class="small"> | ${rest.address || ''}</span>`
+          card.appendChild(restBlock)
+      
+          const total = document.createElement('div')
+          total.className = 'meta'
+          total.innerHTML = `<strong>Total:</strong> ${order.total_price ? 'NPR ' + order.total_price : order.total_display || '—'}`
+          card.appendChild(total)
+      
+          if (Array.isArray(order.order_items) && order.order_items.length) {
+            const itemsTitle = document.createElement('div')
+            itemsTitle.style.marginTop = '10px'
+            itemsTitle.innerHTML = '<strong>Order Items:</strong>'
+            card.appendChild(itemsTitle)
+      
+            const ul = document.createElement('ul')
+            ul.className = 'items'
+            order.order_items.forEach((it) => {
+              const li = document.createElement('li')
+              const name = it.name || it.food_item_name || it.food_item || 'Item'
+              const qty = it.quantity ?? it.qty ?? 1
+              const price = it.price_at_order ?? it.price ?? null
+              li.textContent = `${name} (x${qty})${price ? ' - NPR ' + price : ''}`
+              ul.appendChild(li)
+            })
+            card.appendChild(ul)
+          }
+      
+          const meta = document.createElement('div')
+          meta.className = 'meta'
+          meta.innerHTML = `<strong>Delivery Charge:</strong> ${order.delivery_charge ? 'NPR ' + order.delivery_charge : '—'} <br>
+                                    <strong>Payment:</strong> ${order.payment_method || '—'} <br>
+                                    <strong>Location:</strong> Lat: ${order.latitude ?? order.location?.lat ?? '—'}, Long: ${order.longitude ?? order.location?.long ?? '—'}`
+          card.appendChild(meta)
+      
+          return card
+        }
+      
+        function showPayload(payload) {
+          if (!payload) return
+          ordersDiv.innerHTML = ''
+      
+          let candidates = []
+          if (Array.isArray(payload.orders) && payload.orders.length) {
+            candidates = payload.orders
+          } else if (payload.type === 'delivery_notification' && payload.order) {
+            candidates = [payload.order]
+          } else if (Array.isArray(payload) && payload.length) {
+            candidates = payload
+          } else if (payload.order) {
+            candidates = Array.isArray(payload.order) ? payload.order : [payload.order]
+          } else if (Array.isArray(payload.data) && payload.data.length) {
+            candidates = payload.data
+          } else {
+            const pre = document.createElement('pre')
+            pre.textContent = JSON.stringify(payload, null, 4)
+            ordersDiv.appendChild(pre)
+            return
+          }
+      
+          candidates.forEach((item) => {
+            const card = renderOrderCard(item)
+            ordersDiv.appendChild(card)
+          })
+        }
+      
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
+        const url = `${protocol}://${window.location.host}/ws/deliveryman/`
+        log('Connecting to', url)
+      
+        let socket
+        try {
+          socket = new WebSocket(url)
+        } catch (err) {
+          log('WebSocket constructor error', err)
+          const pre = document.createElement('pre')
+          pre.textContent = 'WebSocket constructor error: ' + err
+          ordersDiv.appendChild(pre)
+          return
+        }
+      
+        socket.onopen = () => {
+          log('Connected')
+        }
+        socket.onclose = (ev) => {
+          log('Closed', ev)
+        }
+        socket.onerror = (err) => {
+          log('Error', err)
+        }
+      
+        socket.onmessage = (e) => {
+          log('Raw message', e.data)
+          let data
+          try {
+            data = JSON.parse(e.data)
+          } catch (err) {
+            log('Invalid JSON', err)
+            const pre = document.createElement('pre')
+            pre.textContent = e.data
+            ordersDiv.appendChild(pre)
+            return
+          }
+          log('Parsed message', data)
+      
+          if (data.type === 'delivery_notification') {
+            showPayload(data)
+          } else if (data.type === 'chat' || data.type === 'orders') {
+            showPayload(data.orders || data)
+          } else {
+            showPayload(data)
+          }
+        }
+      
+        window._deliverySocket = socket
+      })()
+    </script>
+  </body>
+</html>

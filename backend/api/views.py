@@ -33,11 +33,12 @@ from .serializers import (
     Restaurantlistserial,
     CartReadSerializer
 )
-from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem
-from django.core.exceptions import ObjectDoesNotExist
-from typing import List, Optional
+from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem, DeliverymanStatus, Deliveryman
+
 from django.db.models import Prefetch
 from .serializers import OrderWithItemsSerializer
+from django.contrib.sessions.models import Session
+from django.apps import apps
 
 
 def api_overview(request):
@@ -74,7 +75,8 @@ def api_overview(request):
             'Get Restaurant by ID': "/api/restaurants/<int:id>/",
             'Nearby Restaurants': "/api/nearby-restaurants/",
             'Restaurant Locations': "/api/restaurant-locations/",
-        }
+        },
+        'Deliveryman': {'Set Waiting For Delivery': "/api/set-waiting-for-delivery/"}
     }
     return render(request, 'api/api_overview.html', {'api_urls': api_urls})
 
@@ -855,8 +857,8 @@ def update_order_status_api(request):
 
     order_id = request.data.get('order_id')
     new_status = request.data.get('status')
-    print("ordid:",order_id)
-    print("stat:",new_status)
+    print("ordid:", order_id)
+    print("stat:", new_status)
 
     if not order_id or not new_status:
         return Response(
@@ -1021,3 +1023,83 @@ def order_details_api(request):
     )
     serializer = OrderWithItemsSerializer(queryset, many=True)
     return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def set_order_waiting_for_delivery_api(request):
+    order_id = request.data.get('order_id')
+    if not order_id:
+        return Response({"detail": "order_id is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        order = Order.objects.get(pk=order_id)
+    except Order.DoesNotExist:
+        return Response({"detail": f"Order with id {order_id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    if order.status == 'WAITING_FOR_DELIVERY':
+        return Response({"detail": "Order is already WAITING_FOR_DELIVERY. Cannot change."}, status=status.HTTP_400_BAD_REQUEST)
+
+    order.status = 'WAITING_FOR_DELIVERY'
+    order.save(update_fields=['status'])
+
+    # Get deliverymen
+    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
+    Deliveryman = apps.get_model("merchant", "Deliveryman")
+
+    # Get only eligible deliverymen: online and not on delivery
+    eligible_status_qs = DeliverymanStatus.objects.filter(
+        online=True, on_delivery=False).select_related('deliveryman')
+    eligible_deliverymen = [
+        ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
+
+    # Build payload
+    order_items = []
+    for oi in order.order_items.select_related('food_item').all():
+        fi = getattr(oi, 'food_item', None)
+        order_items.append({
+            "name": getattr(fi, 'name', '') if fi else '',
+            "quantity": oi.quantity,
+            "price_at_order": str(oi.price_at_order) if oi.price_at_order is not None else None
+        })
+
+    user_obj = getattr(order, 'user', None)
+    phone = getattr(user_obj, 'phone', None) or getattr(
+        user_obj, 'phone_number', None) if user_obj else None
+
+    payload = {
+        "type": "delivery_notification",
+        "order": {
+            "order_id": order.pk,
+            "user": {
+                "id": getattr(user_obj, 'id', None),
+                "username": getattr(user_obj, 'username', '') if user_obj else '',
+                "email": getattr(user_obj, 'email', '') if user_obj else '',
+                "phone": phone,
+            },
+            "restaurant": {
+                "id": getattr(order.restaurant, 'pk', None),
+                "name": getattr(order.restaurant, 'restaurant_name', '') if getattr(order, 'restaurant', None) else '',
+                "address": getattr(order.restaurant, 'restaurant_address', '') if getattr(order, 'restaurant', None) else '',
+            },
+            "order_items": order_items,
+            "total_price": str(order.total_price) if order.total_price is not None else None,
+            "delivery_charge": str(order.delivery_charge) if order.delivery_charge is not None else "0.00",
+        }
+    }
+
+    # Send notifications via channels
+    channel_layer = get_channel_layer()
+    for dm in eligible_deliverymen:
+        group_name = f"deliveryman_{dm.pk}"
+        try:
+            async_to_sync(channel_layer.group_send)(
+                group_name,
+                {"type": "notify", "payload": payload}
+            )
+        except Exception:
+            pass
+
+    return Response({
+        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
+    }, status=status.HTTP_200_OK)

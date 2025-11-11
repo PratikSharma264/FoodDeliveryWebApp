@@ -35,4 +35,6 @@ urlpatterns = [
          name="update-order-status"),
     path('order-details/', views.order_details_api, name='order-details'),
     path('resraurant-list/', views.get_restaurant_list),
+    path('set-waiting-for-delivery/', views.set_order_waiting_for_delivery_api,
+         name='set_waiting_for_delivery'),
 ]

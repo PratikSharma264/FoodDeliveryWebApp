@@ -792,31 +792,39 @@ def order_receive_view(request):
     return render(request, 'merchant/order_receive.html')
 
 
-def check_deliveryman_status(request):
-    # Get all active sessions
-    sessions = Session.objects.filter(expire_date__gte=timezone.now())
-    user_ids = []
+@login_required
+def deliveryman_order_receive_view(request):
+    try:
+        profile = Deliveryman.objects.get(user=request.user)
+    except Deliveryman.DoesNotExist:
+        return redirect('restaurant-dashboard')
+    return render(request, 'merchant/deliveryman_order_receive.html', {'deliveryman': profile})
 
-    for session in sessions:
-        data = session.get_decoded()
-        uid = data.get("_auth_user_id")
-        if uid:
-            user_ids.append(int(uid))
+# def check_deliveryman_status(request):
+#     # Get all active sessions
+#     sessions = Session.objects.filter(expire_date__gte=timezone.now())
+#     user_ids = []
 
-    # Get online and offline deliverymen
-    online_deliverymen = Deliveryman.objects.filter(user__id__in=user_ids)
-    offline_deliverymen = Deliveryman.objects.exclude(user__id__in=user_ids)
+#     for session in sessions:
+#         data = session.get_decoded()
+#         uid = data.get("_auth_user_id")
+#         if uid:
+#             user_ids.append(int(uid))
 
-    # For testing - print them out
-    print("ONLINE DELIVERYMEN:")
-    for d in online_deliverymen:
-        print(f"- {d.Firstname} {d.Lastname}")
+#     # Get online and offline deliverymen
+#     online_deliverymen = Deliveryman.objects.filter(user__id__in=user_ids)
+#     offline_deliverymen = Deliveryman.objects.exclude(user__id__in=user_ids)
 
-    print("\nOFFLINE DELIVERYMEN:")
-    for d in offline_deliverymen:
-        print(f"- {d.Firstname} {d.Lastname}")
+#     # For testing - print them out
+#     print("ONLINE DELIVERYMEN:")
+#     for d in online_deliverymen:
+#         print(f"- {d.Firstname} {d.Lastname}")
 
-    return JsonResponse({
-        "online": [f"{d.Firstname} {d.Lastname}" for d in online_deliverymen],
-        "offline": [f"{d.Firstname} {d.Lastname}" for d in offline_deliverymen],
-    })
+#     print("\nOFFLINE DELIVERYMEN:")
+#     for d in offline_deliverymen:
+#         print(f"- {d.Firstname} {d.Lastname}")
+
+#     return JsonResponse({
+#         "online": [f"{d.Firstname} {d.Lastname}" for d in online_deliverymen],
+#         "offline": [f"{d.Firstname} {d.Lastname}" for d in offline_deliverymen],
+#     })

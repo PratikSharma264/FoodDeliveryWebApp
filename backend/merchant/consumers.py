@@ -167,3 +167,73 @@ class ChatConsumer(WebsocketConsumer):
                 self.room_group_name, self.channel_name)
         except Exception:
             pass
+
+
+class DeliverymanConsumer(WebsocketConsumer):
+    def connect(self):
+        user = self.scope.get('user')
+        if not user or not user.is_authenticated:
+            self.close()
+            return
+
+        Deliveryman = apps.get_model("merchant", "Deliveryman")
+        DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
+
+        # Get deliveryman instance
+        try:
+            deliveryman = getattr(
+                user, 'deliveryman_profile', None) or Deliveryman.objects.filter(user=user).first()
+        except Exception:
+            deliveryman = None
+
+        if not deliveryman:
+            self.close()
+            return
+
+        # Set deliveryman status to online
+        status_obj, created = DeliverymanStatus.objects.get_or_create(
+            deliveryman=deliveryman)
+        status_obj.online = True
+        status_obj.save(update_fields=['online'])
+
+        self.deliveryman_pk = deliveryman.pk
+        self.group_name = f"deliveryman_{self.deliveryman_pk}"
+        async_to_sync(self.channel_layer.group_add)(
+            self.group_name, self.channel_name)
+
+        self.accept()
+        self.send(text_data=json.dumps({
+            "type": "status",
+            "status": "connected",
+            "deliveryman_id": self.deliveryman_pk
+        }))
+
+    def disconnect(self, close_code):
+        # Set offline on disconnect
+        try:
+            DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
+            status_obj = DeliverymanStatus.objects.filter(
+                deliveryman_id=self.deliveryman_pk).first()
+            if status_obj:
+                status_obj.online = False
+                status_obj.save(update_fields=['online'])
+            async_to_sync(self.channel_layer.group_discard)(
+                self.group_name, self.channel_name)
+        except Exception:
+            pass
+
+    def receive(self, text_data=None, bytes_data=None):
+        # Optional: can be used to acknowledge messages from client
+        try:
+            data = json.loads(text_data) if text_data else {}
+        except Exception:
+            data = {}
+        self.send(text_data=json.dumps({"type": "ack", "received": data}))
+
+    def notify(self, event):
+        payload = event.get('payload', {})
+        try:
+            self.send(text_data=json.dumps(
+                {"type": "delivery_notification", "data": payload}))
+        except Exception:
+            pass
