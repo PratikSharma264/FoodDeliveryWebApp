@@ -273,6 +273,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   // socket = new WebSocket(wsUrl);
+  console.log("csrf:",csrftoken);
   const orderWrapper = document.querySelector("#current-order-wrapper");
   const emptyOrder = document.querySelector("#emptyorder");
   const resid = document.querySelector(".resid").id;
@@ -286,16 +287,19 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       const { data } = await response.json();
       console.log("response:", data);
-      orders.unshift(data);
+      data.forEach((item)=> orders.unshift(item));
     } catch (err) {
       console.error("error: ", err);
       showError({ message: `${err?.message}` });
     }
   }
   getCurrentOrders();
-  if(orders && orders.length>0){
+
+  setTimeout(()=>{
+      if(orders && orders.length>0){
     renderOrders();
   }
+  },1000);
 
   // socket.addEventListener("message", (event) => {
   //   const msg = JSON.parse(event.data);
@@ -370,8 +374,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </ul>
             <h5>Customer Details:</h5>
             <p>Email: ${order.user.email}</p>
-            <p>Phone: ${order.customer.phone}</p>
-            <p>Location: (${order.customer.lat}, ${order.customer.lng})</p>
+            // <p>Phone: ${order.user.phone_number}</p>
+            <p>Delivery Location: (${order.latitude}, ${order.longitude})</p>
           </div>
         `;
 
@@ -389,24 +393,28 @@ document.addEventListener("DOMContentLoaded", () => {
       if (statusBtn) {
         statusBtn.addEventListener("click", async () => {
           const allowedStatuses = [
-            "Order Received",
-            "Processing",
-            "Waiting for Delivery",
+            "PENDING",
+            "PROCESSING",
           ];
           const nextStatus =
             allowedStatuses[allowedStatuses.indexOf(order.status) + 1];
           if (nextStatus) {
-            const res = await fetch(
-              `https://your-backend.com/api/merchant/order/${order.orderId}/status`,
+            try{
+               const res = await fetch(
+              `http://127.0.0.1:8000/api/update-order-status/`,
               {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ status: nextStatus }),
+                method: "POST",
+                headers: { "Content-Type": "application/json","X-CSRFToken": csrftoken },
+                body: JSON.stringify({ status: nextStatus, order_id: order.order_id }),
+                credentials: "include"
               }
             );
             if (res.ok) {
               order.status = nextStatus;
               renderOrders();
+            }
+            } catch(err){
+              console.error("error when updating status in server");
             }
           }
         });
@@ -416,14 +424,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const reqBtn = orderCard.querySelector(".request-delivery");
       if (reqBtn) {
         reqBtn.addEventListener("click", async () => {
-          const res = await fetch(
-            `http://127.0.0.1:8000/api/merchant/order/${order.orderId}/request-delivery`,
+          try{
+             const res = await fetch(
+            `http://127.0.0.1:8000/api/request-delivery/${order.orderId}/`,
             {
               method: "POST",
             }
           );
           if (res.ok) {
+            order.status = "WAITING_FOR_DELIVERY";
             alert("Delivery request sent. Awaiting acceptance...");
+            renderOrders();
+          }
+          } catch(err){
+            console.error("error when requesting for deliveryman");
           }
         });
       }

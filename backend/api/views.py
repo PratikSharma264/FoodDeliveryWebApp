@@ -855,6 +855,8 @@ def update_order_status_api(request):
 
     order_id = request.data.get('order_id')
     new_status = request.data.get('status')
+    print("ordid:",order_id)
+    print("stat:",new_status)
 
     if not order_id or not new_status:
         return Response(
