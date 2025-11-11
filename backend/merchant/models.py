@@ -294,7 +294,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('PENDING', 'Pending'),
         ('PROCESSING', 'Processing'),
-        ('WAITING_FOR_DELIVERY','Waiting for Deliviery')
+        ('WAITING_FOR_DELIVERY','Waiting for Deliviery'),
         ('OUT_FOR_DELIVERY', 'Out for Delivery'),
         ('DELIVERED', 'Delivered'),
         ('CANCELLED', 'Cancelled'),
