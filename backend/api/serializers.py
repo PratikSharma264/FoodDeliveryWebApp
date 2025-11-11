@@ -4,38 +4,111 @@ from rest_framework import serializers
 from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem, Deliveryman
 from decimal import Decimal
 from django.contrib.auth import get_user_model
+from django.apps import apps
+from django.core.validators import RegexValidator
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 
 class AppUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'email', 'first_name')  # use first_name for full_name
+        fields = ('id', 'email', 'first_name')
+
+
+# Validator for Nepali phone numbers
+phone_validator = RegexValidator(
+    regex=r'^(?:((98|97|96)\d{8})|(0\d{2,3}\d{6}))$',
+    message="Enter a valid Nepali mobile or landline number"
+)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(write_only=True)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
+    phone = serializers.CharField(
+        write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ('id', 'email', 'full_name', 'password')
+        fields = ("id", "email", "full_name", "password", "phone")
+
+    def validate_phone(self, value):
+        """
+        Validate phone with Nepali phone regex. Allow empty/blank.
+        """
+        if value in (None, ''):
+            return value
+        try:
+            phone_validator(value)
+        except DjangoValidationError:
+            raise serializers.ValidationError(
+                "Enter a valid Nepali phone number.")
+        return value
 
     def create(self, validated_data):
-        full_name = validated_data.pop('full_name')
-        email = validated_data['email']
-        password = validated_data['password']
+        full_name = validated_data.pop("full_name")
+        email = validated_data["email"]
+        password = validated_data["password"]
+        phone = validated_data.pop("phone", None)
 
-        # Generate a dummy username from email
-        username = email.split('@')[0]
+        # generate unique username from email prefix
+        base_username = email.split("@")[0]
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
 
         user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password
-        )
-        user.first_name = full_name  # store full name in first_name
+            username=username, email=email, password=password)
+        user.first_name = full_name
         user.save()
+
+        # try to save phone to Merchant or Customer profile if available
+        Merchant = None
+        Customer = None
+        try:
+            Merchant = apps.get_model("merchant", "Merchant")
+        except Exception:
+            Merchant = None
+        try:
+            Customer = apps.get_model("merchant", "Customer")
+        except Exception:
+            Customer = None
+
+        def _set_field_if_exists(inst, field_name, value):
+            if not inst or value is None:
+                return False
+            if hasattr(inst, field_name):
+                try:
+                    setattr(inst, field_name, value)
+                    inst.save()
+                    return True
+                except Exception:
+                    return False
+            return False
+
+        saved = False
+        if phone:
+            if Merchant:
+                try:
+                    merchant_profile, created = Merchant.objects.get_or_create(
+                        user=user)
+                    if _set_field_if_exists(merchant_profile, "phone_number", phone):
+                        saved = True
+                except Exception:
+                    saved = False
+
+            if not saved and Customer:
+                try:
+                    customer_profile, created = Customer.objects.get_or_create(
+                        user=user)
+                    if _set_field_if_exists(customer_profile, "phone", phone) or _set_field_if_exists(customer_profile, "phone_number", phone):
+                        saved = True
+                except Exception:
+                    saved = False
+
         return user
 
 

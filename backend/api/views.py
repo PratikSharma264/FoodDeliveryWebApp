@@ -90,8 +90,28 @@ class register_user(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        # find phone from possible profile places
+        phone = None
+        # merchant_profile.phone_number
+        try:
+            phone = getattr(user, "merchant_profile", None) and getattr(
+                user.merchant_profile, "phone_number", None)
+        except Exception:
+            phone = None
+        # fallback to customer profile phone or phone_number
+        if not phone:
+            try:
+                profile = getattr(user, "user_profile", None)
+                if profile:
+                    phone = getattr(profile, "phone", None) or getattr(
+                        profile, "phone_number", None)
+            except Exception:
+                phone = None
+
         return Response({
             'user': AppUserSerializer(user, context=self.get_serializer_context()).data,
+            'phone': phone or ''
         })
 
 
