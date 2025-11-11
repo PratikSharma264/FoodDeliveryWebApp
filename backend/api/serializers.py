@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 from merchant.models import FoodItem, Restaurant, Order, FoodOrderCount, Cart, OrderItem
 from decimal import Decimal
+from django.contrib.auth import get_user_model
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -164,7 +165,22 @@ class Restaurantlistserial(serializers.ModelSerializer):
         ]
 
 
+User = get_user_model()
+
+
+class UserBriefSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'email']
+        read_only_fields = fields
+
+
 class RestaurantDetailSerializer(serializers.ModelSerializer):
+    user = UserBriefSerializer(read_only=True)
+    profile_picture = serializers.SerializerMethodField()
+    cover_photo = serializers.SerializerMethodField()
+    menu = serializers.SerializerMethodField()
+
     class Meta:
         model = Restaurant
         fields = [
@@ -188,22 +204,67 @@ class RestaurantDetailSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def _abs_url(self, val):
+        request = self.context.get('request')
+        if not val:
+            return None
+        try:
+            url = getattr(val, 'url', str(val))
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
+
+    def get_profile_picture(self, obj):
+        return self._abs_url(obj.profile_picture)
+
+    def get_cover_photo(self, obj):
+        return self._abs_url(obj.cover_photo)
+
+    def get_menu(self, obj):
+        return self._abs_url(obj.menu)
+
 
 class OrderItemDetailSerializer(serializers.ModelSerializer):
     food_item_name = serializers.CharField(
         source='food_item.name', read_only=True)
     restaurant_name = serializers.CharField(
-        source='food_item.restaurant.name', read_only=True)
+        source='food_item.restaurant.restaurant_name', read_only=True)
+    food_item_image = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'food_item', 'food_item_name',
-                  'restaurant_name', 'quantity', 'price_at_order', 'total_price']
-        read_only_fields = ['id', 'total_price']
+        fields = ['id', 'food_item', 'food_item_name', 'restaurant_name',
+                  'food_item_image', 'quantity', 'price_at_order', 'total_price']
+        read_only_fields = ['id', 'food_item_image', 'total_price']
+
+    def _abs_url(self, val):
+        request = self.context.get('request')
+        if not val:
+            return None
+        try:
+            url = getattr(val, 'url', str(val))
+            if request:
+                return request.build_absolute_uri(url)
+            return url
+        except Exception:
+            return None
+
+    def get_food_item_image(self, obj):
+        fi = getattr(obj, 'food_item', None)
+        if not fi:
+            return None
+        if getattr(fi, 'profile_picture', None):
+            return self._abs_url(fi.profile_picture)
+        if getattr(fi, 'external_image_url', None):
+            return fi.external_image_url
+        return None
 
     def get_total_price(self, obj):
-        price = obj.price_at_order if obj.price_at_order is not None else obj.food_item.price
+        price = obj.price_at_order if obj.price_at_order is not None else getattr(
+            obj.food_item, 'price', None)
         price = price or Decimal('0.00')
         return price * obj.quantity
 
@@ -214,7 +275,9 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
         source='restaurant.id', read_only=True)
     restaurant = RestaurantDetailSerializer(read_only=True)
     order_items = OrderItemDetailSerializer(many=True, read_only=True)
-    user = serializers.PrimaryKeyRelatedField(read_only=True)
+    user = UserBriefSerializer(read_only=True)
+    delivery_charge = serializers.DecimalField(
+        max_digits=10, decimal_places=2, read_only=True)
 
     class Meta:
         model = Order
@@ -224,6 +287,7 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
             'restaurant_id',
             'restaurant',
             'is_transited',
+            'delivery_charge',
             'total_price',
             'order_items',
             'order_date',
@@ -232,5 +296,5 @@ class OrderWithItemsSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
         ]
-        read_only_fields = ['order_id', 'user', 'restaurant_id',
-                            'restaurant', 'total_price', 'order_items', 'order_date']
+        read_only_fields = ['order_id', 'user', 'restaurant_id', 'restaurant',
+                            'delivery_charge', 'total_price', 'order_items', 'order_date']
