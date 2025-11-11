@@ -7,6 +7,7 @@ __pycache__/
 backend/api/migrations/__pycache__/
 backend/merchant/migrations/__pycache__/
 backend/FoodDeliveryWebApp/__pycache__/
+backend/db.sqlite3
 
 media/bill_book_files/
 media/bill_book_images/
