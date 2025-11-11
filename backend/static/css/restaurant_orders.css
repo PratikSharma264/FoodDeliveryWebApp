@@ -231,12 +231,24 @@
   padding-top: 10px;
   border-top: 1px solid #ccc;
   font-family: "Poppins";
+  display: none;
+  flex-wrap: wrap;
+  gap: 150px;
+  justify-content: center;
 }
-.order-details ul {
+
+.order-details > div > h4 {
+  font-family: "rocketThunder";
+  font-size: 20px;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.order-details > div:first-child > ul {
   padding-left: 20px;
   list-style: none;
 }
-.order-details li {
+.order-details > div:first-child ul > li {
   display: flex;
   align-items: center;
   gap: 10px;

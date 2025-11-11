@@ -35,7 +35,7 @@
               ><span class="nav-icons"
                 ><i class="fa-solid fa-bell fa-shake" style="--fa-animation-duration: 4s;"></i></span>
               <h4>Orders</h4>
-              <span class="new-order-count">0</span>
+              <span class="new-order-count"></span>
               </a>
           </li>
           <li class="link" id="{% block activate_menu_dishes %}menu_dishes{%endblock%}">
@@ -111,6 +111,28 @@
     </div>
   </div>
 
+  <script>
+  function showNotification() {
+  if (Notification.permission === "granted") {
+    const notification = new Notification("New Order Received", {
+      body: "Go to order page to view details.",
+      icon: "/static/images/bell.png",
+      sound: new Audio("{% static 'audio/new_order.wav' %}"),
+    });
+    
+    new Audio("{% static 'audio/new_order.wav' %}").play().catch(error => {
+      console.error("Failed to play sound:", error);
+    });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        showNotification();
+      }
+    });
+  }
+}
+</script>
+   <script src="{% static 'scripts/merchant_ws.js' %}" defer></script>
   <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
   {% block scripts %}
   {% endblock %}

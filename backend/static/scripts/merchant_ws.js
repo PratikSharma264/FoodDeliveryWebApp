@@ -1,9 +1,13 @@
 let ws = null;
+let orderCount = 0;
+const countElement = document.querySelector(".new-order-count");
+countElement.innerHTML = orderCount;
 
 const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
 const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
 
 const wsHandlers = {};
+
 
 function connectWS(){
     ws = new WebSocket(wsUrl);
@@ -29,7 +33,14 @@ function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
     console.log("msg:",msg);
-    const {action,data} = msg;
+    const {status,type} = msg;
+    if(type === "order"){
+        orderCount++;
+        countElement.innerHTML = orderCount;
+        showNotification();
+        document.title = `🔔 New Orders Received`;
+        setTimeout(()=> {document.title = Orders},2000);
+    }
   } catch (e) {
     console.error('Invalid delivery WS message', e);
   }
