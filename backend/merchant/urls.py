@@ -31,8 +31,8 @@ urlpatterns = [
          name='restaurant-customers'),
     path("restaurant-settings/", views.restaurant_settings,
          name='restaurant-settings'),
-    path("check-deliveryman/", views.check_deliveryman_status,
-         name="check-deliveryman"),
+    #     path("check-deliveryman/", views.check_deliveryman_status,
+    #          name="check-deliveryman"),
     path("update-restaurant-bio/", views.update_restaurant_bio,
          name="update-restaurant-bio"),
     path("json/update-restaurant-bio/<int:id>/",
@@ -58,5 +58,7 @@ urlpatterns = [
     path("update-deliveryman-profile-picture/", views.update_deliveryman_profile_picture,
          name="update-deliveryman-profile-picture"),
     path("json/restaurant-orders-response/<int:id>/",
-         views.restaurant_orders_json_response, name="restaurant-orders-json-response")
+         views.restaurant_orders_json_response, name="restaurant-orders-json-response"),
+    path('deliveryman/order-receive/', views.deliveryman_order_receive_view,
+         name='deliveryman-order-receive'),
 ]

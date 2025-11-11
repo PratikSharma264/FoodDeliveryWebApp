@@ -421,48 +421,48 @@ class FoodOrderCount(models.Model):
         self.save(update_fields=['no_of_orders', 'updated_at'])
 
 
-class DeliveryPersonnel(models.Model):
-    name = models.CharField(max_length=255)
-    phone_number = models.CharField(
-        max_length=15, validators=[phone_validator])
-    vehicle_type = models.CharField(max_length=50)
-    latitude = models.FloatField(blank=True, null=True)
-    longitude = models.FloatField(blank=True, null=True)
-    current_order = models.OneToOneField(
-        Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_personnel')
-    deliveryman_profile = models.OneToOneField(
-        'Deliveryman', on_delete=models.CASCADE, related_name='personnel_record', null=True)
+# class DeliveryPersonnel(models.Model):
+#     name = models.CharField(max_length=255)
+#     phone_number = models.CharField(
+#         max_length=15, validators=[phone_validator])
+#     vehicle_type = models.CharField(max_length=50)
+#     latitude = models.FloatField(blank=True, null=True)
+#     longitude = models.FloatField(blank=True, null=True)
+#     current_order = models.OneToOneField(
+#         Order, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_personnel')
+#     deliveryman_profile = models.OneToOneField(
+#         'Deliveryman', on_delete=models.CASCADE, related_name='personnel_record', null=True)
 
-    def __str__(self):
-        status = f"Assigned to Order #{self.current_order.pk}" if self.current_order else "Available"
-        return f"{self.name} - {status}"
+#     def __str__(self):
+#         status = f"Assigned to Order #{self.current_order.pk}" if self.current_order else "Available"
+#         return f"{self.name} - {status}"
 
 
-class Delivery(models.Model):
-    STATUS_CHOICES = [
-        ('ASSIGNED', 'Assigned'),
-        ('PICKED_UP', 'Picked Up'),
-        ('IN_TRANSIT', 'In Transit'),
-        ('DELIVERED', 'Delivered'),
-        ('FAILED', 'Failed'),
-    ]
+# class Delivery(models.Model):
+#     STATUS_CHOICES = [
+#         ('ASSIGNED', 'Assigned'),
+#         ('PICKED_UP', 'Picked Up'),
+#         ('IN_TRANSIT', 'In Transit'),
+#         ('DELIVERED', 'Delivered'),
+#         ('FAILED', 'Failed'),
+#     ]
 
-    order = models.OneToOneField(
-        Order, on_delete=models.CASCADE, related_name='delivery')
-    personnel = models.ForeignKey(
-        DeliveryPersonnel, on_delete=models.SET_NULL, null=True, related_name='deliveries')
-    delivery_address = models.TextField()
-    assigned_time = models.DateTimeField(
-        default=timezone.now)  # Fixed: use timezone.now
-    delivery_time = models.DateTimeField(blank=True, null=True)
-    status = models.CharField(
-        max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
+#     order = models.OneToOneField(
+#         Order, on_delete=models.CASCADE, related_name='delivery')
+#     personnel = models.ForeignKey(
+#         DeliveryPersonnel, on_delete=models.SET_NULL, null=True, related_name='deliveries')
+#     delivery_address = models.TextField()
+#     assigned_time = models.DateTimeField(
+#         default=timezone.now)  # Fixed: use timezone.now
+#     delivery_time = models.DateTimeField(blank=True, null=True)
+#     status = models.CharField(
+#         max_length=20, choices=STATUS_CHOICES, default='ASSIGNED')
 
-    def __str__(self):
-        return f"Delivery #{self.pk} - Status: {self.status}"
+#     def __str__(self):
+#         return f"Delivery #{self.pk} - Status: {self.status}"
 
-    class Meta:
-        verbose_name_plural = "Deliveries"
+#     class Meta:
+#         verbose_name_plural = "Deliveries"
 
 # class DeliveryStatus(models.Model):
 #     STATUS_CHOICES = [
@@ -486,28 +486,24 @@ class Delivery(models.Model):
 #
 #     def __str__(self):
 #         return f"Order #{self.order.id} - {self.status}"
-
-
 class DeliverymanStatus(models.Model):
-    STATUS_CHOICES = [
-        ('available', 'Available'),
-        ('on_delivery', 'On Delivery'),
-        ('offline', 'Offline'),
-    ]
-
     deliveryman = models.OneToOneField(
-        Deliveryman,
+        'Deliveryman',
         on_delete=models.CASCADE,
         related_name='status'
     )
+    online = models.BooleanField(default=False)
+    on_delivery = models.BooleanField(default=False)
     latitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True)
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
     longitude = models.DecimalField(
-        max_digits=9, decimal_places=6, null=True, blank=True)
+        max_digits=9, decimal_places=6, null=True, blank=True
+    )
     last_updated = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.deliveryman.Firstname} {self.deliveryman.Lastname}"
+        return f"{self.deliveryman.Firstname} {self.deliveryman.Lastname} - {'Online' if self.online else 'Offline'} - {'On Delivery' if self.on_delivery else 'Free'}"
 
 
 class GoToDashClickCheck(models.Model):
