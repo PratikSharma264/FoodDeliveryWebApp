@@ -87,7 +87,7 @@
 
       <div>
         <div id="pp-container">
-          {% if restaurant.profile_picture %}
+          {% if restaurant.profile_picture and restaurant.profile_picture.name %}
             <img src="{{ restaurant.profile_picture.url }}" alt="profilepic" height="50" width="50">
           {% else %}
             <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50">

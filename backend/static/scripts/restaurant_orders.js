@@ -331,27 +331,26 @@ document.addEventListener("DOMContentLoaded", () => {
       orderCard.innerHTML = `
           <div class="order-summary">
             <div>
-              <h4>Order ID: ${order.orderId}</h4>
-              <p>Customer: ${order.customer.name}</p>
-              <p>Total: NPR ${order.totalAmount}</p>
+              <h4>Order ID: ${order.order_id}</h4>
+              <p>Customer: ${order.user.first_name}</p>
+              <p>Total: NPR ${order.total_price}</p>
               <p>Status: <strong>${order.status}</strong></p>
             </div>
             <div>
               <button class="toggle-details">Details</button>
               ${
-                order.status === "Order Received" ||
-                order.status === "Processing"
-                  ? '<button class="next-status">Next Status</button>'
+                order.status === "PENDING" 
+                  ? '<button class="next-status">Next Status</button>' // status change garne handler rakhna baki
                   : ""
               }
               ${
                 showRequestDeliveryBtn
-                  ? '<button class="request-delivery">Request Delivery</button>'
+                  ? '<button class="request-delivery">Request Delivery</button>' // delivery request garne handler rakhna baki
                   : ""
               }
               ${
-                order.status === "Out for Delivery"
-                  ? '<button class="track-delivery">Track</button>'
+                order.status === "OUT_FOR_DELIVERY"
+                  ? '<button class="track-delivery">Track</button>' // TRACK HANDLER ADD GARNA BAKI
                   : ""
               }
             </div>
@@ -359,18 +358,18 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="order-details" style="display:none">
             <h5>Order Items:</h5>
             <ul>
-              ${order.items
+              ${order.order_items
                 .map(
                   (item) => `
                 <li>
-                  <img src="${item.image}" width="50" height="50" />
-                  <span>${item.name} (x${item.quantity}) - NPR ${item.price}</span>
+                  <img src="${item.food_item_image}" width="50" height="50" />
+                  <span>${item.food_item_name} (x${item.quantity}) - NPR ${item.total_price}</span>
                 </li>`
                 )
                 .join("")}
             </ul>
             <h5>Customer Details:</h5>
-            <p>Email: ${order.customer.email}</p>
+            <p>Email: ${order.user.email}</p>
             <p>Phone: ${order.customer.phone}</p>
             <p>Location: (${order.customer.lat}, ${order.customer.lng})</p>
           </div>
