@@ -7,6 +7,9 @@ from django.contrib.auth import get_user_model
 from django.apps import apps
 from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import IntegrityError, transaction
+
+User = get_user_model()
 
 
 class AppUserSerializer(serializers.ModelSerializer):
@@ -46,6 +49,15 @@ class RegisterSerializer(serializers.ModelSerializer):
                 "Enter a valid Nepali phone number.")
         return value
 
+    def validate_email(self, value):
+        """
+        Ensure email is unique (case-insensitive). Normalize to lower-case.
+        """
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError(
+                "A user with that email already exists.")
+        return value.lower()
+
     def create(self, validated_data):
         full_name = validated_data.pop("full_name")
         email = validated_data["email"]
@@ -60,18 +72,28 @@ class RegisterSerializer(serializers.ModelSerializer):
             username = f"{base_username}{counter}"
             counter += 1
 
-        user = User.objects.create_user(
-            username=username, email=email, password=password)
-        user.first_name = full_name
-        user.save()
+        # wrap create in transaction to reduce race conditions
+        try:
+            with transaction.atomic():
+                user = User.objects.create_user(
+                    username=username, email=email, password=password
+                )
+                # store full name in first_name (as in your original code)
+                user.first_name = full_name
+                user.save()
+        except IntegrityError:
+            # If a DB-level unique constraint exists and race happened, surface friendly error
+            raise serializers.ValidationError(
+                {"email": ["A user with that email already exists."]})
 
-        # try to save phone to Merchant or Customer profile if available
+        # attempt to save phone to Merchant or Customer profile if available
         Merchant = None
         Customer = None
         try:
             Merchant = apps.get_model("merchant", "Merchant")
         except Exception:
             Merchant = None
+
         try:
             Customer = apps.get_model("merchant", "Customer")
         except Exception:
@@ -104,7 +126,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 try:
                     customer_profile, created = Customer.objects.get_or_create(
                         user=user)
-                    if _set_field_if_exists(customer_profile, "phone", phone) or _set_field_if_exists(customer_profile, "phone_number", phone):
+                    if (_set_field_if_exists(customer_profile, "phone", phone) or
+                            _set_field_if_exists(customer_profile, "phone_number", phone)):
                         saved = True
                 except Exception:
                     saved = False
@@ -236,9 +259,6 @@ class Restaurantlistserial(serializers.ModelSerializer):
             'menu',
             'review_rating'
         ]
-
-
-User = get_user_model()
 
 
 class UserBriefSerializer(serializers.ModelSerializer):
