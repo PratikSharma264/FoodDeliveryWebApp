@@ -3,6 +3,8 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from django.db.models import Prefetch
 from django.apps import apps
+from decimal import Decimal
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -27,20 +29,52 @@ class ChatConsumer(WebsocketConsumer):
     def _get_models(self):
         Order = apps.get_model("merchant", "Order")
         OrderItem = apps.get_model("merchant", "OrderItem")
-        return Order, OrderItem
+        Restaurant = apps.get_model("merchant", "Restaurant")
+        return Order, OrderItem, Restaurant
+
+    def _safe_image_url(self, obj, attr_name):
+        """
+        Try to obtain a URL from an image/file field or an external URL attribute.
+        Mirrors the safe_url usage from the API side in spirit (but simple here).
+        """
+        try:
+            f = getattr(obj, attr_name, None)
+            if f:
+                try:
+                    return f.url
+                except Exception:
+                    return str(f)
+        except Exception:
+            pass
+        return None
+
+    def _get_user_phone(self, user_obj):
+        phone = None
+        if not user_obj:
+            return None
+        for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
+            phone = getattr(user_obj, attr, None)
+            if phone:
+                break
+
+        if not phone and hasattr(user_obj, 'user_profile'):
+            profile = user_obj.user_profile
+            phone = getattr(profile, 'phone', None) or getattr(
+                profile, 'phone_number', None)
+
+        if not phone and hasattr(user_obj, 'merchant_profile'):
+            merchant = user_obj.merchant_profile
+            phone = getattr(merchant, 'phone_number', None)
+
+        return phone or None
 
     def _build_order_detail(self, order_obj):
-        user = getattr(order_obj, "user", None)
-        deliveryman = getattr(order_obj, "deliveryman", None)  # Added
-
-        username = getattr(user, "username", "—") if user else "—"
-        total = getattr(order_obj, "total_price", 0)
-        total_display = f"NPR {total:.2f}" if total else f"NPR 0.00"
-
-        delivery_charge = getattr(order_obj, "delivery_charge", 0)
-        delivery_charge_display = f"NPR {delivery_charge:.2f}" if delivery_charge else f"NPR 0.00"
-
+        """
+        Build the order dict in the exact shape & chronology used by the API response.
+        """
+        # order items
         items = []
+        computed_total = Decimal('0.00')
         try:
             order_items_qs = order_obj.order_items.select_related(
                 "food_item").all()
@@ -49,66 +83,178 @@ class ChatConsumer(WebsocketConsumer):
 
         for oi in order_items_qs:
             fi = getattr(oi, "food_item", None)
-            price = getattr(oi, "price_at_order", getattr(fi, "price", 0))
-            qty = getattr(oi, "quantity", 0)
-            line_total = (price or 0) * qty
+            price_each = oi.price_at_order or (
+                getattr(fi, 'price', Decimal('0.00')) if fi else Decimal('0.00'))
+            item_total = (price_each or Decimal('0.00')) * (oi.quantity or 0)
+            computed_total += item_total
+
+            image_url = None
+            if fi:
+                try:
+                    image_url = fi.profile_picture.url if getattr(
+                        fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
+                except Exception:
+                    image_url = getattr(fi, 'external_image_url', None)
+
             items.append({
+                "id": getattr(oi, "pk", None),
+                "food_item": getattr(fi, "pk", None),
                 "food_item_name": getattr(fi, "name", "") if fi else "",
-                "quantity": qty,
-                "price_at_order": str(price),
-                "line_total": str(line_total),
+                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name', getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
+                "food_item_image": image_url,
+                "quantity": getattr(oi, "quantity", 0),
+                "price_at_order": str(price_each),
+                "total_price": float(item_total),
             })
 
-        # Deliveryman info dict
+        # total price fallback to computed_total if order.total_price is falsy
+        total_value = getattr(order_obj, "total_price", None) or computed_total
+
+        # user info
+        user_obj = getattr(order_obj, 'user', None)
+        customer_name = user_obj.get_full_name() if user_obj and hasattr(
+            user_obj, 'get_full_name') else (getattr(user_obj, 'username', '') if user_obj else '')
+
+        # phone lookup like API
+        phone = self._get_user_phone(user_obj)
+
+        # deliveryman info
+        deliveryman_obj = getattr(order_obj, 'deliveryman', None)
         deliveryman_data = None
-        if deliveryman:
+        if deliveryman_obj:
             deliveryman_data = {
-                "id": getattr(deliveryman, "id", None),
-                "name": getattr(deliveryman, "name", ""),
-                "email": getattr(deliveryman, "email", ""),
-                "phone": getattr(deliveryman, "phone", ""),
+                "id": getattr(deliveryman_obj, 'id', None),
+                "name": "{} {}".format(getattr(deliveryman_obj, 'Firstname', ''), getattr(deliveryman_obj, 'Lastname', '')).strip(),
+                "email": getattr(deliveryman_obj, 'email', None),
+                "phone": getattr(deliveryman_obj, 'phone', None),
             }
 
+        # restaurant owner user info
+        restaurant_user = getattr(
+            getattr(order_obj, 'restaurant', None), 'user', None)
+        restaurant_user_data = None
+        if restaurant_user:
+            restaurant_user_data = {
+                "id": getattr(restaurant_user, 'id', None),
+                "username": getattr(restaurant_user, 'username', ''),
+                "first_name": getattr(restaurant_user, 'first_name', ''),
+                "last_name": getattr(restaurant_user, 'last_name', ''),
+                "email": getattr(restaurant_user, 'email', ''),
+            }
+
+        # restaurant data (many fields copied from API)
+        rest = getattr(order_obj, 'restaurant', None)
+        restaurant_data = None
+        if rest:
+            restaurant_data = {
+                "id": getattr(rest, 'pk', None),
+                "user": restaurant_user_data,
+                "restaurant_name": getattr(rest, 'restaurant_name', ''),
+                "owner_name": getattr(rest, 'owner_name', ''),
+                "owner_email": getattr(rest, 'owner_email', ''),
+                "owner_contact": getattr(rest, 'owner_contact', ''),
+                "restaurant_address": getattr(rest, 'restaurant_address', ''),
+                "latitude": getattr(rest, 'latitude', None),
+                "longitude": getattr(rest, 'longitude', None),
+                "cuisine": getattr(rest, 'cuisine', None),
+                "description": getattr(rest, 'description', None),
+                "restaurant_type": getattr(rest, 'restaurant_type', None),
+                "profile_picture": self._safe_image_url(rest, 'profile_picture'),
+                "cover_photo": self._safe_image_url(rest, 'cover_photo'),
+                "menu": self._safe_image_url(rest, 'menu'),
+                "created_at": getattr(rest, 'created_at', None).isoformat() if getattr(rest, 'created_at', None) else None,
+                "approved": getattr(rest, 'approved', None),
+            }
+
+        # assemble final dict in same key order & names as API
         return {
-            "id": order_obj.pk,
-            "user": {"username": username},
-            "customer_name": username,
-            "deliveryman": deliveryman_data,  # Added
-            "total_price": str(total),
-            "total_display": total_display,
-            "delivery_charge": str(delivery_charge),
-            "delivery_charge_display": delivery_charge_display,
-            "status": getattr(order_obj, "status", "PENDING"),
-            "restaurant": getattr(getattr(order_obj, "restaurant", None), "name",
-                                  str(getattr(getattr(order_obj, "restaurant", None), "pk", ""))),
-            "payment_method": getattr(order_obj, "payment_method", "—"),
-            "latitude": str(getattr(order_obj, "latitude", None)),
-            "longitude": str(getattr(order_obj, "longitude", None)),
+            "order_id": getattr(order_obj, "pk", None),
+            "user": {
+                "id": getattr(user_obj, 'id', None),
+                "username": getattr(user_obj, 'username', '') if user_obj else '',
+                "first_name": getattr(user_obj, 'first_name', '') if user_obj else '',
+                "last_name": getattr(user_obj, 'last_name', '') if user_obj else '',
+                "email": getattr(user_obj, 'email', '') if user_obj else '',
+            },
+            "deliveryman": deliveryman_data,
+            "restaurant_id": getattr(getattr(order_obj, 'restaurant', None), 'pk', None),
+            "restaurant": restaurant_data,
+            "is_transited": getattr(order_obj, 'is_transited', False),
+            "delivery_charge": f"{(getattr(order_obj, 'delivery_charge', None) or Decimal('0.00')):.2f}",
+            "total_price": f"{(total_value or Decimal('0.00')):.2f}",
             "order_items": items,
+            "order_date": getattr(order_obj, 'order_date', None).isoformat() if getattr(order_obj, 'order_date', None) else None,
+            "status": getattr(order_obj, 'status', None),
+            "payment_method": (getattr(order_obj, 'payment_method', '') or '').lower(),
+            "latitude": str(getattr(order_obj, 'latitude', None)) if getattr(order_obj, 'latitude', None) is not None else None,
+            "longitude": str(getattr(order_obj, 'longitude', None)) if getattr(order_obj, 'longitude', None) is not None else None,
+            "customer_details": {
+                "email": getattr(user_obj, 'email', '') if user_obj else '',
+                "phone": phone,
+            },
         }
 
     def _normalize_serialized_order(self, s):
-        user_info = {}
-        if isinstance(s.get("user"), dict):
-            user_info["username"] = s["user"].get(
-                "username") or s["user"].get("name") or "—"
-        else:
-            user_info["username"] = s.get(
-                "customer_name") or s.get("username") or "—"
+        """
+        When socket receives serialized payload (not saved in DB), map to API shape.
+        Keep the same key order as the API.
+        """
+        # minimal normalization - try to map known fields
+        user_obj = s.get("user") or {}
+        user_dict = {
+            "id": user_obj.get("id") if isinstance(user_obj, dict) else None,
+            "username": (user_obj.get("username") if isinstance(user_obj, dict) else (s.get("username") or s.get("customer_name") or "")),
+            "first_name": user_obj.get("first_name") if isinstance(user_obj, dict) else '',
+            "last_name": user_obj.get("last_name") if isinstance(user_obj, dict) else '',
+            "email": user_obj.get("email") if isinstance(user_obj, dict) else s.get("email") or '',
+        }
+
+        # order_items normalization
+        raw_items = s.get("order_items") or []
+        items = []
+        for oi in raw_items:
+            items.append({
+                "id": oi.get("id") if isinstance(oi, dict) else None,
+                "food_item": oi.get("food_item") if isinstance(oi, dict) else None,
+                "food_item_name": oi.get("food_item_name") if isinstance(oi, dict) else '',
+                "restaurant_name": oi.get("restaurant_name") if isinstance(oi, dict) else '',
+                "food_item_image": oi.get("food_item_image") if isinstance(oi, dict) else None,
+                "quantity": oi.get("quantity") if isinstance(oi, dict) else 0,
+                "price_at_order": str(oi.get("price_at_order")) if isinstance(oi, dict) else str(oi.get("price", '0.00')),
+                "total_price": float(oi.get("total_price")) if isinstance(oi, dict) and oi.get("total_price") is not None else 0.0,
+            })
+
+        # derive delivery_charge and total_price
+        delivery_charge = s.get("delivery_charge")
+        total_price = s.get("total_price")
+
+        # deliveryman
+        deliveryman = s.get("deliveryman")
+
+        # restaurant info (try to map restaurant_name or restaurant)
+        restaurant_obj = s.get("restaurant") or {}
+        restaurant_id = s.get("restaurant_id") or (restaurant_obj.get(
+            "id") if isinstance(restaurant_obj, dict) else None)
+
         return {
-            "id": s.get("id") or s.get("pk") or s.get("order_pk"),
-            "user": user_info,
-            "customer_name": user_info.get("username"),
-            "total_price": s.get("total_price"),
-            "total_display": s.get("total_display") or (f"NPR {s.get('total_price')}" if s.get("total_price") else None),
-            "delivery_charge": s.get("delivery_charge"),
-            "delivery_charge_display": s.get("delivery_charge_display") or (f"NPR {s.get('delivery_charge')}" if s.get("delivery_charge") else None),
+            "order_id": s.get("id") or s.get("pk") or s.get("order_pk"),
+            "user": user_dict,
+            "deliveryman": deliveryman,
+            "restaurant_id": restaurant_id,
+            "restaurant": restaurant_obj if isinstance(restaurant_obj, dict) else None,
+            "is_transited": s.get("is_transited", False),
+            "delivery_charge": f"{delivery_charge:.2f}" if isinstance(delivery_charge, (int, float, Decimal)) else (delivery_charge if delivery_charge is not None else f"{Decimal('0.00'):.2f}"),
+            "total_price": f"{total_price:.2f}" if isinstance(total_price, (int, float, Decimal)) else (total_price if total_price is not None else f"{Decimal('0.00'):.2f}"),
+            "order_items": items,
+            "order_date": s.get("order_date"),
             "status": s.get("status"),
-            "restaurant": s.get("restaurant_name") or s.get("restaurant"),
-            "payment_method": s.get("payment_method"),
+            "payment_method": (s.get("payment_method") or '').lower(),
             "latitude": s.get("latitude"),
             "longitude": s.get("longitude"),
-            "order_items": s.get("order_items") or [],
+            "customer_details": {
+                "email": user_dict.get("email", ""),
+                "phone": (s.get("customer_details") or {}).get("phone") if isinstance(s.get("customer_details"), dict) else None,
+            },
         }
 
     def chat_message(self, event):
@@ -116,7 +262,8 @@ class ChatConsumer(WebsocketConsumer):
             payload_order = event.get("order")
             payload_db_saved = event.get("db_saved", [])
             errors = event.get("errors", [])
-            out_payload = {"type": "chat", "errors": errors}
+            # match API outer structure + chronology: {"success": True, "data": [...]}
+            out_payload = {"type": "chat", "errors": errors, "success": True}
             pks = []
             if payload_db_saved:
                 for s in payload_db_saved:
@@ -135,13 +282,14 @@ class ChatConsumer(WebsocketConsumer):
                             except Exception:
                                 pass
             if pks:
-                Order, OrderItem = self._get_models()
-                qs = Order.objects.select_related("user", "restaurant").prefetch_related(
+                Order, OrderItem, Restaurant = self._get_models()
+                qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
                     Prefetch(
                         "order_items", queryset=OrderItem.objects.select_related("food_item"))
                 ).filter(pk__in=pks)
                 detailed = [self._build_order_detail(o) for o in qs]
-                out_payload["orders"] = detailed
+                # API nested result is in key "data" and is a list
+                out_payload["data"] = detailed
             elif payload_order:
                 if isinstance(payload_order, dict):
                     payload_list = [payload_order]
@@ -150,14 +298,16 @@ class ChatConsumer(WebsocketConsumer):
                         payload_order, list) else []
                 normalized = [self._normalize_serialized_order(
                     s) for s in payload_list]
-                out_payload["orders"] = normalized
+                out_payload["data"] = normalized
             else:
-                out_payload["orders"] = []
-            self.send(text_data=json.dumps(out_payload))
+                out_payload["data"] = []
+
+            # ensure JSON encodable for Decimal/datetime etc.
+            self.send(text_data=json.dumps(out_payload, cls=DjangoJSONEncoder))
         except Exception:
             try:
                 self.send(text_data=json.dumps(
-                    {"type": "chat", "errors": ["consumer_error"]}))
+                    {"type": "chat", "errors": ["consumer_error"], "success": False, "data": []}))
             except Exception:
                 pass
 

@@ -36,7 +36,6 @@
   <body>
     <h1 style="text-align:center">Order Receiver</h1>
     <div id="orders"></div>
-
     <script>
       ;(function () {
         const ordersDiv = document.getElementById('orders')
@@ -46,14 +45,25 @@
         }
       
         function userNameFromOrder(order) {
-          return (order.user && order.user.username) || order.customer_name || order.username || '—'
+          // API: order.user.username or order.user.first_name/last_name, fallback to older keys
+          const usr = order.user || {}
+          return usr.username || (usr.first_name || '') + (usr.last_name ? ' ' + usr.last_name : '') || order.customer_name || order.username || '—'
+        }
+      
+        function restaurantNameFromOrder(order) {
+          // API: order.restaurant.restaurant_name or order.restaurant_name (older)
+          if (order.restaurant && typeof order.restaurant === 'object') {
+            return order.restaurant.restaurant_name || order.restaurant.name || order.restaurant || '—'
+          }
+          return order.restaurant_name || order.restaurant || '—'
         }
       
         function renderOrderCard(order) {
           const card = document.createElement('div')
           card.className = 'card'
       
-          const id = order.id ?? order.order_pk ?? '—'
+          // ID: API uses order_id, older consumer used id/pk/order_pk
+          const id = order.order_id ?? order.id ?? order.order_pk ?? '—'
           const header = document.createElement('div')
           header.innerHTML = `<strong>Order ID:</strong> ${id} <span style="float:right"><strong>Status:</strong> ${order.status ?? '—'}</span>`
           card.appendChild(header)
@@ -61,26 +71,30 @@
           const cust = document.createElement('div')
           cust.style.marginTop = '8px'
           const customerName = userNameFromOrder(order)
-          const restaurantName = order.restaurant_name ?? order.restaurant ?? '—'
+          const restaurantName = restaurantNameFromOrder(order)
           cust.innerHTML = `<strong>Customer:</strong> ${customerName}<br>
-                                          <strong>Restaurant:</strong> ${restaurantName}`
+                                              <strong>Restaurant:</strong> ${restaurantName}`
           card.appendChild(cust)
       
+          const totalDisplay = order.total_display ?? (order.total_price ? 'NPR ' + order.total_price : null)
           const total = document.createElement('div')
           total.style.marginTop = '8px'
-          total.innerHTML = `<strong>Total:</strong> ${order.total_display ?? 'NPR ' + (order.total_price ?? '0.00')}`
+          total.innerHTML = `<strong>Total:</strong> ${totalDisplay ?? 'NPR ' + (order.total_price ?? '0.00')}`
           card.appendChild(total)
       
+          const deliveryChargeDisplay = order.delivery_charge_display ?? (order.delivery_charge ? 'NPR ' + order.delivery_charge : null)
           const delivery = document.createElement('div')
           delivery.style.marginTop = '4px'
-          delivery.innerHTML = `<strong>Delivery Charge:</strong> ${order.delivery_charge_display ?? 'NPR ' + (order.delivery_charge ?? '0.00')}`
+          delivery.innerHTML = `<strong>Delivery Charge:</strong> ${deliveryChargeDisplay ?? 'NPR ' + (order.delivery_charge ?? '0.00')}`
           card.appendChild(delivery)
       
           const payment = document.createElement('div')
           payment.style.marginTop = '8px'
+          // API normalizes payment_method to lowercase; keep existing fallback
           payment.innerHTML = `<strong>Payment Method:</strong> ${order.payment_method ?? '—'}`
           card.appendChild(payment)
       
+          // location: API uses latitude / longitude as strings or null
           const lat = order.latitude ?? order.location?.lat ?? null
           const long = order.longitude ?? order.location?.long ?? null
           if (lat || long) {
@@ -90,6 +104,7 @@
             card.appendChild(loc)
           }
       
+          // order items: API matches your earlier shape (id, food_item, food_item_name, quantity, price_at_order, total_price)
           if (Array.isArray(order.order_items) && order.order_items.length) {
             const itemsTitle = document.createElement('div')
             itemsTitle.style.marginTop = '10px'
@@ -107,33 +122,65 @@
             })
             card.appendChild(ul)
           }
+      
+          // deliveryman: API returns deliveryman object same as your consumer version
           if (order.deliveryman) {
             const delManDiv = document.createElement('div')
             delManDiv.style.marginTop = '8px'
-            delManDiv.innerHTML = `<strong>Deliveryman:</strong> ${order.deliveryman.name ?? '—'}${order.deliveryman.phone ? ' (' + order.deliveryman.phone + ')' : ''}`
+            // support both deliveryman.name or deliveryman.first/last if available
+            const dm = order.deliveryman
+            const dmName = dm.name || (dm.Firstname || '') + (dm.Lastname ? ' ' + dm.Lastname : '') || dm.username || '—'
+            delManDiv.innerHTML = `<strong>Deliveryman:</strong> ${dmName}${dm.phone ? ' (' + dm.phone + ')' : ''}`
             card.appendChild(delManDiv)
           } else {
             console.log(`Order ID ${id} has no deliveryman assigned`)
           }
+      
+          // customer details (API provides customer_details)
+          if (order.customer_details) {
+            const cd = order.customer_details
+            const custDiv = document.createElement('div')
+            custDiv.style.marginTop = '6px'
+            custDiv.innerHTML = `<strong>Customer Contact:</strong> ${cd.email ?? ''}${cd.phone ? ' — ' + cd.phone : ''}`
+            card.appendChild(custDiv)
+          }
+      
           return card
+        }
+      
+        function normalizedCandidatesFromPayload(payload) {
+          // Prefer API-style "data"
+          if (payload && Array.isArray(payload.data) && payload.data.length) {
+            return payload.data
+          }
+      
+          // fallbacks for older shapes the page previously accepted
+          if (Array.isArray(payload.orders) && payload.orders.length) {
+            return payload.orders
+          }
+          if (Array.isArray(payload.db_saved) && payload.db_saved.length) {
+            return payload.db_saved
+          }
+          if (Array.isArray(payload.order) && payload.order.length) {
+            return payload.order
+          }
+          if (payload.order && typeof payload.order === 'object') {
+            return [payload.order]
+          }
+          if (Array.isArray(payload) && payload.length) {
+            return payload
+          }
+          return null
         }
       
         function showPayload(payload) {
           if (!payload) return
           ordersDiv.innerHTML = ''
       
-          const candidates = []
-          if (Array.isArray(payload.orders) && payload.orders.length) {
-            candidates.push(...payload.orders)
-          } else if (Array.isArray(payload.db_saved) && payload.db_saved.length) {
-            candidates.push(...payload.db_saved)
-          } else if (Array.isArray(payload.order) && payload.order.length) {
-            candidates.push(...payload.order)
-          } else if (payload.order && typeof payload.order === 'object') {
-            candidates.push(payload.order)
-          } else if (Array.isArray(payload) && payload.length) {
-            candidates.push(...payload)
-          } else {
+          const candidates = normalizedCandidatesFromPayload(payload)
+      
+          if (!candidates) {
+            // nothing recognized — show raw payload prettified
             const pre = document.createElement('pre')
             pre.textContent = JSON.stringify(payload, null, 4)
             ordersDiv.appendChild(pre)
@@ -184,6 +231,8 @@
             return
           }
           log('Parsed message', data)
+          // If message contains `type: 'status'` we can optionally handle it, but showPayload will ignore it.
+          // handle only chat/data payloads
           showPayload(data)
         }
       
