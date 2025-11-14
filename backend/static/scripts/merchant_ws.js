@@ -32,24 +32,38 @@ function connectWS(){
 function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
-    console.log("msg:",msg);
-    const {status,type} = msg;
-    if(type === "order"){
+
+    // console.log("msg:", msg);
+    console.log("msg type:",msg.type);
+
+     if (msg.type === "chat") {
+        console.log("in notif");
         orderCount++;
         countElement.innerHTML = orderCount;
         showNotification();
         document.title = `🔔 New Orders Received`;
-        setTimeout(()=> {document.title = Orders},2000);
+        setTimeout(() => { document.title = "Orders"; }, 2000);
     }
+
+    Object.values(wsHandlers).forEach(handler => {
+        try { handler(msg); } catch(e) { console.error("Handler error", e); }
+    });
   } catch (e) {
     console.error('Invalid delivery WS message', e);
   }
 }
+
 
 function sendWSMessage(action, data) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action, data : data }));
     }
 }
+
+function registerWSHandler(name, callback) {
+    wsHandlers[name] = callback;
+}
+
+window.registerWSHandler = registerWSHandler;
 
 window.addEventListener('DOMContentLoaded', connectWS);
