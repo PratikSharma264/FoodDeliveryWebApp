@@ -65,7 +65,7 @@ def api_overview(request):
             'Show User Orders': "/api/showuserorders/",
             'Place Order': "/api/place-order",
             'Order Details': "/api/order-details",
-            'Update Order Status': "api/update-order-status/"
+            'Update Order Status': "/api/update-order-status/"
         },
         'Products': {
             'List Products': "/api/products/",
