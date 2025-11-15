@@ -51,7 +51,6 @@
   <body>
     <h1 style="text-align:center">Deliveryman — Incoming Orders</h1>
     <div id="orders"></div>
-
     <script>
       ;(function () {
         const ordersDiv = document.getElementById('orders')
@@ -66,30 +65,57 @@
           return `${name} (${u.email || 'no-email'})`
         }
       
+        function formatDeliveryman(dm) {
+          if (!dm) return '—'
+          const name = dm.name || (dm.Firstname ? dm.Firstname + (dm.Lastname ? ' ' + dm.Lastname : '') : dm.username || '—')
+          const phone = dm.phone ? ` (${dm.phone})` : ''
+          return `${name}${phone}`
+        }
+      
+        function restaurantName(rest) {
+          if (!rest) return '—'
+          return rest.restaurant_name || rest.name || '—'
+        }
+      
         function renderOrderCard(order) {
           const card = document.createElement('div')
           card.className = 'card'
       
+          const id = order.order_id ?? order.id ?? order.order_pk ?? '—'
           const header = document.createElement('div')
-          header.innerHTML = `<strong>Order ID:</strong> ${order.order_id || order.id || '—'} <span style="float:right"><strong>Status:</strong> ${order.status || '—'}</span>`
+          header.innerHTML = `<strong>Order ID:</strong> ${id} <span style="float:right"><strong>Status:</strong> ${order.status ?? '—'}</span>`
           card.appendChild(header)
       
+          // User / customer
           const userBlock = document.createElement('div')
           userBlock.className = 'meta'
-          userBlock.innerHTML = `<strong>Customer:</strong> ${formatUser(order.user)} <span class="small"> | Phone: ${order.user?.phone || order.user?.mobile || '—'}</span>`
+          const phoneFromCustomer = (order.customer_details && order.customer_details.phone) || order.user?.phone || order.user?.mobile || '—'
+          userBlock.innerHTML = `<strong>Customer:</strong> ${formatUser(order.user)} <span class="small"> | Phone: ${phoneFromCustomer}</span>`
           card.appendChild(userBlock)
       
+          // Restaurant
           const rest = order.restaurant || {}
           const restBlock = document.createElement('div')
           restBlock.className = 'meta'
-          restBlock.innerHTML = `<strong>Restaurant:</strong> ${rest.name || rest.restaurant_name || '—'} <span class="small"> | ${rest.address || ''}</span>`
+          restBlock.innerHTML = `<strong>Restaurant:</strong> ${restaurantName(rest)} <span class="small"> | ${rest.restaurant_address || rest.address || ''}</span>`
           card.appendChild(restBlock)
       
+          // Deliveryman (show if present)
+          if (order.deliveryman) {
+            const dmBlock = document.createElement('div')
+            dmBlock.className = 'meta'
+            dmBlock.innerHTML = `<strong>Deliveryman:</strong> ${formatDeliveryman(order.deliveryman)}`
+            card.appendChild(dmBlock)
+          }
+      
+          // Totals
           const total = document.createElement('div')
           total.className = 'meta'
-          total.innerHTML = `<strong>Total:</strong> ${order.total_price ? 'NPR ' + order.total_price : order.total_display || '—'}`
+          const totalDisplay = order.total_price ? 'NPR ' + order.total_price : order.total_display ?? '—'
+          total.innerHTML = `<strong>Total:</strong> ${totalDisplay}`
           card.appendChild(total)
       
+          // Items
           if (Array.isArray(order.order_items) && order.order_items.length) {
             const itemsTitle = document.createElement('div')
             itemsTitle.style.marginTop = '10px'
@@ -100,7 +126,7 @@
             ul.className = 'items'
             order.order_items.forEach((it) => {
               const li = document.createElement('li')
-              const name = it.name || it.food_item_name || it.food_item || 'Item'
+              const name = it.food_item_name || it.name || it.food_item || 'Item'
               const qty = it.quantity ?? it.qty ?? 1
               const price = it.price_at_order ?? it.price ?? null
               li.textContent = `${name} (x${qty})${price ? ' - NPR ' + price : ''}`
@@ -109,32 +135,60 @@
             card.appendChild(ul)
           }
       
+          // Meta: delivery charge, payment, location
           const meta = document.createElement('div')
           meta.className = 'meta'
-          meta.innerHTML = `<strong>Delivery Charge:</strong> ${order.delivery_charge ? 'NPR ' + order.delivery_charge : '—'} <br>
-                                    <strong>Payment:</strong> ${order.payment_method || '—'} <br>
-                                    <strong>Location:</strong> Lat: ${order.latitude ?? order.location?.lat ?? '—'}, Long: ${order.longitude ?? order.location?.long ?? '—'}`
+          const deliveryCharge = order.delivery_charge_display ?? (order.delivery_charge ? 'NPR ' + order.delivery_charge : '—')
+          const payment = order.payment_method ?? '—'
+          const lat = order.latitude ?? order.location?.lat ?? '—'
+          const long = order.longitude ?? order.location?.long ?? '—'
+          meta.innerHTML = `<strong>Delivery Charge:</strong> ${deliveryCharge} <br>
+                              <strong>Payment:</strong> ${payment} <br>
+                              <strong>Location:</strong> Lat: ${lat}, Long: ${long}`
           card.appendChild(meta)
       
           return card
+        }
+      
+        function normalizedCandidatesFromPayload(payload) {
+          // Prefer API shape: data array
+          if (payload && Array.isArray(payload.data) && payload.data.length) {
+            return payload.data
+          }
+      
+          // Some messages may directly contain an array
+          if (Array.isArray(payload) && payload.length) {
+            return payload
+          }
+      
+          // older shapes / direct order objects
+          if (Array.isArray(payload.orders) && payload.orders.length) {
+            return payload.orders
+          }
+          if (Array.isArray(payload.order) && payload.order.length) {
+            return payload.order
+          }
+          if (payload.order && typeof payload.order === 'object') {
+            return [payload.order]
+          }
+          // one-off delivery notification shape
+          if (payload.type === 'delivery_notification' && payload.data) {
+            return Array.isArray(payload.data) ? payload.data : payload.data ? [payload.data] : []
+          }
+          if (payload.type === 'delivery_notification' && payload.order) {
+            return [payload.order]
+          }
+      
+          return null
         }
       
         function showPayload(payload) {
           if (!payload) return
           ordersDiv.innerHTML = ''
       
-          let candidates = []
-          if (Array.isArray(payload.orders) && payload.orders.length) {
-            candidates = payload.orders
-          } else if (payload.type === 'delivery_notification' && payload.order) {
-            candidates = [payload.order]
-          } else if (Array.isArray(payload) && payload.length) {
-            candidates = payload
-          } else if (payload.order) {
-            candidates = Array.isArray(payload.order) ? payload.order : [payload.order]
-          } else if (Array.isArray(payload.data) && payload.data.length) {
-            candidates = payload.data
-          } else {
+          const candidates = normalizedCandidatesFromPayload(payload)
+      
+          if (!candidates) {
             const pre = document.createElement('pre')
             pre.textContent = JSON.stringify(payload, null, 4)
             ordersDiv.appendChild(pre)
@@ -186,11 +240,14 @@
           }
           log('Parsed message', data)
       
-          if (data.type === 'delivery_notification') {
+          // Accept multiple types but prefer API-shaped/chat messages
+          if (data.type === 'chat' || (data.success && data.data)) {
             showPayload(data)
-          } else if (data.type === 'chat' || data.type === 'orders') {
-            showPayload(data.orders || data)
+          } else if (data.type === 'delivery_notification') {
+            // delivery_notification may have data or order
+            showPayload(data)
           } else {
+            // fallback: try to render whatever we got
             showPayload(data)
           }
         }

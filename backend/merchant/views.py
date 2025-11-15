@@ -466,6 +466,7 @@ def restaurant_orders_json_response(request, id):
                 "email": user_obj.email if user_obj else '',
                 "phone": phone,
             },
+            "assigned": getattr(order, "assigned", False),
         })
 
     return JsonResponse({"success": True, "data": data}, encoder=DjangoJSONEncoder, safe=True)

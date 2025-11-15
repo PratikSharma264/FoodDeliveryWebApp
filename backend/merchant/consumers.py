@@ -192,6 +192,7 @@ class ChatConsumer(WebsocketConsumer):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
+            "assigned": getattr(order_obj, 'assigned', False),
         }
 
     def _normalize_serialized_order(self, s):
@@ -255,6 +256,8 @@ class ChatConsumer(WebsocketConsumer):
                 "email": user_dict.get("email", ""),
                 "phone": (s.get("customer_details") or {}).get("phone") if isinstance(s.get("customer_details"), dict) else None,
             },
+            "assigned": s.get("assigned", False),
+
         }
 
     def chat_message(self, event):
@@ -318,7 +321,6 @@ class ChatConsumer(WebsocketConsumer):
         except Exception:
             pass
 
-
 class DeliverymanConsumer(WebsocketConsumer):
     def connect(self):
         user = self.scope.get('user')
@@ -331,8 +333,7 @@ class DeliverymanConsumer(WebsocketConsumer):
 
         # Get deliveryman instance
         try:
-            deliveryman = getattr(
-                user, 'deliveryman_profile', None) or Deliveryman.objects.filter(user=user).first()
+            deliveryman = getattr(user, 'deliveryman_profile', None) or Deliveryman.objects.filter(user=user).first()
         except Exception:
             deliveryman = None
 
@@ -341,15 +342,13 @@ class DeliverymanConsumer(WebsocketConsumer):
             return
 
         # Set deliveryman status to online
-        status_obj, created = DeliverymanStatus.objects.get_or_create(
-            deliveryman=deliveryman)
+        status_obj, created = DeliverymanStatus.objects.get_or_create(deliveryman=deliveryman)
         status_obj.online = True
         status_obj.save(update_fields=['online'])
 
         self.deliveryman_pk = deliveryman.pk
         self.group_name = f"deliveryman_{self.deliveryman_pk}"
-        async_to_sync(self.channel_layer.group_add)(
-            self.group_name, self.channel_name)
+        async_to_sync(self.channel_layer.group_add)(self.group_name, self.channel_name)
 
         self.accept()
         self.send(text_data=json.dumps({
@@ -362,13 +361,11 @@ class DeliverymanConsumer(WebsocketConsumer):
         # Set offline on disconnect
         try:
             DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
-            status_obj = DeliverymanStatus.objects.filter(
-                deliveryman_id=self.deliveryman_pk).first()
+            status_obj = DeliverymanStatus.objects.filter(deliveryman_id=self.deliveryman_pk).first()
             if status_obj:
                 status_obj.online = False
                 status_obj.save(update_fields=['online'])
-            async_to_sync(self.channel_layer.group_discard)(
-                self.group_name, self.channel_name)
+            async_to_sync(self.channel_layer.group_discard)(self.group_name, self.channel_name)
         except Exception:
             pass
 
@@ -410,8 +407,7 @@ class DeliverymanConsumer(WebsocketConsumer):
 
         if not phone and hasattr(user_obj, 'user_profile'):
             profile = user_obj.user_profile
-            phone = getattr(profile, 'phone', None) or getattr(
-                profile, 'phone_number', None)
+            phone = getattr(profile, 'phone', None) or getattr(profile, 'phone_number', None)
 
         if not phone and hasattr(user_obj, 'merchant_profile'):
             merchant = user_obj.merchant_profile
@@ -428,23 +424,20 @@ class DeliverymanConsumer(WebsocketConsumer):
         items = []
         computed_total = Decimal('0.00')
         try:
-            order_items_qs = order_obj.order_items.select_related(
-                "food_item").all()
+            order_items_qs = order_obj.order_items.select_related("food_item").all()
         except Exception:
             order_items_qs = []
 
         for oi in order_items_qs:
             fi = getattr(oi, "food_item", None)
-            price_each = oi.price_at_order or (
-                getattr(fi, 'price', Decimal('0.00')) if fi else Decimal('0.00'))
+            price_each = oi.price_at_order or (getattr(fi, 'price', Decimal('0.00')) if fi else Decimal('0.00'))
             item_total = (price_each or Decimal('0.00')) * (oi.quantity or 0)
             computed_total += item_total
 
             image_url = None
             if fi:
                 try:
-                    image_url = fi.profile_picture.url if getattr(
-                        fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
+                    image_url = fi.profile_picture.url if getattr(fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
                 except Exception:
                     image_url = getattr(fi, 'external_image_url', None)
 
@@ -462,8 +455,7 @@ class DeliverymanConsumer(WebsocketConsumer):
         total_value = getattr(order_obj, "total_price", None) or computed_total
 
         user_obj = getattr(order_obj, 'user', None)
-        customer_name = user_obj.get_full_name() if user_obj and hasattr(
-            user_obj, 'get_full_name') else (getattr(user_obj, 'username', '') if user_obj else '')
+        customer_name = user_obj.get_full_name() if user_obj and hasattr(user_obj, 'get_full_name') else (getattr(user_obj, 'username', '') if user_obj else '')
 
         phone = self._get_user_phone(user_obj)
 
@@ -478,8 +470,7 @@ class DeliverymanConsumer(WebsocketConsumer):
                 "phone": getattr(deliveryman_obj, 'phone', None),
             }
 
-        restaurant_user = getattr(
-            getattr(order_obj, 'restaurant', None), 'user', None)
+        restaurant_user = getattr(getattr(order_obj, 'restaurant', None), 'user', None)
         restaurant_user_data = None
         if restaurant_user:
             restaurant_user_data = {
@@ -538,6 +529,7 @@ class DeliverymanConsumer(WebsocketConsumer):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
+            "assigned": getattr(order_obj, 'assigned', False),
         }
 
     # notify will accept either serialized payloads or DB pks and respond using the same shape as ChatConsumer
@@ -564,8 +556,7 @@ class DeliverymanConsumer(WebsocketConsumer):
                     for s in payload_order:
                         if isinstance(s, dict) and (s.get('id') or s.get('pk') or s.get('order_pk') or s.get('order_id')):
                             try:
-                                pks.append(int(s.get('id') or s.get('pk') or s.get(
-                                    'order_pk') or s.get('order_id')))
+                                pks.append(int(s.get('id') or s.get('pk') or s.get('order_pk') or s.get('order_id')))
                             except Exception:
                                 pass
                 elif isinstance(payload_order, dict):
@@ -573,8 +564,7 @@ class DeliverymanConsumer(WebsocketConsumer):
                     # we will normalize and return it directly (no DB lookup)
                     # reuse the same dict keys as ChatConsumer would produce
                     # to try to find an id for later DB lookup as well
-                    possible_id = payload_order.get('id') or payload_order.get(
-                        'pk') or payload_order.get('order_pk') or payload_order.get('order_id')
+                    possible_id = payload_order.get('id') or payload_order.get('pk') or payload_order.get('order_pk') or payload_order.get('order_id')
                     if possible_id:
                         try:
                             pks.append(int(possible_id))
@@ -585,8 +575,7 @@ class DeliverymanConsumer(WebsocketConsumer):
             if pks:
                 Order, OrderItem, Restaurant = self._get_models()
                 qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
-                    Prefetch(
-                        "order_items", queryset=OrderItem.objects.select_related("food_item"))
+                    Prefetch("order_items", queryset=OrderItem.objects.select_related("food_item"))
                 ).filter(pk__in=pks)
                 detailed = [self._build_order_detail(o) for o in qs]
                 out_payload["data"] = detailed
@@ -597,9 +586,8 @@ class DeliverymanConsumer(WebsocketConsumer):
                 if isinstance(payload.get('order'), dict):
                     serialized = payload.get('order')
                 elif isinstance(payload, dict) and ('order_id' in payload or 'order' in payload):
-                    serialized = payload.get('order') if isinstance(
-                        payload.get('order'), dict) else payload
-                elif isinstance(payload, dict) and any(k in payload for k in ('id', 'pk', 'order_pk', 'order_id', 'user', 'order_items')):
+                    serialized = payload.get('order') if isinstance(payload.get('order'), dict) else payload
+                elif isinstance(payload, dict) and any(k in payload for k in ('id','pk','order_pk','order_id','user','order_items')):
                     serialized = payload
 
                 if serialized:
@@ -654,7 +642,6 @@ class DeliverymanConsumer(WebsocketConsumer):
 
         except Exception:
             try:
-                self.send(text_data=json.dumps({"type": "chat", "errors": [
-                          "delivery_consumer_error"], "success": False, "data": []}))
+                self.send(text_data=json.dumps({"type": "chat", "errors": ["delivery_consumer_error"], "success": False, "data": []}))
             except Exception:
                 pass

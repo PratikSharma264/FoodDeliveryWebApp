@@ -316,6 +316,7 @@ class Order(models.Model):
     total_price = models.DecimalField(
         max_digits=10, decimal_places=2, null=True, blank=True)
     is_transited = models.BooleanField(default=True)
+    assigned = models.BooleanField(default=False)
     deliveryman = models.ForeignKey(
         'Deliveryman', on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     order_date = models.DateTimeField(default=timezone.now)
