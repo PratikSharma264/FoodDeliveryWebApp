@@ -59,6 +59,6 @@ urlpatterns = [
          name="update-deliveryman-profile-picture"),
     path("json/restaurant-orders-response/<int:id>/",
          views.restaurant_orders_json_response, name="restaurant-orders-json-response"),
-    path('deliveryman/order-receive/', views.deliveryman_order_receive_view,
+    path('deliveryman-order-receive/', views.deliveryman_order_receive_view,
          name='deliveryman-order-receive'),
 ]
