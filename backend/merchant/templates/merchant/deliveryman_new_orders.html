@@ -4,36 +4,52 @@
 {% block activate_new_orders %}active{% endblock %}
  {% block headcontent %}
         <div id="head-content">
-          <h2>Orders</h2>
-          <h4>New Orders</h4>
+          <h2>New Delivery</h2>
+          <h4>"your new delivery requests"</h4>
         </div>
       {% endblock %}
 {% block mainspace %}
-<div id="container-body" class="order-list"></div>
+  <div id="container-body">
+    <div id="current-order-container">
+      <div id="currentorder-header">
+        <h3>Recent Requested Deliveries</h3>
+        <!--    later implement the filter based on product(add here filter
+            input)    -->
+      </div>
+      <div id="current-order-wrapper">
+        <div id="emptyorder">
+          <div id="crossimg">
+            <img src="{% static 'images/cross.png' %}" alt="" />
+          </div>
+          <div>
+            <p>You haven't received any deliveries request!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<!-- <div id="container-body" class="order-list"></div> -->
 {% endblock %}
 {% block scripts %}
-<script>
-  function showNotification() {
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
-  if (Notification.permission === "granted") {
-    const notification = new Notification("New Order Received", {
-      body: "Click to view details.",
-      icon: "/static/images/bell.png",
-      sound: new Audio("{% static 'audio/new_order.wav' %}"),
-    });
-    
-    new Audio("{% static 'audio/new_order.wav' %}").play().catch(error => {
-      console.error("Failed to play sound:", error);
-    });
-  } else if (Notification.permission !== "denied") {
-    Notification.requestPermission().then(permission => {
-      if (permission === "granted") {
-        showNotification();
+  <script> 
+    function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== "") {
+    const cookies = document.cookie.split(";");
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.startsWith(name + "=")) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
       }
-    });
+    }
   }
+  return cookieValue;
 }
-
-</script>
+const csrftoken = getCookie("csrftoken");
+  </script>
 <script src="{% static 'scripts/deliveryman_new_orders.js' %}" defer></script>
 {% endblock %}

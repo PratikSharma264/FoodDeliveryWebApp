@@ -1,10 +1,8 @@
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("csrf:",csrftoken);
   const orderWrapper = document.querySelector("#current-order-wrapper");
   const emptyOrder = document.querySelector("#emptyorder");
   const resid = document.querySelector(".resid").id;
-  console.log("resid:", resid);
   let orders = [];
 
   async function getCurrentOrders() {
@@ -28,20 +26,33 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   },1000);
 
-  // ws.addEventListener("message", (event) => {
-  //   const msg = JSON.parse(event.data);
-  //   if (msg.type === "status") {
-  //     console.log("Server status:", msg.status);
-  //     return;
-  //   }
+    if (window.registerWSHandler) {
+      window.registerWSHandler("orderPageHandler", (msg) => {
+          if (msg.type === "status") {
+              console.log("Server status:", msg.status);
+              return;
+          }
 
-  //   if (msg.type === "chat_message") {
-  //     console.log("New order received:", msg.data);
-  //     orders.unshift(msg.order);
-  //     orderWrapper.innerHTML = "";
-  //     renderOrders();
-  //   }
-  // });
+          if (msg.type === "chat") {
+            try{
+              setTimeout(() => {
+              if (window.resetOrderCount) {
+              window.resetOrderCount();
+            }
+          }, 1000);
+               console.log("new message received");
+              console.log("New order received:", msg.data);
+              orders.unshift(...msg.data);
+              orderWrapper.innerHTML = "";
+              renderOrders();
+            } catch(err){
+              console.error("error:",err);
+            }
+          }
+      });
+  } else {
+      console.error("WebSocket not initialized yet");
+  }
 
   function renderOrders() {
     if (!orders.length) {
@@ -103,7 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </ul>
             <h4>Customer Details:</h4>
             <p>Email: ${order.user.email}</p>
-            <p>Phone: ${order.customer_details.phone_number}</p></div>
+            <p>Phone: ${order.customer_details.phone}</p></div>
             <div><h4>Delivery Location: (${order.latitude}, ${order.longitude})</h4>
             <div id="${mapDivId}" style="height: 200px; width: 400px;"></div>
             </div>
@@ -179,11 +190,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const reqBtn = orderCard.querySelector(".request-delivery");
       if (reqBtn) {
         reqBtn.addEventListener("click", async () => {
-          try{
+          if(window.confirm("Do you want to send request for deliveryman?")){
+                try{
              const res = await fetch(
-            `http://127.0.0.1:8000/api/request-delivery/${order.orderId}/`,
+            `http://127.0.0.1:8000/api/set-waiting-for-delivery/`,
             {
               method: "POST",
+              headers: { "Content-Type": "application/json","X-CSRFToken": csrftoken },
+              body: JSON.stringify({ order_id: order.order_id }),
+              credentials: "include"
             }
           );
           if (res.ok) {
@@ -193,6 +208,9 @@ document.addEventListener("DOMContentLoaded", () => {
           }
           } catch(err){
             console.error("error when requesting for deliveryman");
+          } 
+          } else{
+            return;
           }
         });
       }

@@ -1,7 +1,10 @@
 let ws = null;
 
+let newDeliveryCount = 0;
+const countElement = document.querySelector(".new-order-count");
+countElement.innerHTML = newDeliveryCount;
 const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
-const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
+const wsUrl = `${wsProtocol}://${location.host}/ws/deliveryman/`;
 
 const wsHandlers = {};
 
@@ -29,26 +32,43 @@ function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
     console.log("msg:",msg);
-    const {action,data} = msg;
-    if (wsHandlers[action]) {
-        wsHandlers[action].forEach(fn => fn(data));
+
+      if (msg.type === "chat") {
+        newDeliveryCount++;
+        countElement.innerHTML = newDeliveryCountCount;
+        showNotification();
+        document.title = `🔔 New Delivery Request Received`;
+        setTimeout(() => { document.title = "Delivery Request"; }, 2000);
     }
+
+    Object.values(wsHandlers).forEach(handler => {
+        try { handler(msg); } catch(e) { console.error("Handler error", e); }
+    });
   } catch (e) {
     console.error('Invalid delivery WS message', e);
   }
 }
-
-
-function registerWSHandler(action, callback) {
-    if (!wsHandlers[action]) wsHandlers[action] = [];
-    wsHandlers[action].push(callback);
-}
-
 
 function sendWSMessage(action, data) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action, data : data }));
     }
 }
+
+function resetDeliveryCount() {
+    newDeliveryCount = 0;
+    countElement.innerHTML = 0;
+}
+
+window.resetDeliveryCount = resetDeliveryCount;
+
+
+function registerWSHandler(name, callback) {
+    if(!wsHandlers[name]){
+        wsHandlers[name] = callback;
+    }
+}
+
+window.registerWSHandler = registerWSHandler;
 
 window.addEventListener('DOMContentLoaded', connectWS);

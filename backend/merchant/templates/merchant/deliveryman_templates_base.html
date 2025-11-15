@@ -46,8 +46,8 @@
             {% endblock %}">
             <a href="{% url 'deliveryman-new-orders' %}">
               <span class="nav-icons"><i class="fa-solid fa-bell fa-shake" style="--fa-animation-duration: 4s;"></i></span>
-              <h4>New Orders</h4>
-              <span id="new-order-count">0</span>
+              <h4>Delivery Requests</h4>
+              <span class="new-order-count">0</span>
             </a>
           </li>
           <li class="link"
@@ -129,7 +129,28 @@
         </form>
       </div>
     </div>
+    <script>
+       function showNotification() {
 
+  if (Notification.permission === "granted") {
+    const notification = new Notification("New Order Received", {
+      body: "Click to view details.",
+      icon: "/static/images/bell.png",
+      sound: new Audio("{% static 'audio/new_order.wav' %}"),
+    });
+    
+    new Audio("{% static 'audio/new_order.wav' %}").play().catch(error => {
+      console.error("Failed to play sound:", error);
+    });
+  } else if (Notification.permission !== "denied") {
+    Notification.requestPermission().then(permission => {
+      if (permission === "granted") {
+        showNotification();
+      }
+    });
+  }
+}
+    </script>
     <script src="{% static 'scripts/deliveryman_ws.js' %}" defer></script>
     <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
     {% block scripts %}

@@ -8,7 +8,6 @@ const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
 
 const wsHandlers = {};
 
-
 function connectWS(){
     ws = new WebSocket(wsUrl);
 
@@ -32,24 +31,43 @@ function connectWS(){
 function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
-    console.log("msg:",msg);
-    const {status,type} = msg;
-    if(type === "order"){
+
+     if (msg.type === "chat") {
         orderCount++;
         countElement.innerHTML = orderCount;
         showNotification();
         document.title = `🔔 New Orders Received`;
-        setTimeout(()=> {document.title = Orders},2000);
+        setTimeout(() => { document.title = "Orders"; }, 2000);
     }
+
+    Object.values(wsHandlers).forEach(handler => {
+        try { handler(msg); } catch(e) { console.error("Handler error", e); }
+    });
   } catch (e) {
     console.error('Invalid delivery WS message', e);
   }
 }
+
 
 function sendWSMessage(action, data) {
     if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action, data : data }));
     }
 }
+
+function resetOrderCount() {
+    orderCount = 0;
+    countElement.innerHTML = 0;
+    document.title = "Orders";
+}
+
+window.resetOrderCount = resetOrderCount;
+
+
+function registerWSHandler(name, callback) {
+    wsHandlers[name] = callback;
+}
+
+window.registerWSHandler = registerWSHandler;
 
 window.addEventListener('DOMContentLoaded', connectWS);
