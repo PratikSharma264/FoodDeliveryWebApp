@@ -8,7 +8,6 @@ const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
 
 const wsHandlers = {};
 
-
 function connectWS(){
     ws = new WebSocket(wsUrl);
 
@@ -33,11 +32,7 @@ function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
 
-    // console.log("msg:", msg);
-    console.log("msg type:",msg.type);
-
      if (msg.type === "chat") {
-        console.log("in notif");
         orderCount++;
         countElement.innerHTML = orderCount;
         showNotification();
@@ -59,6 +54,15 @@ function sendWSMessage(action, data) {
         ws.send(JSON.stringify({ action, data : data }));
     }
 }
+
+function resetOrderCount() {
+    orderCount = 0;
+    countElement.innerHTML = 0;
+    document.title = "Orders";
+}
+
+window.resetOrderCount = resetOrderCount;
+
 
 function registerWSHandler(name, callback) {
     wsHandlers[name] = callback;

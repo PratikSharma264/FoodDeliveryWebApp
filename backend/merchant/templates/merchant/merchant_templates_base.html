@@ -110,7 +110,6 @@
       </form>
     </div>
   </div>
-
   <script>
   function showNotification() {
   if (Notification.permission === "granted") {
@@ -120,18 +119,19 @@
       sound: new Audio("{% static 'audio/new_order.wav' %}"),
     });
     
-    new Audio("{% static 'audio/new_order.wav' %}").play().catch(error => {
-      console.error("Failed to play sound:", error);
-    });
+ const audio = new Audio("{% static 'audio/new_order.wav' %}");
+    audio.play().catch(err => console.warn("Autoplay blocked:", err));
   } else if (Notification.permission !== "denied") {
     Notification.requestPermission().then(permission => {
       if (permission === "granted") {
         showNotification();
       }
     });
+  } else{
+    console.log("notif denied");
   }
 }
-</script>
+  </script>
    <script src="{% static 'scripts/merchant_ws.js' %}" defer></script>
   <script src="{% static 'scripts/merchant_base.js' %}" defer></script>
   {% block scripts %}
