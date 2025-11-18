@@ -33,7 +33,7 @@ from .serializers import (
     Restaurantlistserial,
     CartReadSerializer
 )
-from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem, DeliverymanStatus, Deliveryman
+from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem, DeliverymanStatus, Deliveryman, DeliveryNotification
 
 from django.db.models import Prefetch
 from .serializers import OrderWithItemsSerializer
@@ -1063,17 +1063,14 @@ def set_order_waiting_for_delivery_api(request):
     order.status = 'WAITING_FOR_DELIVERY'
     order.save(update_fields=['status'])
 
-    # Get deliverymen
     DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Deliveryman = apps.get_model("merchant", "Deliveryman")
 
-    # Get only eligible deliverymen: online and not on delivery
     eligible_status_qs = DeliverymanStatus.objects.filter(
         online=True, on_delivery=False).select_related('deliveryman')
     eligible_deliverymen = [
         ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
 
-    # Build payload
     order_items = []
     for oi in order.order_items.select_related('food_item').all():
         fi = getattr(oi, 'food_item', None)
@@ -1108,9 +1105,13 @@ def set_order_waiting_for_delivery_api(request):
         }
     }
 
-    # Send notifications via channels
     channel_layer = get_channel_layer()
     for dm in eligible_deliverymen:
+        DeliveryNotification.objects.create(
+            deliveryman=dm,
+            order=order,
+            payload=payload
+        )
         group_name = f"deliveryman_{dm.pk}"
         try:
             async_to_sync(channel_layer.group_send)(

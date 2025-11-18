@@ -511,3 +511,15 @@ class GoToDashClickCheck(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, related_name="go_to_dash_check")
     go_to_dash_clicked = models.BooleanField(default=False)
+
+
+class DeliveryNotification(models.Model):
+    deliveryman = models.ForeignKey(
+        'merchant.Deliveryman', on_delete=models.CASCADE, related_name='notifications'
+    )
+    order = models.ForeignKey(
+        'merchant.Order', on_delete=models.CASCADE, null=True, blank=True
+    )
+    payload = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField(default=False)
