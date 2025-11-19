@@ -523,3 +523,4 @@ class DeliveryNotification(models.Model):
     payload = models.JSONField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(default=False)
+    check_picked = models.BooleanField(default=False)  # NEW FIELD

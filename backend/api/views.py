@@ -40,6 +40,11 @@ from .serializers import OrderWithItemsSerializer
 from django.contrib.sessions.models import Session
 from django.apps import apps
 
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 def api_overview(request):
     api_urls = {
@@ -76,7 +81,8 @@ def api_overview(request):
             'Nearby Restaurants': "/api/nearby-restaurants/",
             'Restaurant Locations': "/api/restaurant-locations/",
         },
-        'Deliveryman': {'Set Waiting For Delivery': "/api/set-waiting-for-delivery/"}
+        'Deliveryman': {'Set Waiting For Delivery': "/api/set-waiting-for-delivery/",
+                        "Deliveryman Accept Order": "/api/deliveryman-accept-order/"}
     }
     return render(request, 'api/api_overview.html', {'api_urls': api_urls})
 
@@ -1124,3 +1130,76 @@ def set_order_waiting_for_delivery_api(request):
     return Response({
         "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deliveryman_accept_order_api(request):
+    Deliveryman = apps.get_model("merchant", "Deliveryman")
+    DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
+    Order = apps.get_model("merchant", "Order")
+
+    user = request.user
+    deliveryman = getattr(user, 'deliveryman_profile', None)
+    if not deliveryman:
+        return Response({"detail": "User is not a deliveryman."}, status=status.HTTP_400_BAD_REQUEST)
+
+    notification_id = request.data.get("notification_id")
+    if not notification_id:
+        return Response({"detail": "Notification ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        notification = DeliveryNotification.objects.select_related(
+            'order').get(pk=notification_id)
+    except DeliveryNotification.DoesNotExist:
+        return Response({"detail": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    order = notification.order
+
+    if order and not getattr(order, 'deliveryman', None):
+        order.deliveryman = deliveryman
+        order.save(update_fields=['deliveryman'])
+
+    notification.read = True
+    notification.check_picked = True
+    notification.save(update_fields=['read', 'check_picked'])
+
+    payload = {
+        "type": "delivery_notification_update",
+        "notification": {
+            "id": notification.pk,
+            "order_id": order.pk if order else None,
+            "is_read": notification.read,
+            "check_picked": notification.check_picked,
+            "created_at": notification.created_at.isoformat() if notification.created_at else None,
+        },
+        "deliveryman": {
+            "id": deliveryman.pk,
+            "firstname": deliveryman.Firstname,
+            "lastname": deliveryman.Lastname,
+        },
+        "updated_at": timezone.now().isoformat(),
+    }
+
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"deliveryman_{deliveryman.pk}",
+            {"type": "notify", "payload": payload}
+        )
+
+        check_picked_payload = {
+            "type": "check_picked",
+            "notification_id": notification.pk,
+            "order_id": order.pk if order else None,
+            "picked_by": deliveryman.pk,
+            "picked_at": timezone.now().isoformat(),
+        }
+        async_to_sync(channel_layer.group_send)(
+            "deliverymen",
+            {"type": "check_picked", "payload": check_picked_payload}
+        )
+    except Exception:
+        pass
+
+    return Response({"success": True, "data": payload})

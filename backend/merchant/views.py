@@ -25,7 +25,7 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from decimal import Decimal
 from django.apps import apps
 from decimal import Decimal
@@ -971,9 +971,12 @@ def deliveryman_delivery_requests_json_view(request):
             "assigned": getattr(order_obj, 'assigned', False),
         }
 
-    notif_qs = DeliveryNotification.objects.select_related(
-        'order').filter(deliveryman=deliveryman).order_by('-created_at')
-    order_pks = [n.order_id for n in notif_qs if n.order_id]
+    notif_qs = DeliveryNotification.objects.select_related('order').filter(
+        Q(deliveryman=deliveryman) | Q(order__deliveryman=deliveryman)
+    ).order_by('-created_at')
+
+    order_pks = [n.order.pk for n in notif_qs if getattr(
+        n, 'order', None) and getattr(n.order, 'pk', None)]
     orders = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
@@ -981,13 +984,14 @@ def deliveryman_delivery_requests_json_view(request):
     orders_map = {o.pk: o for o in orders}
     detailed = []
     for n in notif_qs:
-        o = orders_map.get(n.order_id)
+        o = orders_map.get(n.order.pk) if getattr(n, 'order', None) else None
         if not o:
             continue
         od = _build_order_detail(o)
         od.update({
             "notification_id": n.pk,
             "notification_is_read": bool(getattr(n, 'read', False)),
+            "notification_check_picked": bool(getattr(n, 'check_picked', False)),
             "notification_created_at": n.created_at.isoformat() if n.created_at else None,
         })
         detailed.append(od)
