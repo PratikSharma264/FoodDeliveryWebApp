@@ -30,6 +30,9 @@ from decimal import Decimal
 from django.apps import apps
 from decimal import Decimal
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+
 
 def profile_none_required(view_func):
     @wraps(view_func)
@@ -817,6 +820,7 @@ def deliveryman_delivery_requests_json_view(request):
     OrderItem = apps.get_model("merchant", "OrderItem")
     DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
 
+    # Resolve deliveryman (query param or request.user)
     deliveryman = None
     deliveryman_id = request.GET.get('deliveryman_id')
     if deliveryman_id:
@@ -827,6 +831,7 @@ def deliveryman_delivery_requests_json_view(request):
     if not deliveryman:
         return HttpResponseBadRequest("No deliveryman specified and request.user is not a deliveryman.")
 
+    # Ensure status object exists
     status_obj, _ = DeliverymanStatus.objects.get_or_create(
         deliveryman=deliveryman)
     status_data = {
@@ -875,8 +880,10 @@ def deliveryman_delivery_requests_json_view(request):
             fi = getattr(oi, "food_item", None)
             price_each = oi.price_at_order or (
                 getattr(fi, 'price', Decimal('0.00')) if fi else Decimal('0.00'))
-            item_total = (price_each or Decimal('0.00')) * (oi.quantity or 0)
+            qty = oi.quantity or 0
+            item_total = (price_each or Decimal('0.00')) * qty
             computed_total += item_total
+
             image_url = None
             if fi:
                 try:
@@ -884,13 +891,15 @@ def deliveryman_delivery_requests_json_view(request):
                         fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
                 except Exception:
                     image_url = getattr(fi, 'external_image_url', None)
+
             items.append({
                 "id": getattr(oi, "pk", None),
                 "food_item": getattr(fi, "pk", None),
                 "food_item_name": getattr(fi, "name", "") if fi else "",
-                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name', getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
+                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name',
+                                           getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
                 "food_item_image": image_url,
-                "quantity": getattr(oi, "quantity", 0),
+                "quantity": qty,
                 "price_at_order": str(price_each),
                 "total_price": float(item_total),
             })
@@ -898,16 +907,6 @@ def deliveryman_delivery_requests_json_view(request):
         total_value = getattr(order_obj, "total_price", None) or computed_total
         user_obj = getattr(order_obj, 'user', None)
         phone = _get_user_phone(user_obj)
-
-        deliveryman_obj = getattr(order_obj, 'deliveryman', None)
-        deliveryman_data = None
-        if deliveryman_obj:
-            deliveryman_data = {
-                "id": getattr(deliveryman_obj, 'id', None),
-                "name": "{} {}".format(getattr(deliveryman_obj, 'Firstname', ''), getattr(deliveryman_obj, 'Lastname', '')).strip(),
-                "email": getattr(deliveryman_obj, 'email', None),
-                "phone": getattr(deliveryman_obj, 'phone', None),
-            }
 
         rest = getattr(order_obj, 'restaurant', None)
         restaurant_user_data = None
@@ -952,7 +951,7 @@ def deliveryman_delivery_requests_json_view(request):
                 "last_name": getattr(user_obj, 'last_name', '') if user_obj else '',
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
             },
-            "deliveryman": deliveryman_data,
+            # No deliveryman info here
             "restaurant_id": getattr(rest, 'pk', None) if rest else None,
             "restaurant": restaurant_data,
             "is_transited": getattr(order_obj, 'is_transited', False),
@@ -968,47 +967,43 @@ def deliveryman_delivery_requests_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
-            "assigned": getattr(order_obj, 'assigned', False),
+            "order_assigned": bool(getattr(order_obj, 'assigned', False)),
+            "assigned_to_a_deliveryman": bool(getattr(order_obj, 'deliveryman', None)),
         }
 
-    notif_qs = DeliveryNotification.objects.select_related('order').filter(
-        Q(deliveryman=deliveryman) | Q(order__deliveryman=deliveryman)
-    ).order_by('-created_at')
+    # If deliveryman is offline, return status and empty orders (clients can choose to ignore)
+    if not status_obj.online:
+        response = {
+            "status": status_data,
+            "orders": [],
+            "returned_at": timezone.now().isoformat(),
+        }
+        return JsonResponse(response, encoder=DjangoJSONEncoder, safe=False)
 
-    order_pks = [n.order.pk for n in notif_qs if getattr(
-        n, 'order', None) and getattr(n.order, 'pk', None)]
-    orders = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
+    # Fetch orders that have notifications for this deliveryman only
+    notif_order_pks = DeliveryNotification.objects.filter(
+        deliveryman=deliveryman).values_list('order_id', flat=True).distinct()
+    if not notif_order_pks:
+        response = {
+            "status": status_data,
+            "orders": [],
+            "returned_at": timezone.now().isoformat(),
+        }
+        return JsonResponse(response, encoder=DjangoJSONEncoder, safe=False)
+
+    order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(pk__in=order_pks)
-    orders_map = {o.pk: o for o in orders}
-    detailed = []
-    for n in notif_qs:
-        o = orders_map.get(n.order.pk) if getattr(n, 'order', None) else None
-        if not o:
-            continue
+    ).filter(pk__in=list(notif_order_pks)).order_by('-order_date')
+
+    detailed_orders = []
+    for o in order_qs:
         od = _build_order_detail(o)
-        od.update({
-            "notification_id": n.pk,
-            "notification_is_read": bool(getattr(n, 'read', False)),
-            "notification_check_picked": bool(getattr(n, 'check_picked', False)),
-            "notification_created_at": n.created_at.isoformat() if n.created_at else None,
-        })
-        detailed.append(od)
+        detailed_orders.append(od)
 
     response = {
-        "deliveryman": {
-            "id": deliveryman.pk,
-            "firstname": deliveryman.Firstname,
-            "lastname": deliveryman.Lastname,
-            "vehicle": getattr(deliveryman, 'Vehicle', None),
-            "zone": getattr(deliveryman, 'Zone', None),
-            "vehicle_number": getattr(deliveryman, 'VehicleNumber', None),
-            "approved": bool(deliveryman.approved),
-            "created_at": deliveryman.created_at.isoformat() if deliveryman.created_at else None,
-        },
         "status": status_data,
-        "notifications": detailed,
+        "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }
 

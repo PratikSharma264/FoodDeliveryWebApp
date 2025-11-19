@@ -515,12 +515,24 @@ class GoToDashClickCheck(models.Model):
 
 class DeliveryNotification(models.Model):
     deliveryman = models.ForeignKey(
-        'merchant.Deliveryman', on_delete=models.CASCADE, related_name='notifications'
+        'merchant.Deliveryman',
+        on_delete=models.CASCADE,
+        related_name='notifications',
+        null=True,
+        blank=True,
     )
     order = models.ForeignKey(
-        'merchant.Order', on_delete=models.CASCADE, null=True, blank=True
+        'merchant.Order',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
     )
-    payload = models.JSONField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    read = models.BooleanField(default=False)
-    check_picked = models.BooleanField(default=False)  # NEW FIELD
+
+    class Meta:
+        unique_together = ('deliveryman', 'order')
+        indexes = [
+            models.Index(fields=['deliveryman', 'order']),
+        ]
+
+    def __str__(self):
+        return f"Notification entry: Order {self.order_id} -> Deliveryman {self.deliveryman_id}"

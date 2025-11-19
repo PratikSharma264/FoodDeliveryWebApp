@@ -1058,6 +1058,7 @@ def set_order_waiting_for_delivery_api(request):
     if not order_id:
         return Response({"detail": "order_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+    Order = apps.get_model("merchant", "Order")
     try:
         order = Order.objects.get(pk=order_id)
     except Order.DoesNotExist:
@@ -1071,12 +1072,12 @@ def set_order_waiting_for_delivery_api(request):
 
     DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Deliveryman = apps.get_model("merchant", "Deliveryman")
+    DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
 
     eligible_status_qs = DeliverymanStatus.objects.filter(
         online=True, on_delivery=False).select_related('deliveryman')
     eligible_deliverymen = [
         ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
-
     order_items = []
     for oi in order.order_items.select_related('food_item').all():
         fi = getattr(oi, 'food_item', None)
@@ -1112,12 +1113,14 @@ def set_order_waiting_for_delivery_api(request):
     }
 
     channel_layer = get_channel_layer()
+    notified_count = 0
+
     for dm in eligible_deliverymen:
-        DeliveryNotification.objects.create(
+        obj, created = DeliveryNotification.objects.get_or_create(
             deliveryman=dm,
-            order=order,
-            payload=payload
+            order=order
         )
+
         group_name = f"deliveryman_{dm.pk}"
         try:
             async_to_sync(channel_layer.group_send)(
@@ -1126,9 +1129,11 @@ def set_order_waiting_for_delivery_api(request):
             )
         except Exception:
             pass
+        if created:
+            notified_count += 1
 
     return Response({
-        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
+        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen. ({notified_count} new DB records)"
     }, status=status.HTTP_200_OK)
 
 
