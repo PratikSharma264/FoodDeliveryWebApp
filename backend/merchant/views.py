@@ -880,7 +880,6 @@ def deliveryman_delivery_requests_json_view(request):
             qty = oi.quantity or 0
             item_total = (price_each or Decimal('0.00')) * qty
             computed_total += item_total
-
             image_url = None
             if fi:
                 try:
@@ -888,7 +887,6 @@ def deliveryman_delivery_requests_json_view(request):
                         fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
                 except Exception:
                     image_url = getattr(fi, 'external_image_url', None)
-
             items.append({
                 "id": getattr(oi, "pk", None),
                 "food_item": getattr(fi, "pk", None),
@@ -904,7 +902,6 @@ def deliveryman_delivery_requests_json_view(request):
         total_value = getattr(order_obj, "total_price", None) or computed_total
         user_obj = getattr(order_obj, 'user', None)
         phone = _get_user_phone(user_obj)
-
         rest = getattr(order_obj, 'restaurant', None)
         restaurant_user_data = None
         if rest and getattr(rest, 'user', None):
@@ -939,14 +936,10 @@ def deliveryman_delivery_requests_json_view(request):
                 "approved": getattr(rest, 'approved', None),
             }
 
-        # Determine assignment flags
-        assigned_to_me = getattr(order_obj.deliveryman, 'pk', None) == deliveryman.pk if getattr(
-            order_obj, 'deliveryman', None) else False
-        order_assigned = bool(order_obj.assigned and assigned_to_me)
+        order_assigned = bool(order_obj.assigned)
 
         return {
             "order_assigned": order_assigned,
-            "assigned_to_me": assigned_to_me,
             "order_id": getattr(order_obj, "pk", None),
             "user": {
                 "id": getattr(user_obj, 'id', None),
@@ -972,18 +965,19 @@ def deliveryman_delivery_requests_json_view(request):
             },
         }
 
-    # Only show orders that are waiting for delivery
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(
-        status='WAITING_FOR_DELIVERY'
-    ).order_by('-order_date')
+    ).filter(status='WAITING_FOR_DELIVERY').order_by('-order_date')
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
+    assigned_to_me_flag = order_qs.filter(
+        deliveryman=deliveryman, assigned=True).exists()
+
     return JsonResponse({
         "status": status_data,
+        "assigned_to_me": assigned_to_me_flag,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }, encoder=DjangoJSONEncoder, safe=False)
