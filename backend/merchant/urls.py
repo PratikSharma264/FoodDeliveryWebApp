@@ -61,4 +61,6 @@ urlpatterns = [
          views.restaurant_orders_json_response, name="restaurant-orders-json-response"),
     path('deliveryman-order-receive/', views.deliveryman_order_receive_view,
          name='deliveryman-order-receive'),
+    path('json/deliveryman-delivery-requests/', views.deliveryman_delivery_requests_json_view,
+         name="deliveryman-delivery-requests-json")
 ]

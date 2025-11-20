@@ -40,6 +40,11 @@ from .serializers import OrderWithItemsSerializer
 from django.contrib.sessions.models import Session
 from django.apps import apps
 
+from django.http import JsonResponse, HttpResponseBadRequest
+from django.views.decorators.http import require_POST
+from django.contrib.auth.decorators import login_required
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 def api_overview(request):
     api_urls = {
@@ -76,7 +81,8 @@ def api_overview(request):
             'Nearby Restaurants': "/api/nearby-restaurants/",
             'Restaurant Locations': "/api/restaurant-locations/",
         },
-        'Deliveryman': {'Set Waiting For Delivery': "/api/set-waiting-for-delivery/"}
+        'Deliveryman': {'Set Waiting For Delivery': "/api/set-waiting-for-delivery/",
+                        "Deliveryman Accept Order": "/api/deliveryman-accept-order/"}
     }
     return render(request, 'api/api_overview.html', {'api_urls': api_urls})
 
@@ -1052,6 +1058,7 @@ def set_order_waiting_for_delivery_api(request):
     if not order_id:
         return Response({"detail": "order_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
+    Order = apps.get_model("merchant", "Order")
     try:
         order = Order.objects.get(pk=order_id)
     except Order.DoesNotExist:
@@ -1063,17 +1070,14 @@ def set_order_waiting_for_delivery_api(request):
     order.status = 'WAITING_FOR_DELIVERY'
     order.save(update_fields=['status'])
 
-    # Get deliverymen
     DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Deliveryman = apps.get_model("merchant", "Deliveryman")
 
-    # Get only eligible deliverymen: online and not on delivery
     eligible_status_qs = DeliverymanStatus.objects.filter(
         online=True, on_delivery=False).select_related('deliveryman')
     eligible_deliverymen = [
         ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
 
-    # Build payload
     order_items = []
     for oi in order.order_items.select_related('food_item').all():
         fi = getattr(oi, 'food_item', None)
@@ -1108,7 +1112,6 @@ def set_order_waiting_for_delivery_api(request):
         }
     }
 
-    # Send notifications via channels
     channel_layer = get_channel_layer()
     for dm in eligible_deliverymen:
         group_name = f"deliveryman_{dm.pk}"
@@ -1123,3 +1126,73 @@ def set_order_waiting_for_delivery_api(request):
     return Response({
         "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
     }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def deliveryman_accept_order_api(request):
+    Deliveryman = apps.get_model("merchant", "Deliveryman")
+    Order = apps.get_model("merchant", "Order")
+
+    deliveryman = getattr(request.user, 'deliveryman_profile', None)
+    if not deliveryman:
+        return Response({"detail": "User is not a deliveryman."}, status=400)
+
+    order_id = request.data.get("order_id")
+    if not order_id:
+        return Response({"detail": "order_id is required."}, status=400)
+
+    try:
+        order_id = int(order_id)
+    except:
+        return Response({"detail": "order_id must be an integer."}, status=400)
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().select_related(
+                'deliveryman').get(pk=order_id)
+            assigned_dm = getattr(order, 'deliveryman', None)
+            # Already assigned to another deliveryman
+            if assigned_dm and assigned_dm.pk != deliveryman.pk:
+                return Response({"detail": "Order already assigned to another deliveryman."}, status=400)
+            # Assign to current deliveryman
+            order.deliveryman = deliveryman
+            order.assigned = True
+            order.save(update_fields=['deliveryman', 'assigned'])
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=404)
+    except:
+        return Response({"detail": "Server error while accepting order."}, status=500)
+
+    payload = {
+        "type": "delivery_assignment",
+        "order": {"order_id": order.pk},
+        "deliveryman": {
+            "id": deliveryman.pk,
+            "firstname": deliveryman.Firstname,
+            "lastname": deliveryman.Lastname,
+        },
+        "assigned_at": timezone.now().isoformat(),
+    }
+
+    try:
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            f"deliveryman_{deliveryman.pk}",
+            {"type": "notify", "payload": payload}
+        )
+        async_to_sync(channel_layer.group_send)(
+            "deliverymen",
+            {
+                "type": "check_picked",
+                "payload": {
+                    "order_id": order.pk,
+                    "picked_by": deliveryman.pk,
+                    "picked_at": timezone.now().isoformat(),
+                }
+            }
+        )
+    except:
+        pass
+
+    return Response({"success": True, "data": payload})

@@ -37,4 +37,7 @@ urlpatterns = [
     path('resraurant-list/', views.get_restaurant_list),
     path('set-waiting-for-delivery/', views.set_order_waiting_for_delivery_api,
          name='set_waiting_for_delivery'),
+    path('deliveryman-accept-order/', views.deliveryman_accept_order_api,
+         name='deliveryman_accept_order'),
+
 ]
