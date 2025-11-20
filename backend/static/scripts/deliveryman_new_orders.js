@@ -1,6 +1,15 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
+   const orderWrapper = document.querySelector("#current-order-wrapper");
+  const emptyOrder = document.querySelector("#emptyorder");
+  // const resid = document.querySelector(".resid").id;
   const newDeliveryRequest= [];
+
+  setTimeout(()=>{
+      if(newDeliveryRequest && newDeliveryRequest.length>0){
+    renderOrders();
+  }
+  },500);
 
   if(window.registerWSHandler){
     window.registerWSHandler("deliveryRequestHandler" , (msg)=>{
@@ -12,8 +21,6 @@ document.addEventListener('DOMContentLoaded',()=>{
               window.resetDeliveryCount();
             }
           }, 1000);
-               console.log("new delivery request received");
-              console.log("New delivery request received:", msg.data);
               newDeliveryRequest.unshift(...msg.data);
               orderWrapper.innerHTML = "";
               renderOrders();
@@ -48,7 +55,8 @@ document.addEventListener('DOMContentLoaded',()=>{
             <div>
               <h4>Order ID: ${order.order_id}</h4>
               <p>Customer: ${order.user.first_name}</p>
-              <p>Total: NPR ${order.total_price}</p>
+              <p>Total: NPR ${order.total_price}(excluding delivery charge)</p>
+              <p>Delivery charge: NPR ${order.delivery_charge}(excluding delivery charge)</p>
               <p>Status: <strong>${order.status}</strong></p>
             </div>
             <div>
