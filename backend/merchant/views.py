@@ -818,9 +818,7 @@ def deliveryman_delivery_requests_json_view(request):
     DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Order = apps.get_model("merchant", "Order")
     OrderItem = apps.get_model("merchant", "OrderItem")
-    DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
 
-    # Resolve deliveryman (query param or request.user)
     deliveryman = None
     deliveryman_id = request.GET.get('deliveryman_id')
     if deliveryman_id:
@@ -831,7 +829,6 @@ def deliveryman_delivery_requests_json_view(request):
     if not deliveryman:
         return HttpResponseBadRequest("No deliveryman specified and request.user is not a deliveryman.")
 
-    # Ensure status object exists
     status_obj, _ = DeliverymanStatus.objects.get_or_create(
         deliveryman=deliveryman)
     status_data = {
@@ -942,7 +939,14 @@ def deliveryman_delivery_requests_json_view(request):
                 "approved": getattr(rest, 'approved', None),
             }
 
+        # Determine assignment flags
+        assigned_to_me = getattr(order_obj.deliveryman, 'pk', None) == deliveryman.pk if getattr(
+            order_obj, 'deliveryman', None) else False
+        order_assigned = bool(order_obj.assigned and assigned_to_me)
+
         return {
+            "order_assigned": order_assigned,
+            "assigned_to_me": assigned_to_me,
             "order_id": getattr(order_obj, "pk", None),
             "user": {
                 "id": getattr(user_obj, 'id', None),
@@ -951,7 +955,6 @@ def deliveryman_delivery_requests_json_view(request):
                 "last_name": getattr(user_obj, 'last_name', '') if user_obj else '',
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
             },
-            # No deliveryman info here
             "restaurant_id": getattr(rest, 'pk', None) if rest else None,
             "restaurant": restaurant_data,
             "is_transited": getattr(order_obj, 'is_transited', False),
@@ -967,47 +970,23 @@ def deliveryman_delivery_requests_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
-            "order_assigned": bool(getattr(order_obj, 'assigned', False)),
-            "assigned_to_a_deliveryman": bool(getattr(order_obj, 'deliveryman', None)),
         }
 
-    # If deliveryman is offline, return status and empty orders (clients can choose to ignore)
-    if not status_obj.online:
-        response = {
-            "status": status_data,
-            "orders": [],
-            "returned_at": timezone.now().isoformat(),
-        }
-        return JsonResponse(response, encoder=DjangoJSONEncoder, safe=False)
-
-    # Fetch orders that have notifications for this deliveryman only
-    notif_order_pks = DeliveryNotification.objects.filter(
-        deliveryman=deliveryman).values_list('order_id', flat=True).distinct()
-    if not notif_order_pks:
-        response = {
-            "status": status_data,
-            "orders": [],
-            "returned_at": timezone.now().isoformat(),
-        }
-        return JsonResponse(response, encoder=DjangoJSONEncoder, safe=False)
-
+    # Only show orders that are waiting for delivery
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(pk__in=list(notif_order_pks)).order_by('-order_date')
+    ).filter(
+        status='WAITING_FOR_DELIVERY'
+    ).order_by('-order_date')
 
-    detailed_orders = []
-    for o in order_qs:
-        od = _build_order_detail(o)
-        detailed_orders.append(od)
+    detailed_orders = [_build_order_detail(o) for o in order_qs]
 
-    response = {
+    return JsonResponse({
         "status": status_data,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
-    }
-
-    return JsonResponse(response, encoder=DjangoJSONEncoder, safe=False)
+    }, encoder=DjangoJSONEncoder, safe=False)
 
 
 # def check_deliveryman_status(request):

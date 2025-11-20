@@ -33,7 +33,7 @@ from .serializers import (
     Restaurantlistserial,
     CartReadSerializer
 )
-from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem, DeliverymanStatus, Deliveryman, DeliveryNotification
+from merchant.models import FoodItem, Restaurant, Order, Cart, OrderItem, DeliverymanStatus, Deliveryman
 
 from django.db.models import Prefetch
 from .serializers import OrderWithItemsSerializer
@@ -1072,12 +1072,12 @@ def set_order_waiting_for_delivery_api(request):
 
     DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Deliveryman = apps.get_model("merchant", "Deliveryman")
-    DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
 
     eligible_status_qs = DeliverymanStatus.objects.filter(
         online=True, on_delivery=False).select_related('deliveryman')
     eligible_deliverymen = [
         ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
+
     order_items = []
     for oi in order.order_items.select_related('food_item').all():
         fi = getattr(oi, 'food_item', None)
@@ -1113,14 +1113,7 @@ def set_order_waiting_for_delivery_api(request):
     }
 
     channel_layer = get_channel_layer()
-    notified_count = 0
-
     for dm in eligible_deliverymen:
-        obj, created = DeliveryNotification.objects.get_or_create(
-            deliveryman=dm,
-            order=order
-        )
-
         group_name = f"deliveryman_{dm.pk}"
         try:
             async_to_sync(channel_layer.group_send)(
@@ -1129,11 +1122,9 @@ def set_order_waiting_for_delivery_api(request):
             )
         except Exception:
             pass
-        if created:
-            notified_count += 1
 
     return Response({
-        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen. ({notified_count} new DB records)"
+        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
     }, status=status.HTTP_200_OK)
 
 
@@ -1141,49 +1132,47 @@ def set_order_waiting_for_delivery_api(request):
 @permission_classes([IsAuthenticated])
 def deliveryman_accept_order_api(request):
     Deliveryman = apps.get_model("merchant", "Deliveryman")
-    DeliveryNotification = apps.get_model("merchant", "DeliveryNotification")
     Order = apps.get_model("merchant", "Order")
 
-    user = request.user
-    deliveryman = getattr(user, 'deliveryman_profile', None)
+    deliveryman = getattr(request.user, 'deliveryman_profile', None)
     if not deliveryman:
-        return Response({"detail": "User is not a deliveryman."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "User is not a deliveryman."}, status=400)
 
-    notification_id = request.data.get("notification_id")
-    if not notification_id:
-        return Response({"detail": "Notification ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+    order_id = request.data.get("order_id")
+    if not order_id:
+        return Response({"detail": "order_id is required."}, status=400)
 
     try:
-        notification = DeliveryNotification.objects.select_related(
-            'order').get(pk=notification_id)
-    except DeliveryNotification.DoesNotExist:
-        return Response({"detail": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+        order_id = int(order_id)
+    except:
+        return Response({"detail": "order_id must be an integer."}, status=400)
 
-    order = notification.order
-
-    if order and not getattr(order, 'deliveryman', None):
-        order.deliveryman = deliveryman
-        order.save(update_fields=['deliveryman'])
-
-    notification.read = True
-    notification.check_picked = True
-    notification.save(update_fields=['read', 'check_picked'])
+    try:
+        with transaction.atomic():
+            order = Order.objects.select_for_update().select_related(
+                'deliveryman').get(pk=order_id)
+            assigned_dm = getattr(order, 'deliveryman', None)
+            # Already assigned to another deliveryman
+            if assigned_dm and assigned_dm.pk != deliveryman.pk:
+                return Response({"detail": "Order already assigned to another deliveryman."}, status=400)
+            # Assign to current deliveryman
+            order.deliveryman = deliveryman
+            order.assigned = True
+            order.save(update_fields=['deliveryman', 'assigned'])
+    except Order.DoesNotExist:
+        return Response({"detail": "Order not found."}, status=404)
+    except:
+        return Response({"detail": "Server error while accepting order."}, status=500)
 
     payload = {
-        "type": "delivery_notification_update",
-        "notification": {
-            "id": notification.pk,
-            "order_id": order.pk if order else None,
-            "is_read": notification.read,
-            "check_picked": notification.check_picked,
-            "created_at": notification.created_at.isoformat() if notification.created_at else None,
-        },
+        "type": "delivery_assignment",
+        "order": {"order_id": order.pk},
         "deliveryman": {
             "id": deliveryman.pk,
             "firstname": deliveryman.Firstname,
             "lastname": deliveryman.Lastname,
         },
-        "updated_at": timezone.now().isoformat(),
+        "assigned_at": timezone.now().isoformat(),
     }
 
     try:
@@ -1192,19 +1181,18 @@ def deliveryman_accept_order_api(request):
             f"deliveryman_{deliveryman.pk}",
             {"type": "notify", "payload": payload}
         )
-
-        check_picked_payload = {
-            "type": "check_picked",
-            "notification_id": notification.pk,
-            "order_id": order.pk if order else None,
-            "picked_by": deliveryman.pk,
-            "picked_at": timezone.now().isoformat(),
-        }
         async_to_sync(channel_layer.group_send)(
             "deliverymen",
-            {"type": "check_picked", "payload": check_picked_payload}
+            {
+                "type": "check_picked",
+                "payload": {
+                    "order_id": order.pk,
+                    "picked_by": deliveryman.pk,
+                    "picked_at": timezone.now().isoformat(),
+                }
+            }
         )
-    except Exception:
+    except:
         pass
 
     return Response({"success": True, "data": payload})

@@ -333,7 +333,6 @@ class DeliverymanConsumer(WebsocketConsumer):
         Deliveryman = apps.get_model("merchant", "Deliveryman")
         DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
 
-        # Get deliveryman instance
         try:
             deliveryman = getattr(
                 user, 'deliveryman_profile', None) or Deliveryman.objects.filter(user=user).first()
@@ -344,7 +343,6 @@ class DeliverymanConsumer(WebsocketConsumer):
             self.close()
             return
 
-        # Set deliveryman status to online
         status_obj, _ = DeliverymanStatus.objects.get_or_create(
             deliveryman=deliveryman)
         status_obj.online = True
@@ -353,7 +351,6 @@ class DeliverymanConsumer(WebsocketConsumer):
         self.deliveryman_pk = deliveryman.pk
         self.group_name = f"deliveryman_{self.deliveryman_pk}"
 
-        # Add to personal and global deliverymen group
         async_to_sync(self.channel_layer.group_add)(
             self.group_name, self.channel_name)
         async_to_sync(self.channel_layer.group_add)(
@@ -389,7 +386,6 @@ class DeliverymanConsumer(WebsocketConsumer):
             data = {}
         self.send(text_data=json.dumps({"type": "ack", "received": data}))
 
-    # --- Helper methods ---
     def _get_models(self):
         Order = apps.get_model("merchant", "Order")
         OrderItem = apps.get_model("merchant", "OrderItem")
@@ -538,9 +534,9 @@ class DeliverymanConsumer(WebsocketConsumer):
                 "phone": phone,
             },
             "assigned": getattr(order_obj, 'assigned', False),
+            "assigned_to_other_deliveryman": getattr(order_obj, 'assigned_to_other_deliveryman', False),
         }
 
-    # Notify method for updates
     def notify(self, event):
         payload = event.get('payload', {}) or {}
         errors = event.get('errors', []) or []
@@ -596,7 +592,6 @@ class DeliverymanConsumer(WebsocketConsumer):
             except Exception:
                 pass
 
-    # Real-time check_picked handler
     def check_picked(self, event):
         payload = event.get("payload", {}) or {}
         try:
