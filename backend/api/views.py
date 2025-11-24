@@ -792,9 +792,19 @@ def place_order_api(request):
 
     cart_items = Cart.objects.filter(
         cart_id__in=cart_ids, user=user).select_related('food_item', 'restaurant')
+    if not cart_items.exists():
+        try:
+            int_ids = [int(i) for i in cart_ids]
+        except Exception:
+            int_ids = []
+        if int_ids:
+            cart_items = Cart.objects.filter(
+                pk__in=int_ids, user=user).select_related('food_item', 'restaurant')
 
     if not cart_items.exists():
         return Response({"detail": "No valid cart items found."}, status=status.HTTP_400_BAD_REQUEST)
+
+    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
 
     created_orders = []
     restaurant_orders = {}
@@ -803,34 +813,72 @@ def place_order_api(request):
     for cart in cart_items:
         try:
             restaurant = cart.restaurant
-            if restaurant.id not in restaurant_orders:
-                order = Order.objects.create(
-                    user=user,
-                    restaurant=restaurant,
-                    order_date=timezone.now(),
-                    payment_method=payment_method,
-                    latitude=lat_dec,
-                    longitude=lon_dec,
-                    delivery_charge=del_charge_dec
-                )
-                restaurant_orders[restaurant.id] = order
-                created_orders.append(order)
-            else:
-                order = restaurant_orders[restaurant.id]
+            with transaction.atomic():
+                if restaurant.id not in restaurant_orders:
+                    order = Order.objects.create(
+                        user=user,
+                        restaurant=restaurant,
+                        order_date=timezone.now(),
+                        payment_method=payment_method,
+                        latitude=lat_dec,
+                        longitude=lon_dec,
+                        delivery_charge=del_charge_dec
+                    )
+                    restaurant_orders[restaurant.id] = order
+                    created_orders.append(order)
+                else:
+                    order = restaurant_orders[restaurant.id]
 
-            OrderItem.objects.create(
-                order=order,
-                food_item=cart.food_item,
-                quantity=cart.quantity,
-                price_at_order=cart.food_item.price or Decimal('0.00')
-            )
-            order.update_total_price()
-            order.total_price = (order.total_price or Decimal(
-                '0.00')) + (order.delivery_charge or Decimal('0.00'))
-            order.save(update_fields=['total_price'])
+                OrderItem.objects.create(
+                    order=order,
+                    food_item=cart.food_item,
+                    quantity=cart.quantity,
+                    price_at_order=cart.food_item.price or Decimal('0.00')
+                )
+                order.update_total_price()
+                order.total_price = (order.total_price or Decimal(
+                    '0.00')) + (order.delivery_charge or Decimal('0.00'))
+                order.save(update_fields=['total_price'])
+
+                candidates = Order.objects.select_for_update().filter(
+                    restaurant=restaurant,
+                    assigned=True,
+                    status='WAITING_FOR_DELIVERY',
+                    deliveryman__isnull=False
+                ).select_related('deliveryman')
+
+                assigned_deliveryman = None
+                for cand in candidates:
+                    dm = cand.deliveryman
+                    if not dm:
+                        continue
+                    dm_status = DeliverymanStatus.objects.select_for_update().filter(deliveryman=dm).first()
+                    if not dm_status or not bool(dm_status.on_delivery):
+                        assigned_deliveryman = dm
+                        break
+
+                if assigned_deliveryman:
+                    order.deliveryman = assigned_deliveryman
+                    order.assigned = True
+                    order.status = 'WAITING_FOR_DELIVERY'
+                    order.save(update_fields=[
+                               'deliveryman', 'assigned', 'status'])
+
+                    # TRIGGER WEBSOCKET FOR CURRENT DELIVERY AFTER ASSIGNMENT
+                    try:
+                        from channels.layers import get_channel_layer
+                        from asgiref.sync import async_to_sync
+                        channel_layer = get_channel_layer()
+                        async_to_sync(channel_layer.group_send)(
+                            f"deliveryman_{assigned_deliveryman.pk}",
+                            {"type": "current_delivery_update", "order_id": order.pk}
+                        )
+                    except Exception as exc:
+                        errors.append({"channel_error": str(exc)})
 
         except Exception as exc:
-            errors.append({"cart_id": cart.cart_id, "error": str(exc)})
+            errors.append(
+                {"cart_id": getattr(cart, 'cart_id', None), "error": str(exc)})
 
     cart_items.delete()
 
@@ -873,7 +921,11 @@ def place_order_api(request):
     except Exception as exc:
         errors.append({"channel_error": str(exc)})
 
-    return Response({"message": "Order(s) placed successfully." if created_orders else "Order placement failed.", "orders": serialized, "errors": errors}, status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response({
+        "message": "Order(s) placed successfully." if created_orders else "Order placement failed.",
+        "orders": serialized,
+        "errors": errors
+    }, status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(['POST'])
@@ -1152,13 +1204,24 @@ def deliveryman_accept_order_api(request):
             order = Order.objects.select_for_update().select_related(
                 'deliveryman').get(pk=order_id)
             assigned_dm = getattr(order, 'deliveryman', None)
-            # Already assigned to another deliveryman
             if assigned_dm and assigned_dm.pk != deliveryman.pk:
                 return Response({"detail": "Order already assigned to another deliveryman."}, status=400)
-            # Assign to current deliveryman
             order.deliveryman = deliveryman
             order.assigned = True
             order.save(update_fields=['deliveryman', 'assigned'])
+
+            # TRIGGER WEBSOCKET FOR CURRENT DELIVERY AFTER ACCEPT
+            try:
+                from channels.layers import get_channel_layer
+                from asgiref.sync import async_to_sync
+                channel_layer = get_channel_layer()
+                async_to_sync(channel_layer.group_send)(
+                    f"deliveryman_{deliveryman.pk}",
+                    {"type": "current_delivery_update", "order_id": order.pk}
+                )
+            except:
+                pass
+
     except Order.DoesNotExist:
         return Response({"detail": "Order not found."}, status=404)
     except:

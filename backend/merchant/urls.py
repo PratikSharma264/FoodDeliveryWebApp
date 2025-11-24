@@ -62,5 +62,9 @@ urlpatterns = [
     path('deliveryman-order-receive/', views.deliveryman_order_receive_view,
          name='deliveryman-order-receive'),
     path('json/deliveryman-delivery-requests/', views.deliveryman_delivery_requests_json_view,
-         name="deliveryman-delivery-requests-json")
+         name="deliveryman-delivery-requests-json"),
+    path('json/deliveryman-current-delivery/', views.deliveryman_current_delivery_json_view,
+         name="deliveryman-current-delivery-json"),
+    path('current-delivery-websocket/', views.current_delivery_websocket_view,
+         name="current-delivery-websocket")
 ]
