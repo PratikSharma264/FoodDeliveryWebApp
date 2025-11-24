@@ -307,11 +307,21 @@
   border-top: 1px solid #ccc;
   font-family: "Poppins";
   display: none;
+  flex-direction: column;
   flex-wrap: wrap;
-  gap: 150px;
+  gap: 20px;
   justify-content: center;
+  align-items: center;
 }
 
+.order-details > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 20px;
+}
+
+.order-details > div > div > h4,
 .order-details > div > h4 {
   font-family: "rocketThunder";
   font-size: 20px;
@@ -319,7 +329,7 @@
   margin-bottom: 10px;
 }
 
-.order-details > div:first-child > ul {
+.order-details > div:first-child > div:first-child > ul {
   padding-left: 20px;
   list-style: none;
 }
