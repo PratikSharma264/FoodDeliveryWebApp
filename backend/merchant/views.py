@@ -1161,6 +1161,10 @@ def deliveryman_current_delivery_json_view(request):
     }, encoder=DjangoJSONEncoder, safe=False)
 
 
+@login_required
+def current_delivery_websocket_view(request):
+    return render(request, 'merchant/current_delivery_websocket.html')
+
 # def check_deliveryman_status(request):
 #     # Get all active sessions
 #     sessions = Session.objects.filter(expire_date__gte=timezone.now())

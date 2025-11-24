@@ -1,6 +1,8 @@
+from channels.generic.websocket import AsyncWebsocketConsumer
+from asgiref.sync import sync_to_async
 import json
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import WebsocketConsumer
+from channels.generic.websocket import WebsocketConsumer, AsyncWebsocketConsumer
 from django.db.models import Prefetch
 from django.apps import apps
 from decimal import Decimal
@@ -601,3 +603,193 @@ class DeliverymanConsumer(WebsocketConsumer):
             }, cls=DjangoJSONEncoder))
         except Exception:
             pass
+
+
+class CurrentDeliveryConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        # Access deliveryman_profile in async-safe way
+        self.deliveryman = await sync_to_async(getattr)(self.scope["user"], "deliveryman_profile", None)
+        if not self.deliveryman:
+            await self.close()
+            return
+
+        self.group_name = f"deliveryman_{self.deliveryman.pk}"
+        await self.channel_layer.group_add(self.group_name, self.channel_name)
+        await self.accept()
+        await self.send_current_delivery()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard(self.group_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        if data.get("action") == "refresh":
+            await self.send_current_delivery()
+
+    async def current_delivery_update(self, event):
+        await self.send_current_delivery()
+
+    async def send_current_delivery(self):
+        DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
+        Order = apps.get_model("merchant", "Order")
+        OrderItem = apps.get_model("merchant", "OrderItem")
+        deliveryman = self.deliveryman
+
+        # get_or_create wrapped in sync_to_async
+        status_obj, _ = await sync_to_async(DeliverymanStatus.objects.get_or_create)(deliveryman=deliveryman)
+        status_data = {
+            "deliveryman_id": deliveryman.pk,
+            "online": bool(status_obj.online),
+            "on_delivery": bool(status_obj.on_delivery),
+            "latitude": float(status_obj.latitude) if status_obj.latitude else None,
+            "longitude": float(status_obj.longitude) if status_obj.longitude else None,
+            "last_updated": status_obj.last_updated.isoformat() if status_obj.last_updated else None
+        }
+
+        if status_obj.on_delivery:
+            await self.send(text_data=json.dumps({
+                "status": status_data,
+                "has_current_assignments": False,
+                "orders": [],
+                "returned_at": timezone.now().isoformat()
+            }))
+            return
+
+        # Helper functions (no change)
+        def _safe_image_url(obj, attr_name):
+            f = getattr(obj, attr_name, None)
+            if f:
+                try:
+                    return f.url
+                except:
+                    return str(f)
+            return None
+
+        def _get_user_phone(user_obj):
+            if not user_obj:
+                return None
+            for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
+                phone = getattr(user_obj, attr, None)
+                if phone:
+                    return phone
+            if hasattr(user_obj, 'user_profile'):
+                p = user_obj.user_profile
+                return getattr(p, 'phone', None) or getattr(p, 'phone_number', None)
+            if hasattr(user_obj, 'merchant_profile'):
+                m = user_obj.merchant_profile
+                return getattr(m, 'phone_number', None)
+            return None
+
+        def _build_order_detail(order_obj):
+            items = []
+            computed_total = Decimal('0.00')
+            try:
+                order_items_qs = order_obj.order_items.select_related(
+                    "food_item").all()
+            except:
+                order_items_qs = []
+            for oi in order_items_qs:
+                fi = getattr(oi, "food_item", None)
+                price_each = oi.price_at_order or (
+                    getattr(fi, 'price', Decimal('0.00')) if fi else Decimal('0.00'))
+                qty = oi.quantity or 0
+                item_total = (price_each or Decimal('0.00')) * qty
+                computed_total += item_total
+                try:
+                    image_url = fi.profile_picture.url if getattr(
+                        fi, 'profile_picture', None) else getattr(fi, 'external_image_url', None)
+                except:
+                    image_url = getattr(fi, 'external_image_url', None)
+                items.append({
+                    "id": getattr(oi, "pk", None),
+                    "food_item": getattr(fi, "pk", None),
+                    "food_item_name": getattr(fi, "name", "") if fi else "",
+                    "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name', getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
+                    "food_item_image": image_url,
+                    "quantity": qty,
+                    "price_at_order": str(price_each),
+                    "total_price": float(item_total),
+                })
+            total_value = getattr(order_obj, "total_price",
+                                  None) or computed_total
+            user_obj = getattr(order_obj, 'user', None)
+            phone = _get_user_phone(user_obj)
+            rest = getattr(order_obj, 'restaurant', None)
+            restaurant_user_data = None
+            if rest and getattr(rest, 'user', None):
+                ru = rest.user
+                restaurant_user_data = {
+                    "id": getattr(ru, 'id', None),
+                    "username": getattr(ru, 'username', ''),
+                    "first_name": getattr(ru, 'first_name', ''),
+                    "last_name": getattr(ru, 'last_name', ''),
+                    "email": getattr(ru, 'email', ''),
+                }
+            restaurant_data = None
+            if rest:
+                restaurant_data = {
+                    "id": getattr(rest, 'pk', None),
+                    "user": restaurant_user_data,
+                    "restaurant_name": getattr(rest, 'restaurant_name', ''),
+                    "owner_name": getattr(rest, 'owner_name', ''),
+                    "owner_email": getattr(rest, 'owner_email', ''),
+                    "owner_contact": getattr(rest, 'owner_contact', ''),
+                    "restaurant_address": getattr(rest, 'restaurant_address', ''),
+                    "latitude": getattr(rest, 'latitude', None),
+                    "longitude": getattr(rest, 'longitude', None),
+                    "cuisine": getattr(rest, 'cuisine', None),
+                    "description": getattr(rest, 'description', None),
+                    "restaurant_type": getattr(rest, 'restaurant_type', None),
+                    "profile_picture": _safe_image_url(rest, 'profile_picture'),
+                    "cover_photo": _safe_image_url(rest, 'cover_photo'),
+                    "menu": _safe_image_url(rest, 'menu'),
+                    "created_at": getattr(rest, 'created_at', None).isoformat() if getattr(rest, 'created_at', None) else None,
+                    "approved": getattr(rest, 'approved', None),
+                }
+            return {
+                "order_assigned": bool(order_obj.assigned),
+                "order_id": getattr(order_obj, "pk", None),
+                "user": {
+                    "id": getattr(user_obj, 'id', None),
+                    "username": getattr(user_obj, 'username', '') if user_obj else '',
+                    "first_name": getattr(user_obj, 'first_name', '') if user_obj else '',
+                    "last_name": getattr(user_obj, 'last_name', '') if user_obj else '',
+                    "email": getattr(user_obj, 'email', '') if user_obj else '',
+                },
+                "restaurant_id": getattr(rest, 'pk', None) if rest else None,
+                "restaurant": restaurant_data,
+                "is_transited": getattr(order_obj, 'is_transited', False),
+                "delivery_charge": f"{(getattr(order_obj, 'delivery_charge', None) or Decimal('0.00')):.2f}",
+                "total_price": f"{(total_value or Decimal('0.00')):.2f}",
+                "order_items": items,
+                "order_date": getattr(order_obj, 'order_date', None).isoformat() if getattr(order_obj, 'order_date', None) else None,
+                "status": getattr(order_obj, 'status', None),
+                "payment_method": (getattr(order_obj, 'payment_method', '') or '').lower(),
+                "latitude": str(getattr(order_obj, 'latitude', None)) if getattr(order_obj, 'latitude', None) is not None else None,
+                "longitude": str(getattr(order_obj, 'longitude', None)) if getattr(order_obj, 'longitude', None) is not None else None,
+                "customer_details": {
+                    "email": getattr(user_obj, 'email', '') if user_obj else '',
+                    "phone": phone,
+                },
+            }
+
+        # Fetch queryset asynchronously
+        order_qs = await sync_to_async(lambda: list(
+            Order.objects.select_related("user", "restaurant", "deliveryman")
+            .prefetch_related('order_items')
+            .filter(deliveryman=deliveryman, assigned=True, status="WAITING_FOR_DELIVERY")
+            .order_by('order_date')
+        ))()
+
+        # Build order details in a thread-safe way
+        detailed_orders = []
+        for o in order_qs:
+            detail = await sync_to_async(_build_order_detail)(o)
+            detailed_orders.append(detail)
+
+        await self.send(text_data=json.dumps({
+            "status": status_data,
+            "has_current_assignments": bool(order_qs),
+            "orders": detailed_orders,
+            "returned_at": timezone.now().isoformat()
+        }))
