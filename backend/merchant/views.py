@@ -975,9 +975,17 @@ def deliveryman_delivery_requests_json_view(request):
     assigned_to_me_flag = order_qs.filter(
         deliveryman=deliveryman, assigned=True).exists()
 
+    assigned_order = order_qs.filter(
+        deliveryman=deliveryman, assigned=True).select_related('restaurant').first()
+    assigned_restaurant = None
+    if assigned_order and getattr(assigned_order, 'restaurant', None):
+        assigned_restaurant = getattr(
+            getattr(assigned_order, 'restaurant'), 'restaurant_name', None)
+
     return JsonResponse({
         "status": status_data,
         "assigned_to_me": assigned_to_me_flag,
+        "assigned_restaurant": assigned_restaurant,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }, encoder=DjangoJSONEncoder, safe=False)
