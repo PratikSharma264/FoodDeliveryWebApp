@@ -1161,9 +1161,22 @@ def deliveryman_current_delivery_json_view(request):
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
+    assigned_restaurant = None
+    latitude = None
+    longitude = None
+    assigned_order = order_qs.select_related('restaurant').first()
+    if assigned_order and getattr(assigned_order, 'restaurant', None):
+        rest = getattr(assigned_order, 'restaurant')
+        assigned_restaurant = getattr(rest, 'restaurant_name', None)
+        latitude = getattr(rest, 'latitude', None)
+        longitude = getattr(rest, 'longitude', None)
+
     return JsonResponse({
         "status": status_data,
         "has_current_assignments": order_qs.exists(),
+        "assigned_restaurant": assigned_restaurant,
+        "latitude": latitude,
+        "longitude": longitude,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }, encoder=DjangoJSONEncoder, safe=False)
