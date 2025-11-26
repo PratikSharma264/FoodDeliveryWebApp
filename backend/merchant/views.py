@@ -975,9 +975,17 @@ def deliveryman_delivery_requests_json_view(request):
     assigned_to_me_flag = order_qs.filter(
         deliveryman=deliveryman, assigned=True).exists()
 
+    assigned_order = order_qs.filter(
+        deliveryman=deliveryman, assigned=True).select_related('restaurant').first()
+    assigned_restaurant = None
+    if assigned_order and getattr(assigned_order, 'restaurant', None):
+        assigned_restaurant = getattr(
+            getattr(assigned_order, 'restaurant'), 'restaurant_name', None)
+
     return JsonResponse({
         "status": status_data,
         "assigned_to_me": assigned_to_me_flag,
+        "assigned_restaurant": assigned_restaurant,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }, encoder=DjangoJSONEncoder, safe=False)
@@ -1153,9 +1161,22 @@ def deliveryman_current_delivery_json_view(request):
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
+    assigned_restaurant = None
+    latitude = None
+    longitude = None
+    assigned_order = order_qs.select_related('restaurant').first()
+    if assigned_order and getattr(assigned_order, 'restaurant', None):
+        rest = getattr(assigned_order, 'restaurant')
+        assigned_restaurant = getattr(rest, 'restaurant_name', None)
+        latitude = getattr(rest, 'latitude', None)
+        longitude = getattr(rest, 'longitude', None)
+
     return JsonResponse({
         "status": status_data,
         "has_current_assignments": order_qs.exists(),
+        "assigned_restaurant": assigned_restaurant,
+        "latitude": latitude,
+        "longitude": longitude,
         "orders": detailed_orders,
         "returned_at": timezone.now().isoformat(),
     }, encoder=DjangoJSONEncoder, safe=False)
