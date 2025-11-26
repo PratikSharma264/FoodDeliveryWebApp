@@ -1,11 +1,11 @@
-#container-body {
+/* #container-body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 20px;
   padding: 20px;
-}
+} */
 
-.delivery-card {
+/* .delivery-card {
   background-color: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -72,13 +72,31 @@
 #nonewdelivery > span {
   color: #f54f0eff;
 }
-
-.map-container {
-  display: none;
-}
-
+ */
+/* 
 @media (max-width: 768px) {
   #container-body {
     grid-template-columns: 1fr;
   }
+} */
+
+/* ///////////////////////////////////////// */
+
+#map-error {
+  /* display: flex; */
+  justify-content: center;
+  align-items: center;
+}
+
+#map-error.hidden {
+  display: none;
+}
+
+#map-error > div {
+  border-radius: 7px;
+  padding: 10px;
+  background-color: #ffffff;
+  color: red;
+  font-size: 17px;
+  box-shadow: 2px 2px 2px #e0e0e0;
 }

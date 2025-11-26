@@ -1,9 +1,11 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
    const orderWrapper = document.querySelector("#current-order-wrapper");
+   const notice = document.querySelector("#currently-assigned-notice");
   const emptyOrder = document.querySelector("#emptyorder");
   const newDeliveryRequest= [];
   let deliverymanPosition = null;
+  let assigned;
 
 navigator.geolocation.getCurrentPosition(
   pos => {
@@ -24,8 +26,12 @@ navigator.geolocation.getCurrentPosition(
           credentials:"include"
         }
       );
-      const {orders} = await response.json();
+    
+      const data = await response.json();
+      const {assigned_to_me,orders} = data;
+      console.log("data:", assigned_to_me);
       console.log("response:", orders);
+      assigned = assigned_to_me;
       if(orders && orders.length>0){
         orders.forEach((item)=> newDeliveryRequest.unshift(item));
       }
@@ -71,6 +77,15 @@ navigator.geolocation.getCurrentPosition(
     emptyOrder.style.display = "none";
 
     orderWrapper.innerHTML = "";
+    if(assigned){
+      orderWrapper.style.height = "60vh";
+      orderWrapper.style.overflow = "hidden";
+      notice.classList.remove("hidden");
+    } else{
+      orderWrapper.style.height = "auto";
+      orderWrapper.style.overflow = "auto";
+      notice.classList.add("hidden");
+    }
 
     newDeliveryRequest.forEach((order) => {
       const orderCard = document.createElement("div");
