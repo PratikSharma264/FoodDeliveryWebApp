@@ -92,11 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
                   ? '<button class="request-delivery">Request Delivery</button>' 
                   : ""
               }
-              ${
-                order.status === "OUT_FOR_DELIVERY"
-                  ? '<button class="track-delivery">Track</button>' // TRACK HANDLER ADD GARNA BAKI
-                  : ""
-              }
             </div>
           </div>
           <div class="order-details">
@@ -127,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .querySelector(".toggle-details")
         .addEventListener("click", () => {
           const detailBox = orderCard.querySelector(".order-details");
-          if (detailBox.style.display === "none") {
+          if (!detailBox.style.display || detailBox.style.display === "none") {
             detailBox.style.display = "flex";
 
             if (!detailBox.dataset.mapInitialized) {
@@ -213,12 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
           }
         });
-      }
-
-      // Show map for delivery tracking
-      const trackBtn = orderCard.querySelector(".track-delivery");
-      if (trackBtn) {
-        trackBtn.addEventListener("click", () => showTrackingPopup(order));
       }
 
       orderWrapper.appendChild(orderCard);

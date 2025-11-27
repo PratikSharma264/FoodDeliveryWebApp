@@ -208,16 +208,6 @@ navigator.geolocation.getCurrentPosition(
                 return marker;
               }
             }).addTo(map);
-
-      
-          // // Auto-fit all markers
-          // const bounds = L.latLngBounds([
-          //   [customerLat, customerLng],
-          //   [restaurantLat, restaurantLng],
-          //   deliverymanLat ? [deliverymanLat, deliverymanLng] : null
-          // ].filter(Boolean));
-        
-          // map.fitBounds(bounds, { padding: [50, 50] });
         
               detailBox.dataset.mapInitialized = true;
             }
@@ -234,7 +224,7 @@ navigator.geolocation.getCurrentPosition(
           if (window.confirm("Do you want to accept the order?")) {
             try{
                const res = await fetch(
-              `http://127.0.0.1:8000/api/update-order-status/`,
+              `http://127.0.0.1:8000/api/deliveryman-accept-order/`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json","X-CSRFToken": csrftoken },
