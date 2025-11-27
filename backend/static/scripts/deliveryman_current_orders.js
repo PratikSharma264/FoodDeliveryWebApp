@@ -178,6 +178,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   const deliveryItemContainer = document.querySelector("#delivery-list-container");
   const deliveryInfoContainer = document.querySelector("#delivery-info-container");
+  const outForDeliveryBtn = document.querySelector("#out-for-deliverybtn");
   const mapBox = document.querySelector("#map"); 
   const mapErrContainer = document.querySelector("#map-error");
 
@@ -408,7 +409,14 @@ currentDeliveries.forEach((delivery, index) => {
       <p><span> Total: </span> NPR ${delivery.total_price} (excluding delivery charge)</p>
       <p><span> Delivery charge: </span> NPR ${delivery.delivery_charge} (excluding delivery charge)</p>
       <p><span>Status:</span> <strong>${delivery.status}</strong></p>
+      <div>
       <button class="view-delivery-btn" data-id="${delivery.order_id}">View Delivery</button>
+      ${
+      delivery.status === 'OUT_FOR_DELIVERY' ? 
+      <button class="view-delivery-btn" data-id={delivery.order_id}>Delivery Completed</button> :
+      null
+      }
+      </div>
     </div>
     <div class="order-details">
       <div>
@@ -436,6 +444,7 @@ currentDeliveries.forEach((delivery, index) => {
 
   const btn = divBlock.querySelector(".fullpageview-btn");
   const orderDetails = divBlock.querySelector(".order-details");
+  const deliveryCompleted = divBlock.querySelector(`[data-id = ${delivery.order_id}]`);
 
   btn.addEventListener("click", () => {
     orderDetails.classList.toggle("show");
@@ -449,8 +458,50 @@ currentDeliveries.forEach((delivery, index) => {
     showDeliveryRoute(delivery);
   });
 
+  // delivery complete vaye paxi ko lagi:
+  if(deliveryCompleted){
+    deliveryCompleted.addEventListener('click',(e)=>{
+
+          async function deliveryCompletedFunc() {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/json/deliveryman-completed-delivery/`,
+        {
+          credentials:"include"
+        }
+      );
+    } catch (err) {
+      console.error("error: ", err);
+      showError({ message: `${err?.message}` });
+    }
+  }
+    })
+  }
+
+
   deliveryItemContainer.appendChild(divBlock);
 });
 
   }
+
+  // ya out for delivery click garda ko logic:
+  if(outForDeliveryBtn){
+    outForDeliveryBtn.addEventListener("click",(e)=>{
+      
+    async function outForDeliveryRequest() {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/json/deliveryman-out-delivery/`,
+        {
+          credentials:"include"
+        }
+      );
+    } catch (err) {
+      console.error("error: ", err);
+      showError({ message: `${err?.message}` });
+    }
+  }
+    })
+  }
+
 })

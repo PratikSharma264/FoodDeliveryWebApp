@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded',()=>{
    const orderWrapper = document.querySelector("#current-order-wrapper");
    const notice = document.querySelector("#currently-assigned-notice");
   const emptyOrder = document.querySelector("#emptyorder");
-  const newDeliveryRequest= [];
+  let newDeliveryRequest= [];
   let deliverymanPosition = null;
   let assigned;
 
@@ -86,7 +86,7 @@ navigator.geolocation.getCurrentPosition(
       orderWrapper.style.overflow = "auto";
       notice.classList.add("hidden");
     }
-
+    console.log("deliveriesreq:",newDeliveryRequest);
     newDeliveryRequest.forEach((order) => {
       const orderCard = document.createElement("div");
       orderCard.classList.add("order-card");
@@ -108,7 +108,7 @@ navigator.geolocation.getCurrentPosition(
             <div>
               <button class="toggle-details">Details</button>
               ${
-                order.status === "WAITING_FOR_DELIVERY" 
+                (order.status === "WAITING_FOR_DELIVERY" && !assigned)
                   ? '<button class="accept_request">Accept Request</button>'
                   : ""
               }
@@ -220,7 +220,7 @@ navigator.geolocation.getCurrentPosition(
       const statusBtn = orderCard.querySelector(".accept_request");
       if (statusBtn) {
         statusBtn.addEventListener("click", async () => {
-         
+         const resId = order.restaurant_id;
           if (window.confirm("Do you want to accept the order?")) {
             try{
                const res = await fetch(
@@ -233,7 +233,9 @@ navigator.geolocation.getCurrentPosition(
               }
             );
             if (res.ok) {
-              order.status = "";
+              // order.status = "";
+              assigned = true;
+              newDeliveryRequest = newDeliveryRequest.filter(del => parseInt(del.restaurant_id) !== parseInt(resId) );
               renderOrders();
             }
             } catch(err){
