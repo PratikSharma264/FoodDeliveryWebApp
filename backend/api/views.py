@@ -771,12 +771,13 @@ def place_order_api(request):
     latitude = request.data.get('latitude')
     longitude = request.data.get('longitude')
     delivery_charge = request.data.get('delivery_charge', 0)
+    customer_location = request.data.get('customer_location')  # <--- NEW FIELD
 
     if not cart_ids or not isinstance(cart_ids, list):
         return Response({"detail": "cart_ids must be provided as a list."}, status=status.HTTP_400_BAD_REQUEST)
 
-    if payment_method is None or latitude is None or longitude is None:
-        return Response({"detail": "payment_method, latitude and longitude are required."}, status=status.HTTP_400_BAD_REQUEST)
+    if payment_method is None or latitude is None or longitude is None or not customer_location:
+        return Response({"detail": "payment_method, latitude, longitude, and customer_location are required."}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         lat_dec = Decimal(str(latitude))
@@ -792,19 +793,9 @@ def place_order_api(request):
 
     cart_items = Cart.objects.filter(
         cart_id__in=cart_ids, user=user).select_related('food_item', 'restaurant')
-    if not cart_items.exists():
-        try:
-            int_ids = [int(i) for i in cart_ids]
-        except Exception:
-            int_ids = []
-        if int_ids:
-            cart_items = Cart.objects.filter(
-                pk__in=int_ids, user=user).select_related('food_item', 'restaurant')
 
     if not cart_items.exists():
         return Response({"detail": "No valid cart items found."}, status=status.HTTP_400_BAD_REQUEST)
-
-    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
 
     created_orders = []
     restaurant_orders = {}
@@ -813,72 +804,35 @@ def place_order_api(request):
     for cart in cart_items:
         try:
             restaurant = cart.restaurant
-            with transaction.atomic():
-                if restaurant.id not in restaurant_orders:
-                    order = Order.objects.create(
-                        user=user,
-                        restaurant=restaurant,
-                        order_date=timezone.now(),
-                        payment_method=payment_method,
-                        latitude=lat_dec,
-                        longitude=lon_dec,
-                        delivery_charge=del_charge_dec
-                    )
-                    restaurant_orders[restaurant.id] = order
-                    created_orders.append(order)
-                else:
-                    order = restaurant_orders[restaurant.id]
-
-                OrderItem.objects.create(
-                    order=order,
-                    food_item=cart.food_item,
-                    quantity=cart.quantity,
-                    price_at_order=cart.food_item.price or Decimal('0.00')
-                )
-                order.update_total_price()
-                order.total_price = (order.total_price or Decimal(
-                    '0.00')) + (order.delivery_charge or Decimal('0.00'))
-                order.save(update_fields=['total_price'])
-
-                candidates = Order.objects.select_for_update().filter(
+            if restaurant.id not in restaurant_orders:
+                order = Order.objects.create(
+                    user=user,
                     restaurant=restaurant,
-                    assigned=True,
-                    status='WAITING_FOR_DELIVERY',
-                    deliveryman__isnull=False
-                ).select_related('deliveryman')
+                    order_date=timezone.now(),
+                    payment_method=payment_method,
+                    latitude=lat_dec,
+                    longitude=lon_dec,
+                    delivery_charge=del_charge_dec,
+                    customer_location=customer_location  # <--- SAVE THE FIELD
+                )
+                restaurant_orders[restaurant.id] = order
+                created_orders.append(order)
+            else:
+                order = restaurant_orders[restaurant.id]
 
-                assigned_deliveryman = None
-                for cand in candidates:
-                    dm = cand.deliveryman
-                    if not dm:
-                        continue
-                    dm_status = DeliverymanStatus.objects.select_for_update().filter(deliveryman=dm).first()
-                    if not dm_status or not bool(dm_status.on_delivery):
-                        assigned_deliveryman = dm
-                        break
-
-                if assigned_deliveryman:
-                    order.deliveryman = assigned_deliveryman
-                    order.assigned = True
-                    order.status = 'WAITING_FOR_DELIVERY'
-                    order.save(update_fields=[
-                               'deliveryman', 'assigned', 'status'])
-
-                    # TRIGGER WEBSOCKET FOR CURRENT DELIVERY AFTER ASSIGNMENT
-                    try:
-                        from channels.layers import get_channel_layer
-                        from asgiref.sync import async_to_sync
-                        channel_layer = get_channel_layer()
-                        async_to_sync(channel_layer.group_send)(
-                            f"deliveryman_{assigned_deliveryman.pk}",
-                            {"type": "current_delivery_update", "order_id": order.pk}
-                        )
-                    except Exception as exc:
-                        errors.append({"channel_error": str(exc)})
+            OrderItem.objects.create(
+                order=order,
+                food_item=cart.food_item,
+                quantity=cart.quantity,
+                price_at_order=cart.food_item.price or Decimal('0.00')
+            )
+            order.update_total_price()
+            order.total_price = (order.total_price or Decimal(
+                '0.00')) + (order.delivery_charge or Decimal('0.00'))
+            order.save(update_fields=['total_price'])
 
         except Exception as exc:
-            errors.append(
-                {"cart_id": getattr(cart, 'cart_id', None), "error": str(exc)})
+            errors.append({"cart_id": cart.cart_id, "error": str(exc)})
 
     cart_items.delete()
 
@@ -896,6 +850,8 @@ def place_order_api(request):
                     order.delivery_charge if order.delivery_charge is not None else "0.00")
                 serialized[idx]['total_price'] = str(
                     order.total_price if order.total_price is not None else "0.00")
+                # <--- INCLUDE IN RESPONSE
+                serialized[idx]['customer_location'] = order.customer_location
         except Exception:
             pass
 
@@ -909,6 +865,7 @@ def place_order_api(request):
             "payment_method": getattr(order, "payment_method", None),
             "latitude": str(getattr(order, "latitude", None)),
             "longitude": str(getattr(order, "longitude", None)),
+            "customer_location": order.customer_location,  # <--- SAVE TO DB LOG
         }
         for order in created_orders
     ]
@@ -921,11 +878,14 @@ def place_order_api(request):
     except Exception as exc:
         errors.append({"channel_error": str(exc)})
 
-    return Response({
-        "message": "Order(s) placed successfully." if created_orders else "Order placement failed.",
-        "orders": serialized,
-        "errors": errors
-    }, status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR)
+    return Response(
+        {
+            "message": "Order(s) placed successfully." if created_orders else "Order placement failed.",
+            "orders": serialized,
+            "errors": errors
+        },
+        status=status.HTTP_201_CREATED if created_orders else status.HTTP_500_INTERNAL_SERVER_ERROR
+    )
 
 
 @api_view(['POST'])
@@ -1111,24 +1071,79 @@ def set_order_waiting_for_delivery_api(request):
         return Response({"detail": "order_id is required."}, status=status.HTTP_400_BAD_REQUEST)
 
     Order = apps.get_model("merchant", "Order")
+    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
+    Deliveryman = apps.get_model("merchant", "Deliveryman")
+    OrderItem = apps.get_model("merchant", "OrderItem")
+
     try:
-        order = Order.objects.get(pk=order_id)
+        order = Order.objects.select_related('restaurant').get(pk=order_id)
     except Order.DoesNotExist:
         return Response({"detail": f"Order with id {order_id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
 
     if order.status == 'WAITING_FOR_DELIVERY':
         return Response({"detail": "Order is already WAITING_FOR_DELIVERY. Cannot change."}, status=status.HTTP_400_BAD_REQUEST)
 
+    assigned_deliveryman = None
+    try:
+        candidates = Order.objects.select_related('deliveryman').filter(
+            restaurant=order.restaurant,
+            assigned=True,
+            status='WAITING_FOR_DELIVERY',
+            deliveryman__isnull=False
+        )
+        for cand in candidates:
+            dm = getattr(cand, 'deliveryman', None)
+            if not dm:
+                continue
+            dm_status = DeliverymanStatus.objects.filter(
+                deliveryman=dm).first()
+            if not dm_status or not bool(dm_status.on_delivery):
+                assigned_deliveryman = dm
+                break
+    except Exception:
+        assigned_deliveryman = None
+
+    if assigned_deliveryman:
+        order.deliveryman = assigned_deliveryman
+        order.assigned = True
+        order.status = 'WAITING_FOR_DELIVERY'
+        order.save(update_fields=['deliveryman', 'assigned', 'status'])
+
+        payload_for_dm = {
+            "type": "delivery_assignment",
+            "order": {"order_id": order.pk},
+            "deliveryman": {
+                "id": getattr(assigned_deliveryman, 'pk', None),
+                "firstname": getattr(assigned_deliveryman, 'Firstname', ''),
+                "lastname": getattr(assigned_deliveryman, 'Lastname', ''),
+            },
+            "assigned_at": timezone.now().isoformat(),
+        }
+
+        try:
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f"deliveryman_{assigned_deliveryman.pk}",
+                {"type": "current_delivery_update", "order_id": order.pk}
+            )
+            async_to_sync(channel_layer.group_send)(
+                f"deliveryman_{assigned_deliveryman.pk}",
+                {"type": "notify", "payload": payload_for_dm}
+            )
+        except Exception:
+            pass
+
+        return Response({
+            "detail": f"Order #{order.pk} assigned to deliveryman #{assigned_deliveryman.pk} automatically."
+        }, status=status.HTTP_200_OK)
+
     order.status = 'WAITING_FOR_DELIVERY'
     order.save(update_fields=['status'])
 
-    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
-    Deliveryman = apps.get_model("merchant", "Deliveryman")
-
     eligible_status_qs = DeliverymanStatus.objects.filter(
         online=True, on_delivery=False).select_related('deliveryman')
-    eligible_deliverymen = [
-        ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and ds.deliveryman.approved]
+    eligible_deliverymen = [ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and getattr(
+        ds.deliveryman, 'approved', False)]
 
     order_items = []
     for oi in order.order_items.select_related('food_item').all():
@@ -1140,8 +1155,10 @@ def set_order_waiting_for_delivery_api(request):
         })
 
     user_obj = getattr(order, 'user', None)
-    phone = getattr(user_obj, 'phone', None) or getattr(
-        user_obj, 'phone_number', None) if user_obj else None
+    phone = None
+    if user_obj:
+        phone = getattr(user_obj, 'phone', None) or getattr(
+            user_obj, 'phone_number', None)
 
     payload = {
         "type": "delivery_notification",
@@ -1165,6 +1182,7 @@ def set_order_waiting_for_delivery_api(request):
     }
 
     channel_layer = get_channel_layer()
+    notified = 0
     for dm in eligible_deliverymen:
         group_name = f"deliveryman_{dm.pk}"
         try:
@@ -1172,11 +1190,12 @@ def set_order_waiting_for_delivery_api(request):
                 group_name,
                 {"type": "notify", "payload": payload}
             )
+            notified += 1
         except Exception:
             pass
 
     return Response({
-        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {len(eligible_deliverymen)} deliverymen."
+        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {notified} deliverymen."
     }, status=status.HTTP_200_OK)
 
 
@@ -1210,7 +1229,6 @@ def deliveryman_accept_order_api(request):
             order.assigned = True
             order.save(update_fields=['deliveryman', 'assigned'])
 
-            # TRIGGER WEBSOCKET FOR CURRENT DELIVERY AFTER ACCEPT
             try:
                 from channels.layers import get_channel_layer
                 from asgiref.sync import async_to_sync
@@ -1221,6 +1239,21 @@ def deliveryman_accept_order_api(request):
                 )
             except:
                 pass
+
+        additionally_assigned_ids = []
+        with transaction.atomic():
+            candidate_qs = Order.objects.select_for_update().filter(
+                restaurant=order.restaurant,
+                status='WAITING_FOR_DELIVERY',
+                assigned=False,
+                deliveryman__isnull=True
+            ).exclude(pk=order.pk).order_by('order_date')
+            for candidate in candidate_qs:
+                if not candidate.assigned and candidate.deliveryman is None:
+                    candidate.deliveryman = deliveryman
+                    candidate.assigned = True
+                    candidate.save(update_fields=['deliveryman', 'assigned'])
+                    additionally_assigned_ids.append(candidate.pk)
 
     except Order.DoesNotExist:
         return Response({"detail": "Order not found."}, status=404)
@@ -1255,7 +1288,34 @@ def deliveryman_accept_order_api(request):
                 }
             }
         )
+
+        for added_id in additionally_assigned_ids:
+            extra_payload = {
+                "type": "delivery_assignment",
+                "order": {"order_id": added_id},
+                "deliveryman": {
+                    "id": deliveryman.pk,
+                    "firstname": deliveryman.Firstname,
+                    "lastname": deliveryman.Lastname,
+                },
+                "assigned_at": timezone.now().isoformat(),
+            }
+            async_to_sync(channel_layer.group_send)(
+                f"deliveryman_{deliveryman.pk}",
+                {"type": "notify", "payload": extra_payload}
+            )
+            async_to_sync(channel_layer.group_send)(
+                "deliverymen",
+                {
+                    "type": "check_picked",
+                    "payload": {
+                        "order_id": added_id,
+                        "picked_by": deliveryman.pk,
+                        "picked_at": timezone.now().isoformat(),
+                    }
+                }
+            )
     except:
         pass
 
-    return Response({"success": True, "data": payload})
+    return Response({"success": True, "data": {"requested_order": order.pk, "also_assigned_order_ids": additionally_assigned_ids, "deliveryman_id": deliveryman.pk}})

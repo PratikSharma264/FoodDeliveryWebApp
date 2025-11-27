@@ -537,6 +537,8 @@ class DeliverymanConsumer(WebsocketConsumer):
             },
             "assigned": getattr(order_obj, 'assigned', False),
             "assigned_to_other_deliveryman": getattr(order_obj, 'assigned_to_other_deliveryman', False),
+            # <--- APPENDED FIELD
+            "customer_location": getattr(order_obj, 'customer_location', '')
         }
 
     def notify(self, event):
@@ -771,6 +773,8 @@ class CurrentDeliveryConsumer(AsyncWebsocketConsumer):
                     "email": getattr(user_obj, 'email', '') if user_obj else '',
                     "phone": phone,
                 },
+                # <--- APPENDED FIELD
+                "customer_location": getattr(order_obj, 'customer_location', '')
             }
 
         # Fetch queryset asynchronously
