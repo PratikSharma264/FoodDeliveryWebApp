@@ -1229,7 +1229,6 @@ def deliveryman_accept_order_api(request):
             order.assigned = True
             order.save(update_fields=['deliveryman', 'assigned'])
 
-            # TRIGGER WEBSOCKET FOR CURRENT DELIVERY AFTER ACCEPT
             try:
                 from channels.layers import get_channel_layer
                 from asgiref.sync import async_to_sync
@@ -1240,6 +1239,21 @@ def deliveryman_accept_order_api(request):
                 )
             except:
                 pass
+
+        additionally_assigned_ids = []
+        with transaction.atomic():
+            candidate_qs = Order.objects.select_for_update().filter(
+                restaurant=order.restaurant,
+                status='WAITING_FOR_DELIVERY',
+                assigned=False,
+                deliveryman__isnull=True
+            ).exclude(pk=order.pk).order_by('order_date')
+            for candidate in candidate_qs:
+                if not candidate.assigned and candidate.deliveryman is None:
+                    candidate.deliveryman = deliveryman
+                    candidate.assigned = True
+                    candidate.save(update_fields=['deliveryman', 'assigned'])
+                    additionally_assigned_ids.append(candidate.pk)
 
     except Order.DoesNotExist:
         return Response({"detail": "Order not found."}, status=404)
@@ -1274,7 +1288,34 @@ def deliveryman_accept_order_api(request):
                 }
             }
         )
+
+        for added_id in additionally_assigned_ids:
+            extra_payload = {
+                "type": "delivery_assignment",
+                "order": {"order_id": added_id},
+                "deliveryman": {
+                    "id": deliveryman.pk,
+                    "firstname": deliveryman.Firstname,
+                    "lastname": deliveryman.Lastname,
+                },
+                "assigned_at": timezone.now().isoformat(),
+            }
+            async_to_sync(channel_layer.group_send)(
+                f"deliveryman_{deliveryman.pk}",
+                {"type": "notify", "payload": extra_payload}
+            )
+            async_to_sync(channel_layer.group_send)(
+                "deliverymen",
+                {
+                    "type": "check_picked",
+                    "payload": {
+                        "order_id": added_id,
+                        "picked_by": deliveryman.pk,
+                        "picked_at": timezone.now().isoformat(),
+                    }
+                }
+            )
     except:
         pass
 
-    return Response({"success": True, "data": payload})
+    return Response({"success": True, "data": {"requested_order": order.pk, "also_assigned_order_ids": additionally_assigned_ids, "deliveryman_id": deliveryman.pk}})
