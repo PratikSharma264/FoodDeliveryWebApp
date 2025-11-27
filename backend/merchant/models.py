@@ -327,6 +327,7 @@ class Order(models.Model):
         choices=PAYMENT_CHOICES,
         default='CashOnDelivery'
     )
+    customer_location = models.CharField(max_length=255, null=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True)
     delivery_charge = models.DecimalField(

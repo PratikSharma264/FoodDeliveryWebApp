@@ -963,6 +963,8 @@ def deliveryman_delivery_requests_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
+            # <--- APPENDED FIELD
+            "customer_location": getattr(order_obj, 'customer_location', '')
         }
 
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
@@ -1089,7 +1091,6 @@ def deliveryman_current_delivery_json_view(request):
         user_obj = getattr(order_obj, 'user', None)
         phone = _get_user_phone(user_obj)
         rest = getattr(order_obj, 'restaurant', None)
-
         restaurant_user_data = None
         if rest and getattr(rest, 'user', None):
             ru = rest.user
@@ -1148,6 +1149,8 @@ def deliveryman_current_delivery_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
+            # <--- APPENDED FIELD
+            "customer_location": getattr(order_obj, 'customer_location', '')
         }
 
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
