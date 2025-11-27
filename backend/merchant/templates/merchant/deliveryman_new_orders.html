@@ -1,6 +1,10 @@
 {% extends "merchant/deliveryman_templates_base.html" %}
 {% load static %}
-{% block styles %}<link rel="stylesheet" href="{% static 'css/deliveryman_new_orders.css' %}">{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+<link rel="stylesheet" href="{% static 'css/deliveryman_new_orders.css' %}">
+{% endblock %}
 {% block activate_new_orders %}active{% endblock %}
  {% block headcontent %}
         <div id="head-content">
@@ -28,11 +32,26 @@
       </div>
     </div>
   </div>
+  <div id="currently-assigned-notice" class="hidden">
+    <div id="notice-info-wrapper"><div id="notice-info">
+      <div id="info-header">
+        <p><span><i class="fa-solid fa-circle-exclamation"></i></span>You are already assigned for the delivery.<span></span></p>
+        <div>
+          <span>(Note:</span>
+          <br/>
+          <span> a)You will receive all the further requests send by the restaurant till you are out for the delivery.</span>
+          <br/>
+         <span>b)You can accept other orders once you have delivered the current request.)</span> 
+        </div>
+      </div>
+    </div></div>
+    
+  </div>
 <!-- <div id="container-body" class="order-list"></div> -->
 {% endblock %}
 {% block scripts %}
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
 
   <script> 
     function getCookie(name) {

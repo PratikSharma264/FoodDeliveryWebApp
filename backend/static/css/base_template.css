@@ -446,6 +446,10 @@ a#logowrapper-link {
   gap: 30px;
 }
 
+#all-wrapper {
+  position: relative;
+}
+
 /* ---------------------------------------- */
 
 /* errors */

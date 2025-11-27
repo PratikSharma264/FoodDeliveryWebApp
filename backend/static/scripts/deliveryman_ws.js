@@ -35,7 +35,7 @@ function onMessage(evt) {
 
       if (msg.type === "chat") {
         newDeliveryCount++;
-        countElement.innerHTML = newDeliveryCountCount;
+        countElement.innerHTML = newDeliveryCount;
         showNotification();
         document.title = `🔔 New Delivery Request Received`;
         setTimeout(() => { document.title = "Delivery Request"; }, 2000);
