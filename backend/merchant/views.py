@@ -33,6 +33,11 @@ from decimal import Decimal
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
 
 def profile_none_required(view_func):
     @wraps(view_func)
@@ -1218,3 +1223,63 @@ def current_delivery_websocket_view(request):
 #         "online": [f"{d.Firstname} {d.Lastname}" for d in online_deliverymen],
 #         "offline": [f"{d.Firstname} {d.Lastname}" for d in offline_deliverymen],
 #     })
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def bulk_update_order_status_api(request):
+    order_ids = request.data.get('order_ids')
+
+    if not order_ids or not isinstance(order_ids, (list, tuple)):
+        return Response(
+            {"detail": "'order_ids' is required and must be a list."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    try:
+        order_ids = [int(i) for i in order_ids]
+    except:
+        return Response(
+            {"detail": "'order_ids' must contain only integers."},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    new_status = "OUT_FOR_DELIVERY"
+    updated = []
+    not_found = []
+    errors = []
+
+    for oid in order_ids:
+        try:
+            order = Order.objects.get(pk=oid)
+        except Order.DoesNotExist:
+            not_found.append(oid)
+            continue
+
+        try:
+            order.status = new_status
+            order.save()
+
+            deliveryman = order.deliveryman
+            if deliveryman:
+                dm_status, _ = DeliverymanStatus.objects.get_or_create(
+                    deliveryman=deliveryman)
+                dm_status.on_delivery = True
+                dm_status.save()
+
+            updated.append(oid)
+        except Exception as exc:
+            errors.append({oid: str(exc)})
+
+    response_data = {
+        "updated_order_ids": updated,
+        "not_found_order_ids": not_found,
+        "errors": errors,
+        "detail": f"Processed {len(order_ids)} order(s): {len(updated)} updated, {len(not_found)} not found, {len(errors)} errors."
+    }
+
+    if updated:
+        return Response(response_data, status=status.HTTP_200_OK)
+    if not_found and not updated:
+        return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+    return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
