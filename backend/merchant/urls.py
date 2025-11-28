@@ -68,5 +68,7 @@ urlpatterns = [
     path('current-delivery-websocket/', views.current_delivery_websocket_view,
          name="current-delivery-websocket"),
     path('api/update-order-out-for-delivery-status/',
-         views.bulk_update_order_status_api, name="bulk-update-order-status-api")
+         views.bulk_update_order_status_api, name="bulk-update-order-status-api"),
+    path('api/update-order-delivered-status/',
+         views.archive_and_delete_order_api, name="archive-and-delete-order-api")
 ]

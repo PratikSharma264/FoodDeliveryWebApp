@@ -17,7 +17,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import EmailMessage
 from django.contrib.auth.tokens import default_token_generator
-from .models import Merchant, Deliveryman, Restaurant, FoodItem, GoToDashClickCheck, Order
+from .models import Merchant, Deliveryman, Restaurant, FoodItem, GoToDashClickCheck, Order, OrderHistory, OrderItemHistory, DeliverymanStatus
 from django.contrib.auth.forms import SetPasswordForm
 from django.http import Http404, JsonResponse
 from functools import wraps
@@ -28,15 +28,13 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models import Prefetch, Q
 from decimal import Decimal
 from django.apps import apps
-from decimal import Decimal
-
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from django.db import transaction
 
 
 def profile_none_required(view_func):
@@ -1027,14 +1025,6 @@ def deliveryman_current_delivery_json_view(request):
         "last_updated": status_obj.last_updated.isoformat() if status_obj.last_updated else None,
     }
 
-    if status_obj.on_delivery:
-        return JsonResponse({
-            "status": status_data,
-            "has_current_assignments": False,
-            "orders": [],
-            "returned_at": timezone.now().isoformat(),
-        }, encoder=DjangoJSONEncoder, safe=False)
-
     def _safe_image_url(obj, attr_name):
         f = getattr(obj, attr_name, None)
         if f:
@@ -1155,7 +1145,6 @@ def deliveryman_current_delivery_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
-            # <--- APPENDED FIELD
             "customer_location": getattr(order_obj, 'customer_location', '')
         }
 
@@ -1165,7 +1154,7 @@ def deliveryman_current_delivery_json_view(request):
     ).filter(
         deliveryman=deliveryman,
         assigned=True,
-        status="WAITING_FOR_DELIVERY"
+        status__in=["WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"]
     ).order_by('order_date')
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
@@ -1283,3 +1272,75 @@ def bulk_update_order_status_api(request):
     if not_found and not updated:
         return Response(response_data, status=status.HTTP_404_NOT_FOUND)
     return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def archive_and_delete_order_api(request):
+    order_id = request.data.get('order_id')
+    if order_id is None:
+        return Response({"detail": "'order_id' is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        order_id = int(order_id)
+    except (ValueError, TypeError):
+        return Response({"detail": "'order_id' must be an integer."}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        order = Order.objects.select_related('user', 'restaurant', 'deliveryman').prefetch_related(
+            'order_items__food_item'
+        ).get(pk=order_id)
+    except Order.DoesNotExist:
+        return Response({"detail": f"Order with id {order_id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+
+    try:
+        with transaction.atomic():
+            oh = OrderHistory.objects.create(
+                user=order.user,
+                restaurant=order.restaurant,
+                total_price=order.total_price,
+                deliveryman=order.deliveryman,
+                order_date=order.order_date,
+                status='DELIVERED',
+                payment_method=order.payment_method,
+                customer_location=order.customer_location,
+                latitude=order.latitude,
+                longitude=order.longitude,
+                delivery_charge=order.delivery_charge
+            )
+
+            for oi in order.order_items.all():
+                OrderItemHistory.objects.create(
+                    order_history=oh,
+                    food_item=oi.food_item,
+                    quantity=oi.quantity,
+                    price_at_order=oi.price_at_order if oi.price_at_order is not None else oi.food_item.price
+                )
+
+            deliveryman = order.deliveryman
+            order.delete()
+
+            if deliveryman:
+                has_remaining_orders = Order.objects.filter(
+                    deliveryman=deliveryman,
+                    assigned=True,
+                    status='OUT_FOR_DELIVERY'
+                ).exists()
+
+                if not has_remaining_orders:
+                    dm_status, _ = DeliverymanStatus.objects.get_or_create(
+                        deliveryman=deliveryman)
+                    dm_status.on_delivery = False
+                    dm_status.save()
+
+    except Exception as exc:
+        return Response(
+            {"detail": "Failed to archive and delete order.",
+             "error": str(exc)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+    return Response(
+        {"detail": f"Order {order_id} archived to OrderHistory #{oh.pk} and deleted from Orders."},
+        status=status.HTTP_200_OK
+    )

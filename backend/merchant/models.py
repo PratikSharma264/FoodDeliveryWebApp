@@ -368,13 +368,6 @@ class Order(models.Model):
 
 
 class OrderHistory(models.Model):
-    original_order = models.OneToOneField(
-        'Order',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='order_history_record'
-    )
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='order_history')
     restaurant = models.ForeignKey(
@@ -398,7 +391,7 @@ class OrderHistory(models.Model):
         ordering = ['-order_date']
 
     def __str__(self):
-        return f"OrderHistory #{self.pk} (from Order #{self.original_order_id if self.original_order else 'N/A'})"
+        return f"OrderHistory #{self.pk} (User: {self.user.username if self.user else 'N/A'})"
 
 
 class OrderItemHistory(models.Model):
