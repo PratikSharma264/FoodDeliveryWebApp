@@ -367,6 +367,62 @@ class Order(models.Model):
         return f"Order #{self.pk} by {self.user.get_full_name() or self.user.username}"
 
 
+class OrderHistory(models.Model):
+    original_order = models.OneToOneField(
+        'Order',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='order_history_record'
+    )
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name='order_history')
+    restaurant = models.ForeignKey(
+        'Restaurant', on_delete=models.CASCADE, related_name='order_history')
+    total_price = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True)
+    deliveryman = models.ForeignKey(
+        'Deliveryman', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_history')
+    order_date = models.DateTimeField(default=timezone.now)
+    status = models.CharField(max_length=20, default='DELIVERED')
+    payment_method = models.CharField(max_length=50, default='CashOnDelivery')
+    customer_location = models.CharField(max_length=255, null=True, blank=True)
+    latitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(
+        max_digits=9, decimal_places=6, null=True, blank=True)
+    delivery_charge = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00, null=True, blank=True)
+
+    class Meta:
+        ordering = ['-order_date']
+
+    def __str__(self):
+        return f"OrderHistory #{self.pk} (from Order #{self.original_order_id if self.original_order else 'N/A'})"
+
+
+class OrderItemHistory(models.Model):
+    order_history = models.ForeignKey(
+        OrderHistory, on_delete=models.CASCADE, related_name='order_items_history')
+    food_item = models.ForeignKey(
+        'FoodItem', on_delete=models.CASCADE, related_name='order_items_history')
+    quantity = models.PositiveIntegerField(default=1)
+    price_at_order = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Order Item History"
+        verbose_name_plural = "Order Items History"
+
+    def save(self, *args, **kwargs):
+        if self.price_at_order is None:
+            self.price_at_order = self.food_item.price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.food_item.name} x{self.quantity} (OrderHistory #{self.order_history.pk})"
+
+
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, related_name='order_items')
