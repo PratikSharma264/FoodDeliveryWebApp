@@ -409,12 +409,12 @@ currentDeliveries.forEach((delivery, index) => {
       <p><span> Total: </span> NPR ${delivery.total_price} (excluding delivery charge)</p>
       <p><span> Delivery charge: </span> NPR ${delivery.delivery_charge} (excluding delivery charge)</p>
       <p><span>Status:</span> <strong>${delivery.status}</strong></p>
-      <div>
+      <div class="button-container">
       <button class="view-delivery-btn" data-id="${delivery.order_id}">View Delivery</button>
       ${
       delivery.status === 'OUT_FOR_DELIVERY' ? 
-      <button class="view-delivery-btn" data-id={delivery.order_id}>Delivery Completed</button> :
-      null
+      `<button class="view-delivery-btn" data-id=${delivery.order_id}>Delivery Completed</button> `:
+      ""
       }
       </div>
     </div>
@@ -444,7 +444,8 @@ currentDeliveries.forEach((delivery, index) => {
 
   const btn = divBlock.querySelector(".fullpageview-btn");
   const orderDetails = divBlock.querySelector(".order-details");
-  const deliveryCompleted = divBlock.querySelector(`[data-id = ${delivery.order_id}]`);
+  const deliveryCompleted = divBlock.querySelector(`[data-id="${delivery.order_id}"]`);
+
 
   btn.addEventListener("click", () => {
     orderDetails.classList.toggle("show");
