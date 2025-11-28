@@ -970,14 +970,15 @@ def deliveryman_delivery_requests_json_view(request):
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(status='WAITING_FOR_DELIVERY').order_by('-order_date')
+    ).filter(status='WAITING_FOR_DELIVERY',    assigned=False,
+             deliveryman__isnull=True).order_by('-order_date')
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
-    assigned_to_me_flag = order_qs.filter(
+    assigned_to_me_flag = Order.objects.filter(
         deliveryman=deliveryman, assigned=True).exists()
 
-    assigned_order = order_qs.filter(
+    assigned_order = Order.objects.filter(
         deliveryman=deliveryman, assigned=True).select_related('restaurant').first()
     assigned_restaurant = None
     if assigned_order and getattr(assigned_order, 'restaurant', None):
