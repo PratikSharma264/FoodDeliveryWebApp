@@ -864,7 +864,7 @@ class DeliverymanConsumer(WebsocketConsumer):
 
         try:
             action = data.get("action") if isinstance(data, dict) else None
-            if action in ("refresh", "send_current_delivery", "current_delivery_update"):
+            if action == "refresh":
                 try:
                     self.send_current_delivery()
                 except Exception:
@@ -1124,12 +1124,14 @@ class DeliverymanConsumer(WebsocketConsumer):
 
             if status_obj.on_delivery:
                 try:
-                    self.send(text_data=json.dumps({
+                    payload = {
                         "status": status_data,
                         "has_current_assignments": False,
                         "orders": [],
                         "returned_at": timezone.now().isoformat()
-                    }, cls=DjangoJSONEncoder))
+                    }
+                    self.send(text_data=json.dumps(
+                        {"action": "send_current_delivery", "data": [payload]}, cls=DjangoJSONEncoder))
                 except Exception:
                     pass
                 return
@@ -1142,12 +1144,14 @@ class DeliverymanConsumer(WebsocketConsumer):
             detailed_orders = [self._build_order_detail(o) for o in qs]
 
             try:
-                self.send(text_data=json.dumps({
+                payload = {
                     "status": status_data,
                     "has_current_assignments": bool(qs),
                     "orders": detailed_orders,
                     "returned_at": timezone.now().isoformat()
-                }, cls=DjangoJSONEncoder))
+                }
+                self.send(text_data=json.dumps(
+                    {"action": "send_current_delivery", "data": [payload]}, cls=DjangoJSONEncoder))
             except Exception:
                 pass
 
@@ -1189,6 +1193,7 @@ class DeliverymanConsumer(WebsocketConsumer):
             orders_qs = Order.objects.select_related(
                 "user", "restaurant").filter(pk__in=order_ids)
             orders_map = {o.pk: o for o in orders_qs}
+            restaurant_orders = {}
             for oid in order_ids:
                 order = orders_map.get(oid)
                 if not order:
@@ -1207,31 +1212,43 @@ class DeliverymanConsumer(WebsocketConsumer):
                         restaurant_location = {
                             "latitude": rlat, "longitude": rlng}
 
-                payload = {
-                    "type": "deliveryman_location",
-                    "deliveryman_id": getattr(self, "deliveryman_pk", None),
+                user_payload = {
                     "order_id": oid,
+                    "restaurant_id": getattr(rest, "pk", None),
                     "lat": lat,
                     "lng": lng,
                     "accuracy": accuracy,
-                    "restaurant_location": restaurant_location
+                    "restaurant_location": restaurant_location,
+                    "deliveryman_id": getattr(self, "deliveryman_pk", None)
                 }
 
                 if rest and getattr(rest, "pk", None) is not None:
-                    try:
-                        group = f"restaurant_{rest.pk}"
-                        async_to_sync(self.channel_layer.group_send)(
-                            group, {"type": "deliveryman_location_message", "payload": payload})
-                    except Exception:
-                        pass
+                    restaurant_orders.setdefault(rest.pk, []).append({
+                        "order_id": oid,
+                        "lat": lat,
+                        "lng": lng,
+                        "accuracy": accuracy
+                    })
 
                 if user and getattr(user, "id", None) is not None:
                     try:
-                        group_u = f"user_{user.id}"
+                        per_user_payload = {
+                            "action": "deliveryman_location", "data": [user_payload]}
+                        per_order_group = f"user_{user.id}_order_{oid}"
                         async_to_sync(self.channel_layer.group_send)(
-                            group_u, {"type": "deliveryman_location_message", "payload": payload})
+                            per_order_group, {"type": "deliveryman_location_message", "payload": per_user_payload})
                     except Exception:
                         pass
+
+            for rest_pk, orders_list in restaurant_orders.items():
+                try:
+                    rest_payload = {"action": "deliveryman_location", "data": [
+                        {"restaurant_id": rest_pk, "orders": orders_list, "deliveryman_id": getattr(self, "deliveryman_pk", None)}]}
+                    group = f"restaurant_{rest_pk}"
+                    async_to_sync(self.channel_layer.group_send)(
+                        group, {"type": "deliveryman_location_message", "payload": rest_payload})
+                except Exception:
+                    pass
         except Exception:
             pass
 
