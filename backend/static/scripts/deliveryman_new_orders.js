@@ -82,17 +82,12 @@ navigator.geolocation.getCurrentPosition(
       orderWrapper.style.overflow = "auto";
       notice.classList.add("hidden");
     }
-    console.log("here1");
-    try{
+
       if (newDeliveryRequest.length === 0) {
-      console.log("here2");
       console.log("emptyOrder =", emptyOrder);
       emptyOrder.style.display = "flex";
       return;
     } 
-    } catch(e){
-      console.error("error:",e);
-    }
    
     emptyOrder.style.display = "none";
 

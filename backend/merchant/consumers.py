@@ -1160,8 +1160,12 @@ class DeliverymanConsumer(WebsocketConsumer):
 
     def handle_deliveryman_location(self, data):
         try:
-            raw_ids = data.get("order_ids") or data.get(
-                "order_ids_list") or data.get("orders")
+            actual_data = data.get("data") # yo chai hoina
+            raw_ids = actual_data.get("order_ids") # [54,55]  (yesma loop garnu)
+            action = data.get("action") # 'deliveryman_location' (yo nai type rakhera client ra merchant lai send garnu)
+            lat = actual_data.get("lat") # 27.6692992
+            lng = actual_data.get("lng") # 85.3016576
+            accuracy = actual_data.get("accuracy") # 11187.273444238337
             if not raw_ids:
                 return
             order_ids = []

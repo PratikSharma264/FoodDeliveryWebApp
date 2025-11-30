@@ -31,7 +31,7 @@ function connectWS(){
 function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
-
+    console.log("msg:",msg);
      if (msg.type === "chat") {
         orderCount++;
         countElement.innerHTML = orderCount;
