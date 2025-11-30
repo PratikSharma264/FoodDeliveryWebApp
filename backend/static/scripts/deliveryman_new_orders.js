@@ -1,6 +1,6 @@
 
 document.addEventListener('DOMContentLoaded',()=>{
-   const orderWrapper = document.querySelector("#current-order-wrapper");
+   const orderWrapper = document.querySelector("#current-order-list");
    const notice = document.querySelector("#currently-assigned-notice");
   const emptyOrder = document.querySelector("#emptyorder");
   let newDeliveryRequest= [];
@@ -32,6 +32,7 @@ navigator.geolocation.getCurrentPosition(
       console.log("data:", assigned_to_me);
       console.log("response:", orders);
       assigned = assigned_to_me;
+      newDeliveryRequest = [];
       if(orders && orders.length>0){
         orders.forEach((item)=> newDeliveryRequest.unshift(item));
       }
@@ -40,13 +41,13 @@ navigator.geolocation.getCurrentPosition(
       showError({ message: `${err?.message}` });
     }
   }
-  getCurrentOrders();
 
-  setTimeout(()=>{
-      if(newDeliveryRequest && newDeliveryRequest.length>0){
+  async function initDeliveryRequest(){
+    await getCurrentOrders();
     renderOrders();
   }
-  },500);
+
+  initDeliveryRequest();
 
   if(window.registerWSHandler){
     window.registerWSHandler("deliveryRequestHandler" , (msg)=>{
@@ -59,7 +60,6 @@ navigator.geolocation.getCurrentPosition(
             }
           }, 1000);
               newDeliveryRequest.unshift(...msg.data);
-              orderWrapper.innerHTML = "";
               renderOrders();
             } catch(err){
               console.error("error:",err);
@@ -70,14 +70,9 @@ navigator.geolocation.getCurrentPosition(
   }
 
   function renderOrders() {
-    if (!newDeliveryRequest.length) {
-      emptyOrder.style.display = "flex";
-      return;
-    }
-    emptyOrder.style.display = "none";
-
     orderWrapper.innerHTML = "";
-    if(assigned){
+    console.log("len:",newDeliveryRequest.length);
+     if(assigned){
       orderWrapper.style.height = "60vh";
       orderWrapper.style.overflow = "hidden";
       notice.classList.remove("hidden");
@@ -86,6 +81,21 @@ navigator.geolocation.getCurrentPosition(
       orderWrapper.style.overflow = "auto";
       notice.classList.add("hidden");
     }
+    console.log("here1");
+    try{
+      if (newDeliveryRequest.length === 0) {
+      console.log("here2");
+      console.log("emptyOrder =", emptyOrder);
+      emptyOrder.style.display = "flex";
+      return;
+    } 
+    } catch(e){
+      console.error("error:",e);
+    }
+   
+    emptyOrder.style.display = "none";
+
+
     console.log("deliveriesreq:",newDeliveryRequest);
     newDeliveryRequest.forEach((order) => {
       const orderCard = document.createElement("div");
@@ -235,6 +245,7 @@ navigator.geolocation.getCurrentPosition(
             if (res.ok) {
               // order.status = "";
               assigned = true;
+              orderWrapper.innerHTML = "";
               newDeliveryRequest = newDeliveryRequest.filter(del => parseInt(del.restaurant_id) !== parseInt(resId) );
               renderOrders();
             }
@@ -251,92 +262,3 @@ navigator.geolocation.getCurrentPosition(
 
 
 })
-
-
-
-
-// /---------------- tala ko simple simulation ------------------------------/
-// const orders = [
-//   {
-//     id: 1,
-//     customer: "Sita Rai",
-//     address: "Patan, Lalitpur",
-//     items: "Burger, Coke",
-//     phone_number : 9876543210,
-//     time: "2 min ago",
-//   },
-//   {
-//     id: 2,
-//     customer: "Ramesh Shrestha",
-//     address: "Baneshwor",
-//     items: "Pizza",
-//     phone_number : 9876543210,
-//     time: "5 min ago",
-//   },
-// ];
-
-// document.addEventListener("DOMContentLoaded", () => renderOrders());
-
-// function renderOrders() {
-//   const container = document.querySelector(".order-list");
-//   container.innerHTML = "";
-//   if(orders.length === 0){
-//     container.innerHTML = `<p id="noneworder"><span><i class="fa-solid fa-circle-xmark"></i></span> No new orders at the moment. </p>`;
-//     return;
-//   }
-//   orders.forEach((order) => {
-//     if(order.status === "accepted") return;
-//     const div = document.createElement("div");
-//     div.className = "summary-card";
-//     div.innerHTML = `
-//       <h3>Order #${order.id}</h3>
-//       <p><strong>Customer:</strong> ${order.customer}</p>
-//       <p><strong>Address:</strong> ${order.address}</p>
-//       <p><strong>Phone number:</strong> ${order.phone_number}</p>
-//       <p><em>${order.time}</em></p>
-//       <div class="order-actions">
-//         <button class="accept-btn" data-id="${order.id}">Accept</button>
-//         <button class="cancel-btn" data-id="${order.id}">Cancel</button>
-//       </div>
-//     `;
-//     container.appendChild(div);
-//   });
-//   bindAcceptButtons();
-// }
-
-// function bindAcceptButtons(){
-//     const buttons = document.querySelectorAll(".accept-btn");
-//     buttons.forEach((btn)=>{
-//         btn.addEventListener('click',(e)=>{
-//             const id = parseInt(btn.getAttribute("data-id"));
-//             acceptOrder(id);
-//         })
-//     })
-// }
-
-// function acceptOrder(id) {
-//     const order = orders.find(o => o.id === id);
-//     if(order){
-//         order.status = "accepted";
-//         alert(`You accepted Order #${id} for ${order.customer}`);
-//         renderOrders();
-//     }
-// }
-
-// setTimeout(() => {
-//   const newOrder = {
-//     id: 3,
-//     customer: "Laxmi Thapa",
-//     address: "Jawalakhel",
-//     items: "Momo",
-//     time: "Just now",
-//   };
-//   orders.push(newOrder);
-//   renderOrders();
-
-//   showNotification();
-
-//   document.getElementById("new-order-count").textContent = orders.length;
-//   document.title = "🔔 New Order! | GrubMate";
-// }, 3000);
-

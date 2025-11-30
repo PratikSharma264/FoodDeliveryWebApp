@@ -6,181 +6,66 @@ document.addEventListener("DOMContentLoaded",()=>{
   let res_lat = 27.7172;
   let res_lng = 85.324 ;
   let assigned_to_res = "Pizza Palace";
-  let map;
-  let layersControl,routingControl;
-  // const currentDeliveries = [{
-  //     "order_assigned": true,
-  //     "order_id": 78,
-  //     "user": {
-  //       "id": 41,
-  //       "username": "bas@gmail.com",
-  //       "first_name": "",
-  //       "last_name": "",
-  //       "email": "bas@gmail.com"
-  //     },
-  //     "restaurant_id": 1,
-  //     "restaurant": {
-  //       "id": 1,
-  //       "user": null,
-  //       "restaurant_name": "Pizza Palace",
-  //       "owner_name": "John Doe",
-  //       "owner_email": null,
-  //       "owner_contact": "9812345678",
-  //       "restaurant_address": "123 Main St, Cityville",
-  //       "latitude": 27.7172,
-  //       "longitude": 85.324,
-  //       "cuisine": "Italian",
-  //       "description": null,
-  //       "restaurant_type": "local",
-  //       "profile_picture": null,
-  //       "cover_photo": null,
-  //       "menu": null,
-  //       "created_at": "2025-07-31T10:14:24+00:00",
-  //       "approved": false
-  //     },
-  //     "is_transited": false,
-  //     "delivery_charge": "30.00",
-  //     "total_price": "9.99",
-  //     "order_items": [
-  //       {
-  //         "id": 73,
-  //         "food_item": 1,
-  //         "food_item_name": "Margherita Pizza",
-  //         "restaurant_name": "Pizza Palace",
-  //         "food_item_image": null,
-  //         "quantity": 1,
-  //         "price_at_order": "9.99",
-  //         "total_price": 9.99
-  //       }
-  //     ],
-  //     "order_date": "2025-11-24T10:01:24.814986+00:00",
-  //     "status": "WAITING_FOR_DELIVERY",
-  //     "payment_method": "cashondelivery",
-  //     "latitude": "27.917245",
-  //     "longitude": "85.423960",
-  //     "customer_details": {
-  //       "email": "basnet2@gmail.com",
-  //       "phone": "9876543210"
-  //     }
-  //   },
-  //   {
-  //     "order_assigned": true,
-  //     "order_id": 79,
-  //     "user": {
-  //       "id": 41,
-  //       "username": "net2@gmail.com",
-  //       "first_name": "",
-  //       "last_name": "",
-  //       "email": "net2@gmail.com"
-  //     },
-  //     "restaurant_id": 1,
-  //     "restaurant": {
-  //       "id": 1,
-  //       "user": null,
-  //       "restaurant_name": "Pizza Palace",
-  //       "owner_name": "John Doe",
-  //       "owner_email": null,
-  //       "owner_contact": "9812345678",
-  //       "restaurant_address": "123 Main St, Cityville",
-  //       "latitude": 27.73885,
-  //       "longitude": 85.4776091,
-  //       "cuisine": "Italian",
-  //       "description": null,
-  //       "restaurant_type": "local",
-  //       "profile_picture": null,
-  //       "cover_photo": null,
-  //       "menu": null,
-  //       "created_at": "2025-07-31T10:14:24+00:00",
-  //       "approved": false
-  //     },
-  //     "is_transited": false,
-  //     "delivery_charge": "30.00",
-  //     "total_price": "11.99",
-  //     "order_items": [
-  //       {
-  //         "id": 74,
-  //         "food_item": 2,
-  //         "food_item_name": "Pepperoni Pizza",
-  //         "restaurant_name": "Pizza Palace",
-  //         "food_item_image": null,
-  //         "quantity": 1,
-  //         "price_at_order": "11.99",
-  //         "total_price": 11.99
-  //       }
-  //     ],
-  //     "order_date": "2025-11-24T10:33:25.377004+00:00",
-  //     "status": "WAITING_FOR_DELIVERY",
-  //     "payment_method": "cashondelivery",
-  //     "latitude": "27.717245",
-  //     "longitude": "85.323960",
-  //     "customer_details": {
-  //       "email": "basnet2@gmail.com",
-  //       "phone": "9876543210"
-  //     }
-  //   },
-  //   {
-  //     "order_assigned": true,
-  //     "order_id": 80,
-  //     "user": {
-  //       "id": 41,
-  //       "username": "gasnet2@gmail.com",
-  //       "first_name": "",
-  //       "last_name": "",
-  //       "email": "gasnet2@gmail.com"
-  //     },
-  //     "restaurant_id": 1,
-  //     "restaurant": {
-  //       "id": 1,
-  //       "user": null,
-  //       "restaurant_name": "Pizza Palace",
-  //       "owner_name": "John Doe",
-  //       "owner_email": null,
-  //       "owner_contact": "9812345678",
-  //       "restaurant_address": "123 Main St, Cityville",
-  //       "latitude": 27.4172,
-  //       "longitude": 85.524,
-  //       "cuisine": "Italian",
-  //       "description": null,
-  //       "restaurant_type": "local",
-  //       "profile_picture": null,
-  //       "cover_photo": null,
-  //       "menu": null,
-  //       "created_at": "2025-07-31T10:14:24+00:00",
-  //       "approved": false
-  //     },
-  //     "is_transited": false,
-  //     "delivery_charge": "30.00",
-  //     "total_price": "9.99",
-  //     "order_items": [
-  //       {
-  //         "id": 75,
-  //         "food_item": 1,
-  //         "food_item_name": "Margherita Pizza",
-  //         "restaurant_name": "Pizza Palace",
-  //         "food_item_image": null,
-  //         "quantity": 1,
-  //         "price_at_order": "9.99",
-  //         "total_price": 9.99
-  //       }
-  //     ],
-  //     "order_date": "2025-11-24T11:34:02.708066+00:00",
-  //     "status": "WAITING_FOR_DELIVERY",
-  //     "payment_method": "cashondelivery",
-  //     "latitude": "27.717245",
-  //     "longitude": "85.323960",
-  //     "customer_details": {
-  //       "email": "basnet2@gmail.com",
-  //       "phone": "9876543210"
-  //     }
-  //   }];
-  const currentDeliveries = [];
+  let map = null;
+  let layersControl;
+  let currentDeliveries = [];
   let isassigned = null;
+  let locationInterval = null;
+  let deliveryman_status = null;
+  let deliveryRoutes = {};
+  let deliverymanMarker = null;
+  let deliverymanAccCircle = null;
 
   const deliveryItemContainer = document.querySelector("#delivery-list-container");
   const deliveryInfoContainer = document.querySelector("#delivery-info-container");
   const outForDeliveryBtn = document.querySelector("#out-for-deliverybtn");
   const mapBox = document.querySelector("#map"); 
   const mapErrContainer = document.querySelector("#map-error");
+
+
+  function startSendingLocation() {
+            const currentOrderIds = currentDeliveries.map(d => d.order_id);
+            sendWSMessage("deliveryman_location", {
+                order_ids: currentOrderIds,
+                lat: delman_lat,
+                lng: delman_lng,
+                accuracy: delman_acc
+            });
+
+           console.log("WS Location Sent:", {
+                currentOrderIds,
+                delman_lat,
+                delman_lng
+            });
+  }
+
+  function updateDeliveryManLocation(){
+    if(!map) return;
+    if(!deliverymanMarker && !deliverymanAccCircle) return;
+        deliverymanMarker.setLatLng([delman_lat, delman_lng]);
+        deliverymanAccCircle.setLatLng([delman_lat, delman_lng]);
+        deliverymanAccCircle.setRadius(delman_acc);
+  }
+
+  function setLocationInterval(){
+    if(locationInterval){
+        clearInterval(locationInterval);
+      }
+
+     locationInterval = setInterval(() => {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            delman_lat = latitude;
+            delman_lng = longitude;
+            delman_acc = accuracy;
+            updateDeliveryManLocation();
+            if(deliveryman_status === "OUT_FOR_DELIVERY"){
+              startSendingLocation();
+            }
+        });
+    }, 5000); 
+}
+
 
 
     async function getCurrentDeliveries() {
@@ -194,12 +79,12 @@ document.addEventListener("DOMContentLoaded",()=>{
     
       const data = await response.json();
       console.log("data:", data);
-      const {has_current_assignments,assigned_restaurant,latitude,longitude,orders} = data;
+      const {has_current_assignments,assigned_restaurant,latitude,longitude,orders,status} = data;
       isassigned = has_current_assignments;
       res_lat = latitude;
       res_lng=longitude;
       assigned_to_res = assigned_restaurant;
-      // isassigned = true;
+      deliveryman_status = status.on_delivery ? "OUT_FOR_DELIVERY":"IDLE";
       if(orders && orders.length>0){
         orders.forEach((item)=> currentDeliveries.push(item));
       }
@@ -209,13 +94,20 @@ document.addEventListener("DOMContentLoaded",()=>{
     }
   }
 
-  getCurrentDeliveries();
-
-   setTimeout(()=>{
+async function initDeliveries() {
+    await getCurrentDeliveries();
     renderDeliveries();
-  },500);
+}
+
+initDeliveries();
+
 
   function renderDeliveries(){
+    deliveryItemContainer.innerHTML = ""; 
+    if(!currentDeliveries.length && map){
+      map.remove();
+      map = null;
+    }
     if(!currentDeliveries.length && !isassigned){
       mapErrContainer.classList.remove("hidden");
       mapErrContainer.style.display = "flex";
@@ -231,6 +123,16 @@ document.addEventListener("DOMContentLoaded",()=>{
       `;
       return;
     }
+    if(deliveryman_status === "OUT_FOR_DELIVERY"){
+      outForDeliveryBtn.disabled = true;
+      outForDeliveryBtn.style.opacity = "0.5";
+      outForDeliveryBtn.style.cursor = "not-allowed";
+      startSendingLocation();
+    } else{
+      outForDeliveryBtn.disabled = false;
+      outForDeliveryBtn.style.opacity = "1";
+      outForDeliveryBtn.style.cursor = "pointer";
+    }
      mapErrContainer.classList.add("hidden");
       mapErrContainer.style.display = "none";
       mapBox.style.display = "inline-block";
@@ -245,6 +147,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     delman_lng = longitude;
     delman_acc = accuracy;
     initMap();
+    setLocationInterval();
   },
   (err)=>{
     console.error("error:",err);
@@ -289,8 +192,12 @@ document.addEventListener("DOMContentLoaded",()=>{
     </div>
   `;
 }
-
 function initMap(){
+   if(map) {
+        map.remove(); 
+        map = null;
+    }
+
    const osmLight = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 maxZoom: 19,
                 attribution: "&copy; OpenStreetMap contributors",
@@ -316,7 +223,11 @@ if(!map) return;
   layersControl = L.control.layers(baseLayersGrp);
     layersControl.addTo(map);
 
-     L.circle([delman_lat, delman_lng], {
+    deliverymanMarker = L.marker([delman_lat,delman_lng])
+    .bindPopup("Your Location",{ autoClose: true })
+    .addTo(map);
+
+    deliverymanAccCircle = L.circle([delman_lat, delman_lng], {
         radius: delman_acc,
         color: "#136AEC",
         fillColor: "#136AEC",
@@ -336,16 +247,14 @@ if(!map) return;
               show:false,
               createMarker: function(i,waypoint,n){
                 let marker;
-                if(i===0){
-                  marker = L.marker(waypoint.latLng);
-                  marker.bindPopup("Your Location").openPopup();
-                } else if(i===1){
+                if(i===1){
                   marker = L.marker(waypoint.latLng,{icon:iconRed});
                   marker.bindPopup(`${assigned_to_res}`).openPopup();
                 }
                 return marker;
               }
             }).addTo(map);
+
 
 //             currentDeliveries.forEach((delivery,index) => {
 //                 setTimeout(()=>{
@@ -363,7 +272,6 @@ if(!map) return;
 //     }).addTo(map);
 //   },index*2000);
 //   });
-
 }
 
 function showDeliveryRoute(delivery) {
@@ -371,11 +279,11 @@ function showDeliveryRoute(delivery) {
     iconUrl: ICON_GREEN,
      iconSize: [35, 50],
    });
-  if (routingControl) {
-    map.removeControl(routingControl);
-  }
+  if (deliveryRoutes[delivery.order_id]) {
+        map.removeControl(deliveryRoutes[delivery.order_id]);
+    }
 
-  routingControl = L.Routing.control({
+  const routingControl = L.Routing.control({
     waypoints: [
       L.latLng(res_lat, res_lng),       
       L.latLng(parseFloat(delivery.latitude), parseFloat(delivery.longitude))
@@ -391,6 +299,7 @@ function showDeliveryRoute(delivery) {
       return marker;
     }
   }).addTo(map);
+  deliveryRoutes[delivery.order_id] = routingControl;
 }
 
 
@@ -413,7 +322,7 @@ currentDeliveries.forEach((delivery, index) => {
       <button class="view-delivery-btn" data-id="${delivery.order_id}">View Delivery</button>
       ${
       delivery.status === 'OUT_FOR_DELIVERY' ? 
-      `<button class="view-delivery-btn" data-id=${delivery.order_id}>Delivery Completed</button> `:
+      `<button class="delivery-completed-btn" data-id=${delivery.order_id}>Delivery Completed</button> `:
       ""
       }
       </div>
@@ -444,7 +353,7 @@ currentDeliveries.forEach((delivery, index) => {
 
   const btn = divBlock.querySelector(".fullpageview-btn");
   const orderDetails = divBlock.querySelector(".order-details");
-  const deliveryCompleted = divBlock.querySelector(`[data-id="${delivery.order_id}"]`);
+  const deliveryCompleted = divBlock.querySelector(".delivery-completed-btn");
 
 
   btn.addEventListener("click", () => {
@@ -462,20 +371,45 @@ currentDeliveries.forEach((delivery, index) => {
   // delivery complete vaye paxi ko lagi:
   if(deliveryCompleted){
     deliveryCompleted.addEventListener('click',(e)=>{
-
-          async function deliveryCompletedFunc() {
+    const order_id = delivery.order_id;
+    async function deliveryCompletedFunc() {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/json/deliveryman-completed-delivery/`,
+        `http://127.0.0.1:8000/api/update-order-delivered-status/`,
         {
-          credentials:"include"
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+             "X-CSRFToken": csrftoken
+          },
+          credentials:"include",
+          body: JSON.stringify({order_id:order_id})
         }
       );
+      if(response.ok){
+        currentDeliveries = currentDeliveries.filter(del => parseInt(del.order_id) !== parseInt(delivery.order_id));
+        if (map && deliveryRoutes[order_id]) {
+          map.removeControl(deliveryRoutes[order_id]);
+          delete deliveryRoutes[order_id];
+        }
+        showError({message: `successfully delivered ${delivery.order_id}`},"success");
+        if(currentDeliveries.length === 0){
+          deliveryman_status = "IDLE";
+          isassigned = false;
+          clearInterval(locationInterval);
+          console.log("All orders delivered. Stopped sending live location....");
+          showError({message: `successfully delivered all the orders`},"success");
+        }
+        renderDeliveries();
+      }
     } catch (err) {
       console.error("error: ", err);
-      showError({ message: `${err?.message}` });
+      showError({ message: `${err?.message}` },"error");
     }
-  }
+    }
+    if(window.confirm(`Are you sure delivery of order ${order_id} is completed?`)){
+      deliveryCompletedFunc();
+    }
     })
   }
 
@@ -491,17 +425,40 @@ currentDeliveries.forEach((delivery, index) => {
       
     async function outForDeliveryRequest() {
     try {
+      const order_ids = currentDeliveries.map((del)=> del.order_id);
+      if(!order_ids || order_ids.length === 0){
+        showError({message:`You don't currently have any delivery!`},"error");
+        return;
+      }
+      console.log("order_ids:",order_ids);
       const response = await fetch(
-        `http://127.0.0.1:8000/json/deliveryman-out-delivery/`,
+        `http://127.0.0.1:8000/api/update-order-out-for-delivery-status/`,
         {
-          credentials:"include"
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+             "X-CSRFToken": csrftoken
+          },
+          credentials:"include",
+          body: JSON.stringify({order_ids:order_ids})
         }
       );
+      if(response.ok){
+        console.log("Out for delivery successful. Starting live location sending...");
+        currentDeliveries.forEach((del)=>{
+          del.status = "OUT_FOR_DELIVERY"
+        });
+        deliveryman_status = "OUT_FOR_DELIVERY";
+        renderDeliveries();
+        // startSendingLocation(); 
+      }
+
     } catch (err) {
       console.error("error: ", err);
       showError({ message: `${err?.message}` });
     }
   }
+  outForDeliveryRequest();
     })
   }
 

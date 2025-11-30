@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   }
 });
 
-function showError(messageobj, condition) {
+function showError(messageobj, condition = "error") {
   const key = Object.keys(messageobj);
   const cardContainer = document.getElementById("card-container");
   const cardDiv = document.createElement("div");
