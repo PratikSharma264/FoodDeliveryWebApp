@@ -58,6 +58,7 @@ document.addEventListener("DOMContentLoaded",()=>{
             delman_lat = latitude;
             delman_lng = longitude;
             delman_acc = accuracy;
+            console.log("lat,lng:",delman_lat,delman_lng);
             updateDeliveryManLocation();
             if(deliveryman_status === "OUT_FOR_DELIVERY"){
               startSendingLocation();
@@ -72,6 +73,7 @@ document.addEventListener("DOMContentLoaded",()=>{
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/json/deliveryman-current-delivery/`,
+        // `http://192.168.18.53:8000/json/deliveryman-current-delivery/`,
         {
           credentials:"include"
         }
@@ -100,6 +102,22 @@ async function initDeliveries() {
 }
 
 initDeliveries();
+
+
+  if(window.registerWSHandler){
+    window.registerWSHandler("autoAssignDeliveryHandler" , (msg)=>{
+      console.log("msg:",msg);
+     if (msg.action === "send_current_delivery") {
+            try{
+              currentDeliveries.unshift(...msg.data);
+              showError({message:"New Delivery assigned!"},"success");
+              renderDeliveries();
+            } catch(err){
+              console.error("error:",err);
+            }
+          }
+    })
+  }
 
 
   function renderDeliveries(){
@@ -376,6 +394,7 @@ currentDeliveries.forEach((delivery, index) => {
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/api/update-order-delivered-status/`,
+        // `http://192.168.18.53:8000/api/update-order-delivered-status/`,
         {
           method: "POST",
           headers: {
@@ -433,6 +452,7 @@ currentDeliveries.forEach((delivery, index) => {
       console.log("order_ids:",order_ids);
       const response = await fetch(
         `http://127.0.0.1:8000/api/update-order-out-for-delivery-status/`,
+        // `http://192.168.18.53:8000/api/update-order-out-for-delivery-status/`,
         {
           method: "POST",
           headers: {

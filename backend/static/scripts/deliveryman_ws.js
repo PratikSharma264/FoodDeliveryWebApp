@@ -4,7 +4,7 @@ let newDeliveryCount = 0;
 const countElement = document.querySelector(".new-order-count");
 countElement.innerHTML = newDeliveryCount;
 const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
-const wsUrl = `${wsProtocol}://${location.host}/ws/deliveryman/`;
+const wsUrl = `${wsProtocol}://${window.location.host}/ws/deliveryman/`;
 
 const wsHandlers = {};
 

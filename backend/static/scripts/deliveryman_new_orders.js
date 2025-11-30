@@ -22,6 +22,7 @@ navigator.geolocation.getCurrentPosition(
     try {
       const response = await fetch(
         `http://127.0.0.1:8000/json/deliveryman-delivery-requests/`,
+        // `http://192.168.18.53:8000/json/deliveryman-delivery-requests/`,
         {
           credentials:"include"
         }
@@ -235,6 +236,7 @@ navigator.geolocation.getCurrentPosition(
             try{
                const res = await fetch(
               `http://127.0.0.1:8000/api/deliveryman-accept-order/`,
+              // `http://192.168.18.53:8000/api/deliveryman-accept-order/`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json","X-CSRFToken": csrftoken },
