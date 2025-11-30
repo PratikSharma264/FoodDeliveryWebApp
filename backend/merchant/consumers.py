@@ -1160,51 +1160,67 @@ class DeliverymanConsumer(WebsocketConsumer):
 
     def handle_deliveryman_location(self, data):
         try:
-            actual_data = data.get("data") # yo chai hoina
-            raw_ids = actual_data.get("order_ids") # [54,55]  (yesma loop garnu)
-            action = data.get("action") # 'deliveryman_location' (yo nai type rakhera client ra merchant lai send garnu)
-            lat = actual_data.get("lat") # 27.6692992
-            lng = actual_data.get("lng") # 85.3016576
-            accuracy = actual_data.get("accuracy") # 11187.273444238337
-            if not raw_ids:
-                return
-            order_ids = []
-            if isinstance(raw_ids, list):
-                for v in raw_ids:
+            payload_list = []
+            if isinstance(data, dict) and isinstance(data.get("data"), list):
+                for item in data.get("data") or []:
+                    if not isinstance(item, dict):
+                        continue
+                    oid = item.get("order_id") or item.get(
+                        "orderId") or item.get("id")
+                    lat = item.get("lat") if item.get(
+                        "lat") is not None else item.get("latitude")
+                    lng = item.get("lng") if item.get(
+                        "lng") is not None else item.get("longitude")
+                    acc = item.get("accuracy")
+                    if oid is None or lat is None or lng is None:
+                        continue
                     try:
-                        order_ids.append(int(v))
+                        oid = int(oid)
                     except Exception:
-                        pass
-            elif isinstance(raw_ids, str):
-                try:
-                    parsed = json.loads(raw_ids)
-                    if isinstance(parsed, list):
-                        for v in parsed:
-                            try:
-                                order_ids.append(int(v))
-                            except Exception:
-                                pass
-                except Exception:
-                    pass
-            lat = data.get("lat") if data.get(
-                "lat") is not None else data.get("latitude")
-            lng = data.get("lng") if data.get(
-                "lng") is not None else data.get("longitude")
-            accuracy = data.get("accuracy")
-            if not order_ids:
+                        continue
+                    payload_list.append(
+                        {"order_id": oid, "lat": lat, "lng": lng, "accuracy": acc})
+            else:
+                raw_ids = data.get("order_ids") or data.get(
+                    "orderIds") or data.get("orders")
+                lat = data.get("lat") if data.get(
+                    "lat") is not None else data.get("latitude")
+                lng = data.get("lng") if data.get(
+                    "lng") is not None else data.get("longitude")
+                acc = data.get("accuracy")
+                if isinstance(raw_ids, list) and lat is not None and lng is not None:
+                    for v in raw_ids:
+                        try:
+                            oid = int(v)
+                        except Exception:
+                            continue
+                        payload_list.append(
+                            {"order_id": oid, "lat": lat, "lng": lng, "accuracy": acc})
+            if not payload_list:
                 return
             Order = apps.get_model("merchant", "Order")
+            order_ids = list({p["order_id"] for p in payload_list})
             orders_qs = Order.objects.select_related(
                 "user", "restaurant").filter(pk__in=order_ids)
             orders_map = {o.pk: o for o in orders_qs}
-            restaurant_orders = {}
-            for oid in order_ids:
+            restaurant_groups = {}
+            deliveryman_id = getattr(self, "deliveryman_pk", None)
+            processed = []
+            for upd in payload_list:
+                oid = upd["order_id"]
+                lat = upd["lat"]
+                lng = upd["lng"]
+                accuracy = upd.get("accuracy")
                 order = orders_map.get(oid)
                 if not order:
                     continue
+                processed.append(oid)
                 rest = getattr(order, "restaurant", None)
                 user = getattr(order, "user", None)
-
+                try:
+                    order_detail = self._build_order_detail(order)
+                except Exception:
+                    order_detail = {"order_id": oid}
                 restaurant_location = None
                 if rest:
                     rlat = getattr(rest, "latitude", None)
@@ -1215,50 +1231,41 @@ class DeliverymanConsumer(WebsocketConsumer):
                     except Exception:
                         restaurant_location = {
                             "latitude": rlat, "longitude": rlng}
-
-                user_payload = {
-                    "order_id": oid,
-                    "restaurant_id": getattr(rest, "pk", None),
-                    "lat": lat,
-                    "lng": lng,
-                    "accuracy": accuracy,
-                    "restaurant_location": restaurant_location,
-                    "deliveryman_id": getattr(self, "deliveryman_pk", None)
-                }
-
-                if rest and getattr(rest, "pk", None) is not None:
-                    restaurant_orders.setdefault(rest.pk, []).append({
-                        "order_id": oid,
-                        "lat": lat,
-                        "lng": lng,
-                        "accuracy": accuracy
-                    })
-
+                user_payload = {"type": "deliveryman_location", "data": [
+                    {**order_detail, "lat": lat, "lng": lng, "accuracy": accuracy, "restaurant_location": restaurant_location, "deliveryman_id": deliveryman_id}]}
                 if user and getattr(user, "id", None) is not None:
                     try:
-                        per_user_payload = {
-                            "action": "deliveryman_location", "data": [user_payload]}
                         per_order_group = f"user_{user.id}_order_{oid}"
-                        async_to_sync(self.channel_layer.group_send)(
-                            per_order_group, {"type": "deliveryman_location_message", "payload": per_user_payload})
-                    except Exception:
-                        pass
-
-            for rest_pk, orders_list in restaurant_orders.items():
+                        async_to_sync(self.channel_layer.group_send)(per_order_group, {
+                            "type": "deliveryman_location_message", "payload": user_payload})
+                        print("sent deliveryman_location to",
+                              per_order_group, "order", oid)
+                    except Exception as e:
+                        print("error sending to user group", e)
+                if rest and getattr(rest, "pk", None) is not None:
+                    restaurant_groups.setdefault(rest.pk, []).append(
+                        {"order_id": oid, "lat": lat, "lng": lng, "accuracy": accuracy})
+            for rest_pk, orders_list in restaurant_groups.items():
                 try:
-                    rest_payload = {"action": "deliveryman_location", "data": [
-                        {"restaurant_id": rest_pk, "orders": orders_list, "deliveryman_id": getattr(self, "deliveryman_pk", None)}]}
+                    rest_payload = {"type": "deliveryman_location", "data": [
+                        {"restaurant_id": rest_pk, "orders": orders_list, "deliveryman_id": deliveryman_id}]}
                     group = f"restaurant_{rest_pk}"
                     async_to_sync(self.channel_layer.group_send)(
                         group, {"type": "deliveryman_location_message", "payload": rest_payload})
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                    print("sent deliveryman_location to", group,
+                          "orders", [o["order_id"] for o in orders_list])
+                except Exception as e:
+                    print("error sending to restaurant group", e)
+            print("Deliveryman location sent for orders:", processed)
+        except Exception as e:
+            print("handle_deliveryman_location error:", e)
 
     def deliveryman_location_message(self, event):
         try:
             payload = event.get("payload", {}) or {}
             self.send(text_data=json.dumps(payload, cls=DjangoJSONEncoder))
-        except Exception:
-            pass
+        except Exception as e:
+            try:
+                print("deliveryman_location_message error:", e)
+            except Exception:
+                pass
