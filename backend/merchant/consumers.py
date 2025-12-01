@@ -9,11 +9,47 @@ from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 
+#sandesh
+class ClientConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        order_id = self.scope['url_route']['kwargs']['order_id']
+        self.role = "client"
+        self.room_group_name = f"order_{order_id}"
+
+        await self.channel_layer.group_add(
+            self.room_group_name,
+            self.channel_name
+        )
+        await self.accept()
+
+        await self.send(text_data=json.dumps({
+            "type": "status",
+            "status": "connected"
+        }))
+
+    async def disconnect(self, code):
+        await self.channel_layer.group_discard(
+            self.room_group_name,
+            self.channel_name
+        )
+        print(f"Client disconnected from order {self.room_group_name} with code {code}")
+
+    #sandesh
+    async def deliveryman_location(self, event):
+        await self.send(text_data=json.dumps({
+            "type": "deliveryman_location",
+            "order_id": event["order_id"],
+            "lat": event["lat"],
+            "lng": event["lng"],
+            "accuracy": event["accuracy"],
+        }))
+
 
 class ChatConsumer(WebsocketConsumer):
-
     def connect(self):
-        self.room_group_name = "order"
+        restaurant_id = self.scope['url_route']['kwargs']['restaurant_id']
+        self.role = "restaurant"
+        self.room_group_name = f"restaurant_{restaurant_id}"
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name, self.channel_name)
         self.accept()
@@ -29,6 +65,80 @@ class ChatConsumer(WebsocketConsumer):
             self.room_group_name,
             {"type": "chat_message", "order": payload, "db_saved": [], "errors": []},
         )
+
+    # sandesh
+    def join_order_group(self,event):
+        order_id = event["order_id"]
+        async_to_sync(self.channel_layer.group_add)(
+            f"order_{order_id}",
+            self.channel_name
+        )
+        try:
+            payload_order = event.get("order")
+            payload_db_saved = event.get("db_saved", [])
+            errors = event.get("errors", [])
+            out_payload = {"type": "chat", "errors": errors, "success": True}
+            pks = []
+            if payload_db_saved:
+                for s in payload_db_saved:
+                    if isinstance(s, dict) and s.get("order_pk"):
+                        try:
+                            pks.append(int(s.get("order_pk")))
+                        except Exception:
+                            pass
+            if not pks and payload_order:
+                if isinstance(payload_order, list):
+                    for s in payload_order:
+                        if isinstance(s, dict) and (s.get("id") or s.get("pk") or s.get("order_pk")):
+                            try:
+                                pks.append(int(s.get("id") or s.get(
+                                    "pk") or s.get("order_pk")))
+                            except Exception:
+                                pass
+            if pks:
+                Order, OrderItem, Restaurant = self._get_models()
+                qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
+                    Prefetch(
+                        "order_items", queryset=OrderItem.objects.select_related("food_item"))
+                ).filter(pk__in=pks)
+                detailed = [self._build_order_detail(o) for o in qs]
+                # API nested result is in key "data" and is a list
+                out_payload["data"] = detailed
+            elif payload_order:
+                if isinstance(payload_order, dict):
+                    payload_list = [payload_order]
+                else:
+                    payload_list = payload_order if isinstance(
+                        payload_order, list) else []
+                normalized = [self._normalize_serialized_order(
+                    s) for s in payload_list]
+                out_payload["data"] = normalized
+            else:
+                out_payload["data"] = []
+
+            # ensure JSON encodable for Decimal/datetime etc.
+            self.send(text_data=json.dumps(out_payload, cls=DjangoJSONEncoder))
+        except Exception:
+            try:
+                self.send(text_data=json.dumps(
+                    {"type": "chat", "errors": ["consumer_error"], "success": False, "data": []}))
+            except Exception:
+                pass
+
+        # self.send(text_data=json.dumps(
+        #     {"type":"new_order", "order_id": order_id,}
+        # ))
+
+    #sandesh
+    def deliveryman_location(self, event):
+        print("merchantconhere")
+        self.send(text_data=json.dumps({
+            "type": "deliveryman_location",
+            "order_id": event["order_id"],
+            "lat": event["lat"],
+            "lng": event["lng"],
+            "accuracy": event["accuracy"],
+        }))
 
     def _get_models(self):
         Order = apps.get_model("merchant", "Order")
@@ -264,59 +374,66 @@ class ChatConsumer(WebsocketConsumer):
 
         }
 
-    def chat_message(self, event):
-        try:
-            payload_order = event.get("order")
-            payload_db_saved = event.get("db_saved", [])
-            errors = event.get("errors", [])
-            # match API outer structure + chronology: {"success": True, "data": [...]}
-            out_payload = {"type": "chat", "errors": errors, "success": True}
-            pks = []
-            if payload_db_saved:
-                for s in payload_db_saved:
-                    if isinstance(s, dict) and s.get("order_pk"):
-                        try:
-                            pks.append(int(s.get("order_pk")))
-                        except Exception:
-                            pass
-            if not pks and payload_order:
-                if isinstance(payload_order, list):
-                    for s in payload_order:
-                        if isinstance(s, dict) and (s.get("id") or s.get("pk") or s.get("order_pk")):
-                            try:
-                                pks.append(int(s.get("id") or s.get(
-                                    "pk") or s.get("order_pk")))
-                            except Exception:
-                                pass
-            if pks:
-                Order, OrderItem, Restaurant = self._get_models()
-                qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
-                    Prefetch(
-                        "order_items", queryset=OrderItem.objects.select_related("food_item"))
-                ).filter(pk__in=pks)
-                detailed = [self._build_order_detail(o) for o in qs]
-                # API nested result is in key "data" and is a list
-                out_payload["data"] = detailed
-            elif payload_order:
-                if isinstance(payload_order, dict):
-                    payload_list = [payload_order]
-                else:
-                    payload_list = payload_order if isinstance(
-                        payload_order, list) else []
-                normalized = [self._normalize_serialized_order(
-                    s) for s in payload_list]
-                out_payload["data"] = normalized
-            else:
-                out_payload["data"] = []
+    # def chat_message(self, event):
+    #     try:
+    #         payload_order = event.get("order")
+    #         payload_db_saved = event.get("db_saved", [])
+    #         errors = event.get("errors", [])
+    #         # match API outer structure + chronology: {"success": True, "data": [...]}
+    #         out_payload = {"type": "chat", "errors": errors, "success": True}
+    #         pks = []
+    #         if payload_db_saved:
+    #             for s in payload_db_saved:
+    #                 if isinstance(s, dict) and s.get("order_pk"):
+    #                     try:
+    #                         pks.append(int(s.get("order_pk")))
+    #                     except Exception:
+    #                         pass
+    #         if not pks and payload_order:
+    #             if isinstance(payload_order, list):
+    #                 for s in payload_order:
+    #                     if isinstance(s, dict) and (s.get("id") or s.get("pk") or s.get("order_pk")):
+    #                         try:
+    #                             pks.append(int(s.get("id") or s.get(
+    #                                 "pk") or s.get("order_pk")))
+    #                         except Exception:
+    #                             pass
+    #         if pks:
+    #             Order, OrderItem, Restaurant = self._get_models()
+    #             qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
+    #                 Prefetch(
+    #                     "order_items", queryset=OrderItem.objects.select_related("food_item"))
+    #             ).filter(pk__in=pks)
+    #             detailed = [self._build_order_detail(o) for o in qs]
+    #             # API nested result is in key "data" and is a list
+    #             out_payload["data"] = detailed
+    #         elif payload_order:
+    #             if isinstance(payload_order, dict):
+    #                 payload_list = [payload_order]
+    #             else:
+    #                 payload_list = payload_order if isinstance(
+    #                     payload_order, list) else []
+    #             normalized = [self._normalize_serialized_order(
+    #                 s) for s in payload_list]
+    #             out_payload["data"] = normalized
+    #         else:
+    #             out_payload["data"] = []
 
-            # ensure JSON encodable for Decimal/datetime etc.
-            self.send(text_data=json.dumps(out_payload, cls=DjangoJSONEncoder))
-        except Exception:
-            try:
-                self.send(text_data=json.dumps(
-                    {"type": "chat", "errors": ["consumer_error"], "success": False, "data": []}))
-            except Exception:
-                pass
+    #         # ensure JSON encodable for Decimal/datetime etc.
+    #         self.send(text_data=json.dumps(out_payload, cls=DjangoJSONEncoder))
+    #     except Exception:
+    #         try:
+    #             self.send(text_data=json.dumps(
+    #                 {"type": "chat", "errors": ["consumer_error"], "success": False, "data": []}))
+    #         except Exception:
+    #             pass
+     
+    def deliveryman_location_message(self, event):
+        payload = event.get("payload", {})
+        self.send(text_data=json.dumps({
+            "type": "deliveryman_location",
+            "data": payload
+        }))
 
     def disconnect(self, close_code):
         try:
@@ -328,7 +445,9 @@ class ChatConsumer(WebsocketConsumer):
 
 class DeliverymanConsumer(WebsocketConsumer):
     def connect(self):
+        deliveryman_id = self.scope['url_route']['kwargs']['deliveryman_id']
         user = self.scope.get('user')
+        self.role = "deliveryman"
         if not user or not user.is_authenticated:
             self.close()
             return
@@ -391,19 +510,54 @@ class DeliverymanConsumer(WebsocketConsumer):
 
         try:
             action = data.get("action") if isinstance(data, dict) else None
-            if action == "refresh":
-                try:
-                    self.send_current_delivery()
-                except Exception:
-                    pass
-            elif action == "deliveryman_location":
+
+            if action == "deliveryman_location":
                 try:
                     self.handle_deliveryman_location(data)
                 except Exception:
                     pass
         except Exception:
             pass
+    
+    #sandesh
+    def direct_order_assignment(self, event):
+        order_id = event.get("order_id")
+        async_to_sync(self.channel_layer.group_add)(
+            f"order_{order_id}",
+            self.channel_name
+        )
+        def make_json_safe(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_safe(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_safe(i) for i in obj]
+            elif isinstance(obj, Decimal):
+                return str(obj)
+            return obj
+        safe_payload = make_json_safe(event.get("payload", {}))
+        self.send(text_data=json.dumps({
+            "type": "direct_order_assignment",
+            "data": safe_payload
+        }))
+    
+    #sandesh
+    def new_order_available(self, event):
+        def make_json_safe(obj):
+            if isinstance(obj, dict):
+                return {k: make_json_safe(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_json_safe(i) for i in obj]
+            elif isinstance(obj, Decimal):
+                return str(obj)
+            return obj
+        safe_payload = make_json_safe(event.get("payload", {}))
+        print("i was here")
+        self.send(text_data=json.dumps({
+            "type": "new_order_available",
+            "data": safe_payload
+        }))
 
+    
     def _get_models(self):
         Order = apps.get_model("merchant", "Order")
         OrderItem = apps.get_model("merchant", "OrderItem")
@@ -622,6 +776,7 @@ class DeliverymanConsumer(WebsocketConsumer):
             except Exception:
                 pass
 
+    
     def check_picked(self, event):
         payload = event.get("payload", {}) or {}
         try:
@@ -660,59 +815,103 @@ class DeliverymanConsumer(WebsocketConsumer):
                 "last_updated": status_obj.last_updated.isoformat() if getattr(status_obj, 'last_updated', None) else None
             }
 
+            payload_meta = {
+                "status": status_data,
+                "has_current_assignments": False,
+                "orders_count": 0,
+                "returned_at": timezone.now().isoformat()
+            }
             if status_obj.on_delivery:
                 try:
-                    payload = {
-                        "status": status_data,
-                        "has_current_assignments": False,
-                        "orders": [],
-                        "returned_at": timezone.now().isoformat()
+                    compat_msg = {
+                        "type": "chat",
+                        "action": "send_current_delivery",
+                        "data": [],       
+                        "meta": payload_meta
                     }
                     self.send(text_data=json.dumps(
-                        {"action": "send_current_delivery", "data": [payload]}, cls=DjangoJSONEncoder))
+                        compat_msg, cls=DjangoJSONEncoder))
+                except Exception:
+                    pass
+                return
+            qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
+                Prefetch(
+                    "order_items", queryset=OrderItem.objects.select_related("food_item"))
+            ).filter(
+                deliveryman=deliveryman, assigned=True, status="WAITING_FOR_DELIVERY"
+            ).order_by('-order_date')
+
+            latest = qs.first()
+            if not latest:
+                try:
+                    compat_msg = {
+                        "type": "chat",
+                        "action": "send_current_delivery",
+                        "data": [],
+                        "meta": payload_meta
+                    }
+                    self.send(text_data=json.dumps(
+                        compat_msg, cls=DjangoJSONEncoder))
+                except Exception:
+                    pass
+                try:
+                    self.__dict__.pop("_last_sent_order_pk", None)
                 except Exception:
                     pass
                 return
 
-            qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
-                Prefetch(
-                    "order_items", queryset=OrderItem.objects.select_related("food_item"))
-            ).filter(deliveryman=deliveryman, assigned=True, status="WAITING_FOR_DELIVERY").order_by('order_date')
-
-            detailed_orders = [self._build_order_detail(o) for o in qs]
-
+            latest_detail = self._build_order_detail(latest)
+            payload_meta["has_current_assignments"] = True
+            payload_meta["orders_count"] = 1
+            last_sent = getattr(self, "_last_sent_order_pk", None)
+            current_pk = latest.pk
+            if current_pk == last_sent:
+                return
+            self._last_sent_order_pk = current_pk
             try:
-                payload = {
-                    "status": status_data,
-                    "has_current_assignments": bool(qs),
-                    "orders": detailed_orders,
-                    "returned_at": timezone.now().isoformat()
+                combined_msg = {
+                    "type": "chat",
+                    "action": "send_current_delivery",
+                    "data": [latest_detail],
+                    "meta": payload_meta
                 }
                 self.send(text_data=json.dumps(
-                    {"action": "send_current_delivery", "data": [payload]}, cls=DjangoJSONEncoder))
+                    combined_msg, cls=DjangoJSONEncoder))
             except Exception:
                 pass
 
         except Exception:
             pass
 
+    #sandesh
     # def handle_deliveryman_location(self, data):
-    #     print(data)
     #     try:
-    #         actual_data = data.get("data") # yo chai hoina
-    #         raw_ids = actual_data.get("order_ids") # [54,55]  (yesma loop garnu)
-    #         action = data.get("action") # 'deliveryman_location' (yo nai type rakhera client ra merchant lai send garnu)
-    #         lat = actual_data.get("lat") # 27.6692992
-    #         lng = actual_data.get("lng") # 85.3016576
-    #         accuracy = actual_data.get("accuracy") # 11187.273444238337
+    #         actual_data = data.get("data")
+    #         if not actual_data:
+    #             return
+
+    #         raw_ids = actual_data.get("order_ids")
+    #         action = data.get("action")
+
+    #         # deliveryman location from actual_data (correct source)
+    #         lat = actual_data.get("lat")
+    #         lng = actual_data.get("lng")
+    #         accuracy = actual_data.get("accuracy")
+
+    #         print(lat)
+    #         print(lng)
+    #         print(accuracy)
+
     #         if not raw_ids:
     #             return
+
+    #         # parse order IDs
     #         order_ids = []
     #         if isinstance(raw_ids, list):
     #             for v in raw_ids:
     #                 try:
     #                     order_ids.append(int(v))
-    #                 except Exception:
+    #                 except:
     #                     pass
     #         elif isinstance(raw_ids, str):
     #             try:
@@ -721,40 +920,46 @@ class DeliverymanConsumer(WebsocketConsumer):
     #                     for v in parsed:
     #                         try:
     #                             order_ids.append(int(v))
-    #                         except Exception:
+    #                         except:
     #                             pass
-    #             except Exception:
+    #             except:
     #                 pass
-    #         lat = data.get("lat") if data.get(
-    #             "lat") is not None else data.get("latitude")
-    #         lng = data.get("lng") if data.get(
-    #             "lng") is not None else data.get("longitude")
-    #         accuracy = data.get("accuracy")
+
     #         if not order_ids:
     #             return
+    #         print("orderids:",order_ids)
     #         Order = apps.get_model("merchant", "Order")
-    #         orders_qs = Order.objects.select_related(
-    #             "user", "restaurant").filter(pk__in=order_ids)
+    #         orders_qs = (
+    #             Order.objects.select_related("user", "restaurant")
+    #             .filter(pk__in=order_ids)
+    #         )
     #         orders_map = {o.pk: o for o in orders_qs}
+
     #         restaurant_orders = {}
+
     #         for oid in order_ids:
     #             order = orders_map.get(oid)
     #             if not order:
     #                 continue
+
     #             rest = getattr(order, "restaurant", None)
     #             user = getattr(order, "user", None)
 
+    #             # restaurant lat/lng
     #             restaurant_location = None
     #             if rest:
     #                 rlat = getattr(rest, "latitude", None)
     #                 rlng = getattr(rest, "longitude", None)
     #                 try:
-    #                     restaurant_location = {"latitude": float(
-    #                         rlat) if rlat is not None else None, "longitude": float(rlng) if rlng is not None else None}
-    #                 except Exception:
+    #                     restaurant_location = {
+    #                         "latitude": float(rlat) if rlat is not None else None,
+    #                         "longitude": float(rlng) if rlng is not None else None
+    #                     }
+    #                 except:
     #                     restaurant_location = {
     #                         "latitude": rlat, "longitude": rlng}
 
+    #             # payload to send to user
     #             user_payload = {
     #                 "order_id": oid,
     #                 "restaurant_id": getattr(rest, "pk", None),
@@ -765,179 +970,87 @@ class DeliverymanConsumer(WebsocketConsumer):
     #                 "deliveryman_id": getattr(self, "deliveryman_pk", None)
     #             }
 
-    #             if rest and getattr(rest, "pk", None) is not None:
+    #             # SEND TO CLIENT (USER)
+    #             if user and getattr(user, "id", None):
+    #                 try:
+    #                     per_user_payload = {
+    #                         "action": "deliveryman_location",
+    #                         "data": [user_payload]
+    #                     }
+    #                     # group = f"user_{user.id}_order_{oid}"
+    #                     group = f"order_{oid}"
+    #                     async_to_sync(self.channel_layer.group_send)(
+    #                         group,
+    #                         {
+    #                             "type": "deliveryman_location_message",
+    #                             "payload": per_user_payload
+    #                         }
+    #                     )
+    #                 except:
+    #                     pass
+
+    #             # PREPARE FOR MERCHANT (restaurant)
+    #             if rest:
     #                 restaurant_orders.setdefault(rest.pk, []).append({
     #                     "order_id": oid,
     #                     "lat": lat,
     #                     "lng": lng,
-    #                     "accuracy": accuracy
+    #                     "accuracy": accuracy,
     #                 })
 
-    #             if user and getattr(user, "id", None) is not None:
-    #                 try:
-    #                     per_user_payload = {
-    #                         "action": "deliveryman_location", "data": [user_payload]}
-    #                     per_order_group = f"user_{user.id}_order_{oid}"
-    #                     async_to_sync(self.channel_layer.group_send)(
-    #                         per_order_group, {"type": "deliveryman_location_message", "payload": per_user_payload})
-    #                 except Exception:
-    #                     pass
-
+    #         # SEND TO MERCHANT (RESTAURANT)
+    #                 # SEND TO MERCHANT (RESTAURANT)
     #         for rest_pk, orders_list in restaurant_orders.items():
     #             try:
-    #                 rest_payload = {"action": "deliveryman_location", "data": [
-    #                     {"restaurant_id": rest_pk, "orders": orders_list, "deliveryman_id": getattr(self, "deliveryman_pk", None)}]}
+    #                 rest_payload = {
+    #                     "action": "deliveryman_location",
+    #                     "data": [{
+    #                         "restaurant_id": rest_pk,
+    #                         "deliveryman_id": getattr(self, "deliveryman_pk", None),
+    #                         # list of {order_id, lat, lng, accuracy}
+    #                         "orders": orders_list
+    #                     }]
+    #                 }
+
     #                 group = f"restaurant_{rest_pk}"
+
     #                 async_to_sync(self.channel_layer.group_send)(
-    #                     group, {"type": "deliveryman_location_message", "payload": rest_payload})
+    #                     group,
+    #                     {
+    #                         "type": "deliveryman_location_message",
+    #                         "payload": rest_payload
+    #                     }
+    #                 )
+
     #             except Exception:
     #                 pass
+
     #     except Exception:
     #         pass
 
+    #sandesh
     def handle_deliveryman_location(self, data):
-        try:
-            print(data)
-            actual_data = data.get("data")
-            if not actual_data:
-                return
+        order_ids = data.get("order_ids", [])
+        lat = data.get("lat")
+        lng = data.get("lng")
+        accuracy = data.get("accuracy")
 
-            raw_ids = actual_data.get("order_ids")
-            action = data.get("action", "deliveryman_location")
-
-            # deliveryman location from actual_data (correct source)
-            lat = actual_data.get("lat")
-            lng = actual_data.get("lng")
-            accuracy = actual_data.get("accuracy")
-
-            print(lat)
-            print(lng)
-            print(accuracy)
-
-            if not raw_ids:
-                return
-
-            # parse order IDs
-            order_ids = []
-            if isinstance(raw_ids, list):
-                for v in raw_ids:
-                    try:
-                        order_ids.append(int(v))
-                    except:
-                        pass
-            elif isinstance(raw_ids, str):
-                try:
-                    parsed = json.loads(raw_ids)
-                    if isinstance(parsed, list):
-                        for v in parsed:
-                            try:
-                                order_ids.append(int(v))
-                            except:
-                                pass
-                except:
-                    pass
-
-            if not order_ids:
-                return
-
-            Order = apps.get_model("merchant", "Order")
-            orders_qs = (
-                Order.objects.select_related("user", "restaurant")
-                .filter(pk__in=order_ids)
-            )
-            orders_map = {o.pk: o for o in orders_qs}
-
-            restaurant_orders = {}
-
-            for oid in order_ids:
-                order = orders_map.get(oid)
-                if not order:
-                    continue
-
-                rest = getattr(order, "restaurant", None)
-                user = getattr(order, "user", None)
-
-                # restaurant lat/lng
-                restaurant_location = None
-                if rest:
-                    rlat = getattr(rest, "latitude", None)
-                    rlng = getattr(rest, "longitude", None)
-                    try:
-                        restaurant_location = {
-                            "latitude": float(rlat) if rlat is not None else None,
-                            "longitude": float(rlng) if rlng is not None else None
-                        }
-                    except:
-                        restaurant_location = {
-                            "latitude": rlat, "longitude": rlng}
-
-                # payload to send to user
-                user_payload = {
-                    "order_id": oid,
-                    "restaurant_id": getattr(rest, "pk", None),
+        if not isinstance(order_ids, list):
+            return
+        
+        print("delconhere")
+        for order_id in order_ids:
+            print(order_id)
+            async_to_sync(self.channel_layer.group_send)(
+                f"order_{order_id}",
+                {
+                    "type": "deliveryman.location",
+                    "order_id": order_id,
                     "lat": lat,
                     "lng": lng,
-                    "accuracy": accuracy,
-                    "restaurant_location": restaurant_location,
-                    "deliveryman_id": getattr(self, "deliveryman_pk", None)
+                    "accuracy": accuracy
                 }
-
-                # SEND TO CLIENT (USER)
-                if user and getattr(user, "id", None):
-                    try:
-                        per_user_payload = {
-                            "action": "deliveryman_location",
-                            "data": [user_payload]
-                        }
-                        group = f"user_{user.id}_order_{oid}"
-                        async_to_sync(self.channel_layer.group_send)(
-                            group,
-                            {
-                                "type": "deliveryman_location_message",
-                                "payload": per_user_payload
-                            }
-                        )
-                    except:
-                        pass
-
-                # PREPARE FOR MERCHANT (restaurant)
-                if rest:
-                    restaurant_orders.setdefault(rest.pk, []).append({
-                        "order_id": oid,
-                        "lat": lat,
-                        "lng": lng,
-                        "accuracy": accuracy,
-                    })
-
-            # SEND TO MERCHANT (RESTAURANT)
-                    # SEND TO MERCHANT (RESTAURANT)
-            for rest_pk, orders_list in restaurant_orders.items():
-                try:
-                    rest_payload = {
-                        "action": "deliveryman_location",
-                        "data": [{
-                            "restaurant_id": rest_pk,
-                            "deliveryman_id": getattr(self, "deliveryman_pk", None),
-                            # list of {order_id, lat, lng, accuracy}
-                            "orders": orders_list
-                        }]
-                    }
-
-                    group = f"restaurant_{rest_pk}"
-
-                    async_to_sync(self.channel_layer.group_send)(
-                        group,
-                        {
-                            "type": "deliveryman_location_message",
-                            "payload": rest_payload
-                        }
-                    )
-
-                except Exception:
-                    pass
-
-        except Exception:
-            pass
+            )
 
     def deliveryman_location_message(self, event):
         try:

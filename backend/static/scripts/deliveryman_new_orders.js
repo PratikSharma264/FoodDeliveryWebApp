@@ -31,7 +31,7 @@ navigator.geolocation.getCurrentPosition(
       const data = await response.json();
       const {assigned_to_me,orders} = data;
       console.log("data:", assigned_to_me);
-      console.log("response:", orders);
+      console.log("response:", data);
       assigned = assigned_to_me;
       newDeliveryRequest = [];
       if(orders && orders.length>0){
@@ -53,14 +53,14 @@ navigator.geolocation.getCurrentPosition(
   if(window.registerWSHandler){
     window.registerWSHandler("deliveryRequestHandler" , (msg)=>{
       console.log("msg:",msg);
-     if (msg.type === "chat") {
+     if (msg.type === "new_order_available") {
             try{
               setTimeout(() => {
               if (window.resetDeliveryCount) {
               window.resetDeliveryCount();
             }
           }, 1000);
-              newDeliveryRequest.unshift(...msg.data);
+              newDeliveryRequest.unshift(...msg.data.orders);
               renderOrders();
             } catch(err){
               console.error("error:",err);
@@ -71,6 +71,7 @@ navigator.geolocation.getCurrentPosition(
   }
 
   function renderOrders() {
+    console.log("datadata:",newDeliveryRequest);
     orderWrapper.innerHTML = "";
     console.log("len:",newDeliveryRequest.length);
      if(assigned){

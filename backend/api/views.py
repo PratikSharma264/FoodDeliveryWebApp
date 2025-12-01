@@ -772,7 +772,7 @@ def place_order_api(request):
     longitude = request.data.get('longitude')
     delivery_charge = request.data.get('delivery_charge', 0)
     customer_location = request.data.get('customer_location')  # <--- NEW FIELD
-
+    restaurant_id = None
     if not cart_ids or not isinstance(cart_ids, list):
         return Response({"detail": "cart_ids must be provided as a list."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -804,6 +804,7 @@ def place_order_api(request):
     for cart in cart_items:
         try:
             restaurant = cart.restaurant
+            restaurant_id = restaurant.id
             if restaurant.id not in restaurant_orders:
                 order = Order.objects.create(
                     user=user,
@@ -842,7 +843,9 @@ def place_order_api(request):
     serializer = PlaceOrderSerializer(
         created_orders, many=True, context={'request': request})
     serialized = serializer.data
-
+    order_id = None
+    for item in serialized:
+        order_id = item["id"]
     for idx, order in enumerate(created_orders):
         try:
             if isinstance(serialized[idx], dict):
@@ -872,9 +875,8 @@ def place_order_api(request):
 
     try:
         channel_layer = get_channel_layer()
-        payload = {"type": "chat_message", "order": serialized,
-                   "db_saved": db_saved, "errors": errors}
-        async_to_sync(channel_layer.group_send)("order", payload)
+        payload = {"type": "join_order_group", "order_id": order_id , "order":serialized, "db_saved": db_saved, "errors": errors}
+        async_to_sync(channel_layer.group_send)(f"restaurant_{restaurant_id}", payload)
     except Exception as exc:
         errors.append({"channel_error": str(exc)})
 
@@ -1063,140 +1065,215 @@ def order_details_api(request):
     return Response({"orders": serializer.data}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def set_order_waiting_for_delivery_api(request):
-    order_id = request.data.get('order_id')
-    if not order_id:
-        return Response({"detail": "order_id is required."}, status=status.HTTP_400_BAD_REQUEST)
-
     Order = apps.get_model("merchant", "Order")
-    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     Deliveryman = apps.get_model("merchant", "Deliveryman")
+    DeliverymanStatus = apps.get_model("merchant", "DeliverymanStatus")
     OrderItem = apps.get_model("merchant", "OrderItem")
 
+    order_id = request.data.get("order_id")
+    if not order_id:
+        return Response({"detail": "order_id is required."}, status=400)
+
     try:
-        order = Order.objects.select_related('restaurant').get(pk=order_id)
+        order_id = int(order_id)
+    except:
+        return Response({"detail": "order_id must be numeric."}, status=400)
+    
+    try:
+        order = Order.objects.select_related("restaurant", "user").get(pk=order_id)
     except Order.DoesNotExist:
-        return Response({"detail": f"Order with id {order_id} does not exist."}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"detail": f"Order with id {order_id} does not exist."}, status=404)
 
-    if order.status == 'WAITING_FOR_DELIVERY':
-        return Response({"detail": "Order is already WAITING_FOR_DELIVERY. Cannot change."}, status=status.HTTP_400_BAD_REQUEST)
+    if order.status == "WAITING_FOR_DELIVERY":
+        return Response({"detail": "Order is already WAITING_FOR_DELIVERY."}, status=400)
 
+    restaurant = order.restaurant
+
+    try:
+        order.status = "WAITING_FOR_DELIVERY"
+        order.save(update_fields=["status"])
+    except Exception:
+        return Response({"detail": "Failed to update order status."}, status=500)
+
+    # Check if a deliveryman is already assigned to this restaurant
     assigned_deliveryman = None
     try:
-        candidates = Order.objects.select_related('deliveryman').filter(
-            restaurant=order.restaurant,
-            assigned=True,
-            status='WAITING_FOR_DELIVERY',
-            deliveryman__isnull=False
+        existing_order = (
+            Order.objects
+            .select_related("deliveryman")
+            .filter(
+                restaurant=restaurant,
+                assigned=True,
+                deliveryman__isnull=False
+            )
+            .first()
         )
-        for cand in candidates:
-            dm = getattr(cand, 'deliveryman', None)
-            if not dm:
-                continue
-            dm_status = DeliverymanStatus.objects.filter(
-                deliveryman=dm).first()
-            if not dm_status or not bool(dm_status.on_delivery):
-                assigned_deliveryman = dm
-                break
+        if existing_order:
+            assigned_deliveryman = existing_order.deliveryman
     except Exception:
         assigned_deliveryman = None
 
-    if assigned_deliveryman:
-        order.deliveryman = assigned_deliveryman
-        order.assigned = True
-        order.status = 'WAITING_FOR_DELIVERY'
-        order.save(update_fields=['deliveryman', 'assigned', 'status'])
+    # Build detailed payload
+    def build_payload(order, assigned_deliveryman=None):
+        restaurant_obj = order.restaurant
+        user_obj = order.user
+        dm_status = None
+        if assigned_deliveryman:
+            dm_status = DeliverymanStatus.objects.filter(deliveryman=assigned_deliveryman).first()
 
-        payload_for_dm = {
-            "type": "delivery_assignment",
-            "order": {"order_id": order.pk},
-            "deliveryman": {
-                "id": getattr(assigned_deliveryman, 'pk', None),
-                "firstname": getattr(assigned_deliveryman, 'Firstname', ''),
-                "lastname": getattr(assigned_deliveryman, 'Lastname', ''),
-            },
-            "assigned_at": timezone.now().isoformat(),
+        # Build order items
+        # order_items_list = []
+        # for oi in order.order_items.select_related("food_item").all():
+        #     fi = getattr(oi, "food_item", None)
+        #     order_items_list.append({
+        #         "id": oi.pk,
+        #         "food_item": getattr(fi, "pk", None),
+        #         "food_item_name": getattr(fi, "name", "") if fi else "",
+        #         "restaurant_name": getattr(restaurant_obj, "restaurant_name", ""),
+        #         "food_item_image": getattr(fi, "image", None) if fi else None,
+        #         "quantity": oi.quantity,
+        #         "price_at_order": str(oi.price_at_order) if oi.price_at_order is not None else None,
+        #         "total_price": str(order.total_price) if order.total_price is not None else None,
+        #     })
+
+        order_items_list = []
+        for oi in order.order_items.select_related("food_item").all():
+            fi = getattr(oi, "food_item", None)
+            price_at_order = str(oi.price_at_order) if oi.price_at_order is not None else "0.00"
+            total_price = str((oi.price_at_order or 0) * oi.quantity)
+
+            order_items_list.append({
+                "id": oi.pk,
+                "food_item": getattr(fi, "pk", None),
+                "food_item_name": getattr(fi, "name", "") if fi else "",
+                "restaurant_name": getattr(restaurant_obj, "restaurant_name", ""),
+                "food_item_image": getattr(fi, "image", None) if fi else None,
+                "quantity": oi.quantity,
+                "price_at_order": price_at_order,
+                "total_price": total_price,
+            })
+
+
+        return {
+            "assigned_to_me": bool(assigned_deliveryman),
+            "assigned_restaurant": getattr(restaurant_obj, "restaurant_name", ""),
+            "orders": [
+                {
+                    "order_assigned": bool(assigned_deliveryman),
+                    "order_id": order.pk,
+                    "user": {
+                        "id": getattr(user_obj, "pk", None),
+                        "username": getattr(user_obj, "username", ""),
+                        "first_name": getattr(user_obj, "first_name", ""),
+                        "email": getattr(user_obj, "email", ""),
+                    },
+                    "restaurant_id": getattr(restaurant_obj, "pk", None),
+                    "restaurant": {
+                        "id": getattr(restaurant_obj, "pk", None),
+                        "user": {
+                            "id": getattr(restaurant_obj.user, "pk", None) if hasattr(restaurant_obj, "user") else None,
+                            "username": getattr(restaurant_obj.user, "username", "") if hasattr(restaurant_obj, "user") else "",
+                            "first_name": getattr(restaurant_obj.user, "first_name", "") if hasattr(restaurant_obj, "user") else "",
+                            "last_name": getattr(restaurant_obj.user, "last_name", "") if hasattr(restaurant_obj, "user") else "",
+                            "email": getattr(restaurant_obj.user, "email", "") if hasattr(restaurant_obj, "user") else "",
+                        },
+                        "restaurant_name": getattr(restaurant_obj, "restaurant_name", ""),
+                        "owner_name": getattr(restaurant_obj, "owner_name", ""),
+                        "owner_contact": getattr(restaurant_obj, "owner_contact", ""),
+                        "restaurant_address": getattr(restaurant_obj, "restaurant_address", ""),
+                        "latitude": getattr(restaurant_obj, "latitude", None),
+                        "longitude": getattr(restaurant_obj, "longitude", None),
+                        "cuisine": getattr(restaurant_obj, "cuisine", ""),
+                        "description": getattr(restaurant_obj, "description", ""),
+                        "restaurant_type": getattr(restaurant_obj, "restaurant_type", ""),
+                        "profile_picture": order.restaurant.profile_picture.url if getattr(order.restaurant, "profile_picture", None) and order.restaurant.profile_picture else None,
+                        "cover_photo": order.restaurant.cover_photo.url if getattr(order.restaurant, "cover_photo", None) and order.restaurant.cover_photo else None,
+                    },
+                    "is_transited": False,
+                    "delivery_charge": str(order.delivery_charge) if order.delivery_charge is not None else "0.00",
+                    "total_price": str(order.total_price) if order.total_price is not None else "0.00",
+                    "order_items": order_items_list,
+                    "order_date": getattr(order, "created_at", timezone.now()).isoformat(),
+                    "status": order.status,
+                    "payment_method": getattr(order, "payment_method", "cashondelivery"),
+                    "latitude": getattr(order, "latitude", None),
+                    "longitude": getattr(order, "longitude", None),
+                    "customer_details": {
+                        "email": getattr(user_obj, "email", None),
+                        "phone": getattr(user_obj, "phone", None),
+                    },
+                    "customer_location": getattr(order, "delivery_address", None)
+                }
+            ],
+            "returned_at": timezone.now().isoformat()
         }
 
-        try:
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f"deliveryman_{assigned_deliveryman.pk}",
-                {"type": "current_delivery_update", "order_id": order.pk}
-            )
-            async_to_sync(channel_layer.group_send)(
-                f"deliveryman_{assigned_deliveryman.pk}",
-                {"type": "notify", "payload": payload_for_dm}
-            )
-        except Exception:
-            pass
-
-        return Response({
-            "detail": f"Order #{order.pk} assigned to deliveryman #{assigned_deliveryman.pk} automatically."
-        }, status=status.HTTP_200_OK)
-
-    order.status = 'WAITING_FOR_DELIVERY'
-    order.save(update_fields=['status'])
-
-    eligible_status_qs = DeliverymanStatus.objects.filter(
-        online=True, on_delivery=False).select_related('deliveryman')
-    eligible_deliverymen = [ds.deliveryman for ds in eligible_status_qs if ds.deliveryman and getattr(
-        ds.deliveryman, 'approved', False)]
-
-    order_items = []
-    for oi in order.order_items.select_related('food_item').all():
-        fi = getattr(oi, 'food_item', None)
-        order_items.append({
-            "name": getattr(fi, 'name', '') if fi else '',
-            "quantity": oi.quantity,
-            "price_at_order": str(oi.price_at_order) if oi.price_at_order is not None else None
-        })
-
-    user_obj = getattr(order, 'user', None)
-    phone = None
-    if user_obj:
-        phone = getattr(user_obj, 'phone', None) or getattr(
-            user_obj, 'phone_number', None)
-
-    payload = {
-        "type": "delivery_notification",
-        "order": {
-            "order_id": order.pk,
-            "user": {
-                "id": getattr(user_obj, 'id', None),
-                "username": getattr(user_obj, 'username', '') if user_obj else '',
-                "email": getattr(user_obj, 'email', '') if user_obj else '',
-                "phone": phone,
-            },
-            "restaurant": {
-                "id": getattr(order.restaurant, 'pk', None),
-                "name": getattr(order.restaurant, 'restaurant_name', '') if getattr(order, 'restaurant', None) else '',
-                "address": getattr(order.restaurant, 'restaurant_address', '') if getattr(order, 'restaurant', None) else '',
-            },
-            "order_items": order_items,
-            "total_price": str(order.total_price) if order.total_price is not None else None,
-            "delivery_charge": str(order.delivery_charge) if order.delivery_charge is not None else "0.00",
-        }
-    }
-
+    payload = build_payload(order, assigned_deliveryman)
     channel_layer = get_channel_layer()
-    notified = 0
-    for dm in eligible_deliverymen:
-        group_name = f"deliveryman_{dm.pk}"
+
+    # CASE A = Restaurant already has a deliveryman assigned
+    if assigned_deliveryman:
         try:
-            async_to_sync(channel_layer.group_send)(
-                group_name,
-                {"type": "notify", "payload": payload}
-            )
-            notified += 1
+            dm_status = DeliverymanStatus.objects.filter(deliveryman=assigned_deliveryman).first()
         except Exception:
+            dm_status = None
+
+        # CASE A1 = Deliveryman idle = Assign the order
+        if dm_status and not dm_status.on_delivery:
+            try:
+                order.deliveryman = assigned_deliveryman
+                order.assigned = True
+                order.save(update_fields=["deliveryman", "assigned"])
+            except:
+                return Response({"detail": "Could not assign order."}, status=500)
+
+            try:
+                print("already assigned...")
+                async_to_sync(channel_layer.group_send)(
+                    f"deliveryman_{assigned_deliveryman.pk}",
+                    {
+                        "type": "direct_order_assignment",
+                        "payload": payload,
+                        "order_id": order_id
+                    }
+                )
+            except:
+                pass
+
+            return Response(payload, status=200)
+
+        # CASE A2 = Deliveryman is busy = broadcast
+        try:
+            print("already assigned out for del")
+            async_to_sync(channel_layer.group_send)(
+                "deliverymen",
+                {
+                    "type": "new_order_available",
+                    "payload": payload,
+                }
+            )
+        except:
             pass
 
-    return Response({
-        "detail": f"Order #{order.pk} set to WAITING_FOR_DELIVERY and notified {notified} deliverymen."
-    }, status=status.HTTP_200_OK)
+        return Response(payload, status=200)
+
+    # CASE B → No deliveryman found → broadcast
+    try:
+        print("no assigned")
+        async_to_sync(channel_layer.group_send)(
+            "deliverymen",
+            {
+                "type": "new_order_available",
+                "payload": payload,
+            }
+        )
+    except:
+        pass
+
+    return Response(payload, status=200)
 
 
 @api_view(['POST'])

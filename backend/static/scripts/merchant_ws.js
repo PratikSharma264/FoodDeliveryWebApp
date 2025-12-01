@@ -1,10 +1,11 @@
 let ws = null;
 let orderCount = 0;
 const countElement = document.querySelector(".new-order-count");
+const resId = document.querySelector(".resid").getAttribute("id");
 countElement.innerHTML = orderCount;
 
 const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
-const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/`;
+const wsUrl = `${wsProtocol}://${location.host}/ws/socket-server/${resId}/`;
 
 const wsHandlers = {};
 
@@ -31,13 +32,19 @@ function connectWS(){
 function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
-    console.log("msg:",msg);
      if (msg.type === "chat") {
         orderCount++;
         countElement.innerHTML = orderCount;
         showNotification();
         document.title = `🔔 New Orders Received`;
         setTimeout(() => { document.title = "Orders"; }, 2000);
+    }
+
+    if(msg.type === 'deliveryman_location'){
+        console.log("msgoid:",msg.order_id);
+        console.log("msglat:",msg.lat);
+        console.log("msglng:",msg.lng);
+        console.log("msgacc:",msg.accuracy);
     }
 
     Object.values(wsHandlers).forEach(handler => {

@@ -2,9 +2,10 @@ let ws = null;
 
 let newDeliveryCount = 0;
 const countElement = document.querySelector(".new-order-count");
+const deliveryman_id = document.querySelector(".delid").getAttribute("id");
 countElement.innerHTML = newDeliveryCount;
 const wsProtocol = location.protocol === 'https' ? 'wss':'ws';
-const wsUrl = `${wsProtocol}://${window.location.host}/ws/deliveryman/`;
+const wsUrl = `${wsProtocol}://${window.location.host}/ws/deliveryman/${deliveryman_id}/`;
 
 const wsHandlers = {};
 
@@ -31,9 +32,9 @@ function connectWS(){
 function onMessage(evt) {
   try {
     const msg = JSON.parse(evt.data);
-    console.log("msg:",msg);
+    console.log("msgfrombase:",msg);
 
-      if (msg.type === "chat") {
+      if (msg.type === "new_order_available") {
         newDeliveryCount++;
         countElement.innerHTML = newDeliveryCount;
         showNotification();

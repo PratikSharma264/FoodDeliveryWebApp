@@ -111,7 +111,7 @@
               <img src="{% static 'images/profilepic.png' %}" alt="default profilepic" height="50" width="50" />
             {% endif %}
           </div>
-          <h4>{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</h4>
+          <h4 class="delid" id="{{deliveryman.id}}">{{ deliveryman.Firstname }} {{ deliveryman.Lastname }}</h4>
         </div>
       </div>
       <div id="all-wrapper">{% block mainspace %}

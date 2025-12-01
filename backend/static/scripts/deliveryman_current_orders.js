@@ -106,10 +106,10 @@ initDeliveries();
 
   if(window.registerWSHandler){
     window.registerWSHandler("autoAssignDeliveryHandler" , (msg)=>{
-      console.log("msg:",msg);
-     if (msg.action === "send_current_delivery") {
+      console.log("msgfromcurrent:",msg);
+     if (msg.type === "direct_order_assignment") {
             try{
-              currentDeliveries.unshift(...msg.data);
+              currentDeliveries.unshift(...msg.data.orders);
               showError({message:"New Delivery assigned!"},"success");
               renderDeliveries();
             } catch(err){
