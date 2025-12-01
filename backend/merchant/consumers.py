@@ -557,6 +557,18 @@ class DeliverymanConsumer(WebsocketConsumer):
         }
 
     def notify(self, event):
+        Order = apps.get_model("merchant", "Order")
+        OrderItem = apps.get_model("merchant", "OrderItem")
+        if hasattr(self, 'deliveryman_pk'):
+            is_assigned = Order.objects.filter(
+                deliveryman_id=self.deliveryman_pk,
+                assigned=True,
+                status__in=["WAITING_FOR_DELIVERY",
+                            "OUT_FOR_DELIVERY", "PICKED_UP"]
+            ).exists()
+
+            if is_assigned:
+                return
         payload = event.get('payload', {}) or {}
         errors = event.get('errors', []) or []
         out_payload = {"type": "chat", "errors": errors, "success": True}
@@ -592,7 +604,6 @@ class DeliverymanConsumer(WebsocketConsumer):
                             pass
 
             if pks:
-                Order, OrderItem, _ = self._get_models()
                 qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
                     Prefetch(
                         "order_items", queryset=OrderItem.objects.select_related("food_item"))
@@ -607,7 +618,7 @@ class DeliverymanConsumer(WebsocketConsumer):
         except Exception:
             try:
                 self.send(text_data=json.dumps({"type": "chat", "errors": [
-                          "delivery_consumer_error"], "success": False, "data": []}))
+                    "delivery_consumer_error"], "success": False, "data": []}))
             except Exception:
                 pass
 

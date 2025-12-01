@@ -386,6 +386,10 @@ class OrderHistory(models.Model):
         max_digits=9, decimal_places=6, null=True, blank=True)
     delivery_charge = models.DecimalField(
         max_digits=10, decimal_places=2, default=0.00, null=True, blank=True)
+    original_order = models.CharField(
+        max_length=50, null=True, blank=True,
+        help_text='ID of the original order from the Order table before deletion.'
+    )
 
     class Meta:
         ordering = ['-order_date']

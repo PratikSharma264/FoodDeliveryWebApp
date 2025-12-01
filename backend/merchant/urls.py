@@ -70,5 +70,9 @@ urlpatterns = [
     path('api/update-order-out-for-delivery-status/',
          views.bulk_update_order_status_api, name="bulk-update-order-status-api"),
     path('api/update-order-delivered-status/',
-         views.archive_and_delete_order_api, name="archive-and-delete-order-api")
+         views.archive_and_delete_order_api, name="archive-and-delete-order-api"),
+    path("json/deliveryman-order-history/", views.deliveryman_order_history_json_response,
+         name="deliveryman-order-history-json"),
+    path("json/restaurant-customer-list/", views.restaurant_customer_list_json_response,
+         name="restaurant-customer-list-json")
 ]
