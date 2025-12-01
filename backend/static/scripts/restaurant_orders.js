@@ -18,13 +18,20 @@ document.addEventListener("DOMContentLoaded", () => {
       showError({ message: `${err?.message}` });
     }
   }
-  getCurrentOrders();
+  // getCurrentOrders();
 
-  setTimeout(()=>{
-      if(orders && orders.length>0){
+  // setTimeout(()=>{
+  //     if(orders && orders.length>0){
+  //   renderOrders();
+  // }
+  // },1000);
+
+  async function initOrders(){
+    await getCurrentOrders();
     renderOrders();
   }
-  },1000);
+
+  initOrders();
 
     if (window.registerWSHandler) {
       window.registerWSHandler("orderPageHandler", (msg) => {
@@ -50,6 +57,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
           }
       });
+
+      window.registerWSHandler("deliverymanLocationHandler", (msg) => {
+       if (msg.type === "deliveryman_location") {
+        console.log("📍 Deliveryman location update:", msg.data);
+
+        // msg.data contains:
+        // order_id, lat, lng, accuracy, deliveryman_id
+        
+        const { order_id, lat, lng, accuracy } = msg.data;
+
+        // OPTIONAL: Update the map marker for this order (if shown)
+        // updateDeliverymanMarker(order_id, lat, lng);
+    }
+});
+
   } else {
       console.error("WebSocket not initialized yet");
   }
