@@ -3,10 +3,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderWrapper = document.querySelector("#current-order-wrapper");
   const statusFilter = document.getElementById("order_status_select");
   const emptyOrder = document.querySelector("#emptyorder");
+  const loadMoreBtn = document.querySelector("#loadmore");
   const resid = document.querySelector(".resid").id;
   let orders = [];
-const orderMaps = {};  
-const orderRoutes = {};
+  const orderMaps = {};  
+  const orderRoutes = {};
+  const limitIncSize = 10;
+  let lastLimitId = null;
 
 
 function updateDeliverymanMarker(order_id) {
@@ -76,6 +79,9 @@ statusFilter.addEventListener("change", async () => {
   await getCurrentOrders(status);
   renderOrders();            
 });
+
+loadMoreBtn.addEventListener("click",()=>{
+})
 
 
 
@@ -321,57 +327,57 @@ async function getCurrentOrders(status = "ALL") {
     });
   }
 
-  function showTrackingPopup(order) {
-    const popup = document.createElement("div");
-    popup.classList.add("tracking-popup");
-    popup.innerHTML = `
-        <div class="tracking-content">
-          <h4>Tracking Delivery</h4>
-          <div id="map" style="height: 300px;"></div>
-          <button onclick="this.parentElement.parentElement.remove()">Close</button>
-        </div>
-      `;
-    document.body.appendChild(popup);
+  // function showTrackingPopup(order) {
+  //   const popup = document.createElement("div");
+  //   popup.classList.add("tracking-popup");
+  //   popup.innerHTML = `
+  //       <div class="tracking-content">
+  //         <h4>Tracking Delivery</h4>
+  //         <div id="map" style="height: 300px;"></div>
+  //         <button onclick="this.parentElement.parentElement.remove()">Close</button>
+  //       </div>
+  //     `;
+  //   document.body.appendChild(popup);
 
-    const map = L.map("map").setView(
-      [order.customer.lat, order.customer.lng],
-      13
-    );
+  //   const map = L.map("map").setView(
+  //     [order.customer.lat, order.customer.lng],
+  //     13
+  //   );
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
+  //   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  //     maxZoom: 19,
+  //     attribution: "&copy; OpenStreetMap contributors",
+  //   }).addTo(map);
 
-    L.marker([order.customer.lat, order.customer.lng])
-      .addTo(map)
-      .bindPopup("Customer Location")
-      .openPopup();
+  //   L.marker([order.customer.lat, order.customer.lng])
+  //     .addTo(map)
+  //     .bindPopup("Customer Location")
+  //     .openPopup();
 
-    if (order.deliverymanLocation) {
-      L.marker([order.deliverymanLocation.lat, order.deliverymanLocation.lng], {
-        icon: redIcon,
-      })
-        .addTo(map)
-        .bindPopup("Deliveryman");
-    }
+  //   if (order.deliverymanLocation) {
+  //     L.marker([order.deliverymanLocation.lat, order.deliverymanLocation.lng], {
+  //       icon: redIcon,
+  //     })
+  //       .addTo(map)
+  //       .bindPopup("Deliveryman");
+  //   }
 
-    if (order.merchantLocation) {
-      L.marker([order.merchantLocation.lat, order.merchantLocation.lng], {
-        icon: blueIcon,
-      })
-        .addTo(map)
-        .bindPopup("Restaurant");
-    }
-  }
+  //   if (order.merchantLocation) {
+  //     L.marker([order.merchantLocation.lat, order.merchantLocation.lng], {
+  //       icon: blueIcon,
+  //     })
+  //       .addTo(map)
+  //       .bindPopup("Restaurant");
+  //   }
+  // }
 
-  const redIcon = new L.Icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-    iconSize: [32, 32],
-  });
+  // const redIcon = new L.Icon({
+  //   iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+  //   iconSize: [32, 32],
+  // });
 
-  const blueIcon = new L.Icon({
-    iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-    iconSize: [32, 32],
-  });
+  // const blueIcon = new L.Icon({
+  //   iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
+  //   iconSize: [32, 32],
+  // });
 });
