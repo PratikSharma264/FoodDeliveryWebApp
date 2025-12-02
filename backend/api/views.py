@@ -44,6 +44,7 @@ from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from django.core.serializers.json import DjangoJSONEncoder
+from django.shortcuts import get_object_or_404
 
 
 def api_overview(request):
@@ -875,8 +876,10 @@ def place_order_api(request):
 
     try:
         channel_layer = get_channel_layer()
-        payload = {"type": "join_order_group", "order_id": order_id , "order":serialized, "db_saved": db_saved, "errors": errors}
-        async_to_sync(channel_layer.group_send)(f"restaurant_{restaurant_id}", payload)
+        payload = {"type": "join_order_group", "order_id": order_id,
+                   "order": serialized, "db_saved": db_saved, "errors": errors}
+        async_to_sync(channel_layer.group_send)(
+            f"restaurant_{restaurant_id}", payload)
     except Exception as exc:
         errors.append({"channel_error": str(exc)})
 
@@ -1081,9 +1084,10 @@ def set_order_waiting_for_delivery_api(request):
         order_id = int(order_id)
     except:
         return Response({"detail": "order_id must be numeric."}, status=400)
-    
+
     try:
-        order = Order.objects.select_related("restaurant", "user").get(pk=order_id)
+        order = Order.objects.select_related(
+            "restaurant", "user").get(pk=order_id)
     except Order.DoesNotExist:
         return Response({"detail": f"Order with id {order_id} does not exist."}, status=404)
 
@@ -1122,7 +1126,8 @@ def set_order_waiting_for_delivery_api(request):
         user_obj = order.user
         dm_status = None
         if assigned_deliveryman:
-            dm_status = DeliverymanStatus.objects.filter(deliveryman=assigned_deliveryman).first()
+            dm_status = DeliverymanStatus.objects.filter(
+                deliveryman=assigned_deliveryman).first()
 
         # Build order items
         # order_items_list = []
@@ -1142,7 +1147,8 @@ def set_order_waiting_for_delivery_api(request):
         order_items_list = []
         for oi in order.order_items.select_related("food_item").all():
             fi = getattr(oi, "food_item", None)
-            price_at_order = str(oi.price_at_order) if oi.price_at_order is not None else "0.00"
+            price_at_order = str(
+                oi.price_at_order) if oi.price_at_order is not None else "0.00"
             total_price = str((oi.price_at_order or 0) * oi.quantity)
 
             order_items_list.append({
@@ -1155,7 +1161,6 @@ def set_order_waiting_for_delivery_api(request):
                 "price_at_order": price_at_order,
                 "total_price": total_price,
             })
-
 
         return {
             "assigned_to_me": bool(assigned_deliveryman),
@@ -1217,7 +1222,8 @@ def set_order_waiting_for_delivery_api(request):
     # CASE A = Restaurant already has a deliveryman assigned
     if assigned_deliveryman:
         try:
-            dm_status = DeliverymanStatus.objects.filter(deliveryman=assigned_deliveryman).first()
+            dm_status = DeliverymanStatus.objects.filter(
+                deliveryman=assigned_deliveryman).first()
         except Exception:
             dm_status = None
 
@@ -1396,3 +1402,102 @@ def deliveryman_accept_order_api(request):
         pass
 
     return Response({"success": True, "data": {"requested_order": order.pk, "also_assigned_order_ids": additionally_assigned_ids, "deliveryman_id": deliveryman.pk}})
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_order_details_api(request, id):
+    user = request.user
+    # Get the order by ID for the current authenticated user
+    order = get_object_or_404(
+        Order.objects.select_related('restaurant', 'deliveryman')
+                     .prefetch_related(
+                         Prefetch(
+                             'order_items', queryset=OrderItem.objects.select_related('food_item')
+                         )
+        ),
+        id=id, user=user
+    )
+
+    is_assigned = order.assigned
+
+    # Customer info
+    customer_info = {
+        "id": user.id,
+        "username": user.username,
+        "full_name": user.get_full_name(),
+        "email": user.email,
+        "phone": getattr(user.user_profile, 'phone_number', None) if hasattr(user, 'user_profile') else None,
+    }
+
+    # Restaurant info
+    restaurant_obj = getattr(order, 'restaurant', None)
+    restaurant_info = None
+    if restaurant_obj:
+        restaurant_info = {
+            "id": restaurant_obj.id,
+            "name": getattr(restaurant_obj, 'restaurant_name', 'N/A'),
+            "owner_name": getattr(restaurant_obj, 'owner_name', 'N/A'),
+            "owner_email": getattr(restaurant_obj, 'owner_email', 'N/A'),
+            "owner_contact": getattr(restaurant_obj, 'owner_contact', 'N/A'),
+            "address": getattr(restaurant_obj, 'restaurant_address', 'N/A'),
+            "cuisine": getattr(restaurant_obj, 'cuisine', 'N/A'),
+            "restaurant_type": getattr(restaurant_obj, 'restaurant_type', 'N/A'),
+            "profile_picture": getattr(restaurant_obj.profile_picture, 'url', None) if getattr(restaurant_obj, 'profile_picture', None) else None,
+            "latitude": getattr(restaurant_obj, 'latitude', 0.0),
+            "longitude": getattr(restaurant_obj, 'longitude', 0.0),
+        }
+
+    # Deliveryman info
+    deliveryman_obj = getattr(order, 'deliveryman', None)
+    deliveryman_info = None
+    if deliveryman_obj:
+        deliveryman_user = getattr(deliveryman_obj, 'user', None)
+        phone_number = None
+        if deliveryman_user:
+            if hasattr(deliveryman_user, 'user_profile'):
+                phone_number = getattr(
+                    deliveryman_user.user_profile, 'phone_number', None)
+            if not phone_number and hasattr(deliveryman_user, 'merchant_profile'):
+                phone_number = getattr(
+                    deliveryman_user.merchant_profile, 'phone_number', None)
+
+        deliveryman_info = {
+            "id": deliveryman_obj.id,
+            "name": f"{getattr(deliveryman_obj, 'Firstname', '')} {getattr(deliveryman_obj, 'Lastname', '')}".strip(),
+            "email": getattr(deliveryman_user, 'email', None) if deliveryman_user else None,
+            "phone": phone_number or 'N/A',
+            "vehicle": getattr(deliveryman_obj, 'Vehicle', 'N/A'),
+        }
+
+    # Order items with images
+    order_items_data = []
+    for item in order.order_items.all():
+        fi = getattr(item, 'food_item', None)
+        if fi:
+            image_url = getattr(fi.profile_picture, 'url', None) if getattr(
+                fi, 'profile_picture', None) else fi.external_image_url
+        else:
+            image_url = None
+
+        order_items_data.append({
+            "id": item.id,
+            "name": getattr(fi, 'name', 'N/A') if fi else 'N/A',
+            "quantity": item.quantity,
+            "price_at_order": str(item.price_at_order),
+            "image": image_url
+        })
+
+    # Final order data
+    order_data = {
+        "order_id": order.id,
+        "status": getattr(order, 'status', 'N/A'),
+        "total_price": str(getattr(order, 'total_price', Decimal('0.00'))),
+        "order_date": getattr(order, 'order_date', None).isoformat() if getattr(order, 'order_date', None) else None,
+        "customer": customer_info,
+        "restaurant": restaurant_info,
+        "deliveryman": deliveryman_info,
+        "order_items": order_items_data,
+    }
+
+    return Response({"success": True, "assigned": is_assigned, "order": order_data}, status=status.HTTP_200_OK)

@@ -39,5 +39,7 @@ urlpatterns = [
          name='set_waiting_for_delivery'),
     path('deliveryman-accept-order/', views.deliveryman_accept_order_api,
          name='deliveryman_accept_order'),
+    path('user-order-details/<int:id>/',
+         views.user_order_details_api, name='user-order-details'),
 
 ]
