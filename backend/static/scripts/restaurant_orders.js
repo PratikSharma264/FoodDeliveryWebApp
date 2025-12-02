@@ -10,6 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const orderRoutes = {};
   const limitIncSize = 10;
   let lastLimitId = null;
+  let orderStatus = 'ALL';
+  let loadMoreFinished = null;
 
 
 function updateDeliverymanMarker(order_id) {
@@ -76,27 +78,52 @@ function updateRoutingPath(order_id) {
 
 statusFilter.addEventListener("change", async () => {
   const status = statusFilter.value;
-  await getCurrentOrders(status);
+  orderStatus = status;
+  lastLimitId = null;
+  orders = []; 
+  await getCurrentOrders();
   renderOrders();            
 });
 
-loadMoreBtn.addEventListener("click",()=>{
+loadMoreBtn.addEventListener("click", async ()=>{
+  const lastorderId = orders[orders.length-1].order_id;
+  if(lastorderId){
+    lastLimitId = lastorderId;
+    await getCurrentOrders();
+    renderOrders();
+  }
+
 })
 
 
 
-async function getCurrentOrders(status = "ALL") {
+async function getCurrentOrders() {
   try {
     let url = `http://127.0.0.1:8000/json/restaurant-orders-response/${resid}`;
-    if (status && status !== "ALL") {
-      url += `?status=${status}`;
+    const isFiltering = orderStatus && orderStatus !== "ALL";
+    const hasLastId = Boolean(lastLimitId);
+    if (isFiltering) {
+      url += `?status=${orderStatus}`;
+    } else{
+      url += `?`;
     }
 
+    if(hasLastId){
+      url += `&limit=${limitIncSize}&last_limit_id=${lastLimitId}`;
+    } else {
+      url += `&limit=${limitIncSize}`;
+    }
     const response = await fetch(url);
-    const { data } = await response.json();
-    console.log("response:", data);
-    orders = [];
-    orders = data;
+    const  {data,finished} = await response.json();
+    loadMoreFinished = finished;
+
+    if (hasLastId) {
+      orders = [...orders, ...data];
+    } 
+    else {
+      orders = data;
+    }
+    console.log("neworders:",orders)
   } catch (err) {
     console.error("error: ", err);
     showError({ message: `${err?.message}` });
@@ -164,11 +191,15 @@ async function getCurrentOrders(status = "ALL") {
     console.log(orders.length);
     if (orders.length === 0) {
       emptyOrder.style.display = "flex";
+      loadMoreBtn.style.display = "none";
       return;
     }
     emptyOrder.style.display = "none";
-
-
+    if(loadMoreFinished){
+      loadMoreBtn.style.display = "none";
+    } else{
+      loadMoreBtn.style.display = "inline-block";
+    }
     orders.forEach((order) => {
       const orderCard = document.createElement("div");
       orderCard.classList.add("order-card");
@@ -326,58 +357,4 @@ async function getCurrentOrders(status = "ALL") {
       orderWrapper.appendChild(orderCard);
     });
   }
-
-  // function showTrackingPopup(order) {
-  //   const popup = document.createElement("div");
-  //   popup.classList.add("tracking-popup");
-  //   popup.innerHTML = `
-  //       <div class="tracking-content">
-  //         <h4>Tracking Delivery</h4>
-  //         <div id="map" style="height: 300px;"></div>
-  //         <button onclick="this.parentElement.parentElement.remove()">Close</button>
-  //       </div>
-  //     `;
-  //   document.body.appendChild(popup);
-
-  //   const map = L.map("map").setView(
-  //     [order.customer.lat, order.customer.lng],
-  //     13
-  //   );
-
-  //   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  //     maxZoom: 19,
-  //     attribution: "&copy; OpenStreetMap contributors",
-  //   }).addTo(map);
-
-  //   L.marker([order.customer.lat, order.customer.lng])
-  //     .addTo(map)
-  //     .bindPopup("Customer Location")
-  //     .openPopup();
-
-  //   if (order.deliverymanLocation) {
-  //     L.marker([order.deliverymanLocation.lat, order.deliverymanLocation.lng], {
-  //       icon: redIcon,
-  //     })
-  //       .addTo(map)
-  //       .bindPopup("Deliveryman");
-  //   }
-
-  //   if (order.merchantLocation) {
-  //     L.marker([order.merchantLocation.lat, order.merchantLocation.lng], {
-  //       icon: blueIcon,
-  //     })
-  //       .addTo(map)
-  //       .bindPopup("Restaurant");
-  //   }
-  // }
-
-  // const redIcon = new L.Icon({
-  //   iconUrl: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
-  //   iconSize: [32, 32],
-  // });
-
-  // const blueIcon = new L.Icon({
-  //   iconUrl: "https://maps.google.com/mapfiles/ms/icons/blue-dot.png",
-  //   iconSize: [32, 32],
-  // });
 });
