@@ -1,7 +1,8 @@
 from django.contrib import admin
-from .models import Merchant, Restaurant, FoodItem, Order, OrderItem, Deliveryman, DeliverymanStatus, Cuisine, FoodOrderCount, GoToDashClickCheck, Cart, OrderHistory, OrderItemHistory
+from .models import Customer, Merchant, Restaurant, FoodItem, Order, OrderItem, Deliveryman, DeliverymanStatus, Cuisine, FoodOrderCount, GoToDashClickCheck, Cart, OrderHistory, OrderItemHistory
 # Register your models here.
 
+admin.site.register(Customer)
 admin.site.register(Merchant)
 admin.site.register(Restaurant)
 admin.site.register(FoodItem)

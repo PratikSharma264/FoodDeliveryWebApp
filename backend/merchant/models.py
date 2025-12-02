@@ -47,6 +47,11 @@ class Customer(models.Model):
         User, on_delete=models.CASCADE, related_name='user_profile')
     profile_picture = models.ImageField(
         upload_to='user_images/', blank=True, null=True)
+    phone_number = models.CharField(
+        max_length=15, blank=True, null=True)  # Add this
+
+    def __str__(self):
+        return self.user.get_full_name() or self.user.username
 
 
 class Cuisine(models.Model):
@@ -54,45 +59,6 @@ class Cuisine(models.Model):
 
     def __str__(self):
         return self.cuisine_name
-
-
-# class Restaurant(models.Model):
-#     RESTAURANT_TYPE_CHOICES = [
-#         ('local', 'Local'),
-#         ('finedining', 'Fine Dining'),
-#     ]
-#     BUSINESS_PLAN_CHOICES = [
-#         ('commission', 'Commission Base'),
-#         ('subscription', 'Subscription Base'),
-#     ]
-#
-#     user = models.OneToOneField(
-#         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='restaurant_profile', null=True)
-#     restaurant_name = models.CharField(max_length=100, default='')
-#     vat_and_tax = models.DecimalField(
-#         max_digits=5, decimal_places=2, default=0.0)
-#     restaurant_address = models.TextField(default='')
-#     latitude = models.FloatField(default=0.0)
-#     longitude = models.FloatField(default=0.0)
-#     cuisine = models.CharField(max_length=50, default='')
-#     profile_picture = models.ImageField(
-#         upload_to='restaurant/profile_pics/', blank=True, null=True)
-#     cover_photo = models.ImageField(
-#         upload_to='restaurant/cover_photos/', blank=True, null=True)
-#     external_image_url = models.URLField(blank=True, null=True)
-#     owner_name = models.CharField(max_length=100, default='')
-#     owner_contact = models.CharField(
-#         max_length=15, null=True, validators=[phone_validator])
-#     menu = models.FileField(upload_to='restaurant/menus/', null=True)
-#     business_plan = models.CharField(
-#         max_length=20, choices=BUSINESS_PLAN_CHOICES, null=True)
-#     restaurant_type = models.CharField(
-#         max_length=10, choices=RESTAURANT_TYPE_CHOICES, default='local')
-#     created_at = models.DateTimeField(default=timezone.now)
-#     approved = models.BooleanField(default=False)
-#
-#     def __str__(self):
-#         return self.restaurant_name
 
 
 class Restaurant(models.Model):

@@ -351,19 +351,53 @@ def safe_url(field):
 @login_required
 def restaurant_orders_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
-    customer_id = request.GET.get('customer_id')
     status = request.GET.get('status', '').strip().upper()
     orders_qs = Order.objects.filter(restaurant=restaurant).select_related(
-        'user', 'restaurant', 'deliveryman').prefetch_related('order_items__food_item')
-    if customer_id:
-        orders_qs = orders_qs.filter(user_id=customer_id)
+        'user', 'restaurant', 'deliveryman'
+    ).prefetch_related('order_items__food_item')
+
+    # Filter by status
     valid_statuses = {k for k, _ in Order.STATUS_CHOICES}
     if status and status in valid_statuses:
         orders_qs = orders_qs.filter(status=status)
 
+    # Pagination params
+    last_limit_id = request.GET.get('last_limit_id')
+    try:
+        limit = int(request.GET.get('limit', 10))
+        if limit <= 0:
+            limit = 10
+    except (ValueError, TypeError):
+        limit = 10
+
+    if last_limit_id:
+        try:
+            last_limit_id_int = int(last_limit_id)
+            orders_qs = orders_qs.filter(
+                id__lt=last_limit_id_int)  # descending order
+        except ValueError:
+            pass
+
+    orders_qs = orders_qs.order_by('-id')  # descending order
+
+    # Fetch limited orders
+    orders_list = list(orders_qs[:limit])
+
+    # Determine finished status
+    if not orders_list:
+        finished = True
+    else:
+        if len(orders_list) < limit:
+            finished = True  # less than limit, no more pages
+        else:
+            last_id_in_page = orders_list[-1].id
+            remaining_orders = orders_qs.filter(
+                id__lt=last_id_in_page).exists()
+            finished = not remaining_orders  # no more orders after this page
+
     data = []
 
-    for order in orders_qs:
+    for order in orders_list:
         items = []
         computed_total = Decimal('0.00')
         for oi in order.order_items.all():
@@ -394,9 +428,7 @@ def restaurant_orders_json_response(request, id):
         total_value = order.total_price or computed_total
 
         user_obj = getattr(order, 'user', None)
-        customer_name = user_obj.get_full_name() if user_obj else ''
         phone = None
-
         if user_obj:
             for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
                 phone = getattr(user_obj, attr, None)
@@ -480,7 +512,7 @@ def restaurant_orders_json_response(request, id):
             "assigned": getattr(order, "assigned", False),
         })
 
-    return JsonResponse({"success": True, "data": data}, encoder=DjangoJSONEncoder, safe=True)
+    return JsonResponse({"success": True, "data": data, "finished": finished}, encoder=DjangoJSONEncoder, safe=True)
 
 
 @login_required
@@ -829,7 +861,9 @@ def deliveryman_delivery_requests_json_view(request):
         deliveryman = getattr(request.user, 'deliveryman_profile', None)
 
     if not deliveryman:
-        return HttpResponseBadRequest("No deliveryman specified and request.user is not a deliveryman.")
+        return HttpResponseBadRequest(
+            "No deliveryman specified and request.user is not a deliveryman."
+        )
 
     status_obj, _ = DeliverymanStatus.objects.get_or_create(
         deliveryman=deliveryman)
@@ -893,8 +927,7 @@ def deliveryman_delivery_requests_json_view(request):
                 "id": getattr(oi, "pk", None),
                 "food_item": getattr(fi, "pk", None),
                 "food_item_name": getattr(fi, "name", "") if fi else "",
-                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name',
-                                           getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
+                "restaurant_name": getattr(getattr(fi, 'restaurant', None), 'restaurant_name', getattr(getattr(order_obj, 'restaurant', None), 'restaurant_name', '')) if fi or getattr(order_obj, 'restaurant', None) else '',
                 "food_item_image": image_url,
                 "quantity": qty,
                 "price_at_order": str(price_each),
@@ -905,6 +938,7 @@ def deliveryman_delivery_requests_json_view(request):
         user_obj = getattr(order_obj, 'user', None)
         phone = _get_user_phone(user_obj)
         rest = getattr(order_obj, 'restaurant', None)
+
         restaurant_user_data = None
         if rest and getattr(rest, 'user', None):
             ru = rest.user
@@ -965,15 +999,13 @@ def deliveryman_delivery_requests_json_view(request):
                 "email": getattr(user_obj, 'email', '') if user_obj else '',
                 "phone": phone,
             },
-            # <--- APPENDED FIELD
             "customer_location": getattr(order_obj, 'customer_location', '')
         }
 
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(status='WAITING_FOR_DELIVERY',    assigned=False,
-             deliveryman__isnull=True).order_by('-order_date')
+    ).filter(status='WAITING_FOR_DELIVERY', assigned=False, deliveryman__isnull=True).order_by('-order_date')
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
@@ -1051,7 +1083,6 @@ def deliveryman_current_delivery_json_view(request):
     def _build_order_detail(order_obj):
         items = []
         computed_total = Decimal('0.00')
-
         try:
             order_items_qs = order_obj.order_items.select_related(
                 "food_item").all()
@@ -1150,11 +1181,7 @@ def deliveryman_current_delivery_json_view(request):
     order_qs = Order.objects.select_related("user", "restaurant", "deliveryman").prefetch_related(
         Prefetch("order_items",
                  queryset=OrderItem.objects.select_related("food_item"))
-    ).filter(
-        deliveryman=deliveryman,
-        assigned=True,
-        status__in=["WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"]
-    ).order_by('order_date')
+    ).filter(deliveryman=deliveryman, assigned=True, status__in=["WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"]).order_by('-order_date')
 
     detailed_orders = [_build_order_detail(o) for o in order_qs]
 
@@ -1354,9 +1381,10 @@ def deliveryman_order_history_json_response(request):
     except Deliveryman.DoesNotExist:
         return JsonResponse(
             {"success": False,
-                "detail": "Access denied. User is not registered as a Deliveryman."},
+             "detail": "Access denied. User is not registered as a Deliveryman."},
             status=403
         )
+
     try:
         historical_orders = OrderHistory.objects.filter(
             deliveryman=deliveryman,
@@ -1364,6 +1392,9 @@ def deliveryman_order_history_json_response(request):
         ).select_related(
             'user',
             'restaurant'
+        ).prefetch_related(
+            'order_items_history__food_item',
+            'user__user_profile'  # prefetch Customer profile
         ).order_by('-order_date')
 
     except Exception as e:
@@ -1376,14 +1407,27 @@ def deliveryman_order_history_json_response(request):
     history_data = []
 
     for order in historical_orders:
-        restaurant_name = order.restaurant.restaurant_name if hasattr(
-            order.restaurant, 'restaurant_name') else order.restaurant.name
-        restaurant_address = order.restaurant.restaurant_address if hasattr(
-            order.restaurant, 'restaurant_address') else "N/A"
-        restaurant_contact = order.restaurant.owner_contact if hasattr(
-            order.restaurant, 'owner_contact') else "N/A"
+        restaurant_name = getattr(order.restaurant, 'restaurant_name', getattr(
+            order.restaurant, 'name', 'N/A'))
+        restaurant_address = getattr(
+            order.restaurant, 'restaurant_address', 'N/A')
+        restaurant_contact = getattr(order.restaurant, 'owner_contact', 'N/A')
 
         customer_name = order.user.get_full_name() or order.user.username
+
+        # Fetch phone from Customer profile if exists
+        customer_number = "N/A"
+        if hasattr(order.user, 'user_profile') and getattr(order.user.user_profile, 'phone_number', None):
+            customer_number = order.user.user_profile.phone_number
+
+        # Order items
+        order_items_data = []
+        for item in order.order_items_history.all():
+            order_items_data.append({
+                "item_name": item.food_item.name if item.food_item else "N/A",
+                "quantity": item.quantity,
+                "price_at_order": str(item.price_at_order),
+            })
 
         order_entry = {
             "order_id": order.pk,
@@ -1391,7 +1435,7 @@ def deliveryman_order_history_json_response(request):
             "customer_info": {
                 "customer": customer_name,
                 "address": order.customer_location,
-                "number": order.user.profile.phone_number if hasattr(order.user, 'profile') and hasattr(order.user.profile, 'phone_number') else "Placeholder/Check Model"
+                "number": customer_number
             },
             "merchant_info": {
                 "restaurant_name": restaurant_name,
@@ -1400,7 +1444,8 @@ def deliveryman_order_history_json_response(request):
             },
             "order_status": order.status,
             "total_price": str(order.total_price),
-            "order_date": order.order_date.isoformat()
+            "order_date": order.order_date.isoformat(),
+            "order_items": order_items_data
         }
         history_data.append(order_entry)
 
@@ -1408,7 +1453,7 @@ def deliveryman_order_history_json_response(request):
 
 
 @login_required
-def restaurant_customer_list_json_response(request):
+def restaurant_order_list_json_response(request):
     user = request.user
     try:
         restaurant = Restaurant.objects.get(user=user)
@@ -1417,46 +1462,75 @@ def restaurant_customer_list_json_response(request):
             {"success": False, "detail": "Access denied. User is not registered as a Restaurant owner."},
             status=403
         )
-    current_customer_ids = Order.objects.filter(
-        restaurant=restaurant
-    ).values_list('user_id', flat=True).distinct()
-    history_customer_ids = OrderHistory.objects.filter(
-        restaurant=restaurant
-    ).values_list('user_id', flat=True).distinct()
-    all_customer_ids = list(
-        set(list(current_customer_ids) + list(history_customer_ids)))
-    CustomerUser = user.__class__
-    all_customers = CustomerUser.objects.filter(pk__in=all_customer_ids)
-    customer_list = []
-    for customer in all_customers:
-        latest_order_data = Order.objects.filter(
-            user=customer,
-            restaurant=restaurant
-        ).order_by('-order_date').first()
 
-        if not latest_order_data:
-            latest_order_data = OrderHistory.objects.filter(
-                user=customer,
-                restaurant=restaurant
-            ).order_by('-order_date').first()
-        customer_location = getattr(
-            latest_order_data, 'customer_location', 'N/A')
-        customer_name = customer.get_full_name() or customer.username
-        customer_number = "Placeholder/Check Model"
-        if hasattr(customer, 'profile') and hasattr(customer.profile, 'phone_number'):
-            customer_number = customer.profile.phone_number
-        elif hasattr(customer, 'phone_number'):
-            customer_number = customer.phone_number
+    try:
+        orders = list(Order.objects.filter(restaurant=restaurant)) + \
+            list(OrderHistory.objects.filter(restaurant=restaurant))
+        orders = sorted(orders, key=lambda o: o.order_date, reverse=True)
+    except Exception as e:
+        print(f"Database query error: {e}")
+        return JsonResponse(
+            {"success": False, "detail": "An internal error occurred while fetching orders."},
+            status=500
+        )
 
-        customer_entry = {
-            "customer_id": customer.pk,
-            "customer_name": customer_name,
-            "customer_info": {
-                "customer": customer_name,
-                "address": customer_location,
-                "number": customer_number,
-            },
-            "last_order_date": getattr(latest_order_data, 'order_date', None),
+    order_list = []
+
+    for order in orders:
+        customer_name = order.user.get_full_name() or order.user.username
+        customer_number = getattr(order.user.user_profile, 'phone_number',
+                                  'N/A') if hasattr(order.user, 'user_profile') else 'N/A'
+
+        customer_info = {
+            "customer": customer_name,
+            "address": getattr(order, 'customer_location', 'N/A'),
+            "number": customer_number
         }
-        customer_list.append(customer_entry["customer_info"])
-    return JsonResponse({"success": True, "data": customer_list}, status=200)
+
+        deliveryman_info = {}
+        if hasattr(order, 'deliveryman') and order.deliveryman:
+            deliveryman = order.deliveryman
+            phone_number = None
+            if hasattr(deliveryman.user, 'user_profile'):
+                phone_number = getattr(
+                    deliveryman.user.user_profile, 'phone_number', None)
+            if not phone_number and hasattr(deliveryman.user, 'merchant_profile'):
+                phone_number = getattr(
+                    deliveryman.user.merchant_profile, 'phone_number', None)
+            if not phone_number:
+                phone_number = 'N/A'
+
+            deliveryman_info = {
+                "deliveryman_name": f"{deliveryman.Firstname} {deliveryman.Lastname}",
+                "phone_number": phone_number,
+                "vehicle": getattr(deliveryman, 'Vehicle', 'N/A')
+            }
+
+        if hasattr(order, 'order_items'):
+            order_items = order.order_items.all()
+        elif hasattr(order, 'order_items_history'):
+            order_items = order.order_items_history.all()
+        else:
+            order_items = []
+
+        order_items_data = []
+        for item in order_items:
+            order_items_data.append({
+                "item_name": item.food_item.name if item.food_item else "N/A",
+                "quantity": item.quantity,
+                "price_at_order": str(item.price_at_order)
+            })
+
+        order_entry = {
+            "order_id": order.pk,
+            "original_order_id": getattr(order, 'original_order', None),
+            "customer_info": customer_info,
+            "deliveryman_info": deliveryman_info,
+            "order_status": getattr(order, 'status', 'N/A'),
+            "total_price": str(getattr(order, 'total_price', 0)),
+            "order_date": getattr(order, 'order_date', None),
+            "order_items": order_items_data
+        }
+        order_list.append(order_entry)
+
+    return JsonResponse({"success": True, "data": order_list}, status=200)
