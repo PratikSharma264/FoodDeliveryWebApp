@@ -352,10 +352,14 @@ def safe_url(field):
 def restaurant_orders_json_response(request, id):
     restaurant = get_object_or_404(Restaurant, id=id, user=request.user)
     customer_id = request.GET.get('customer_id')
+    status = request.GET.get('status', '').strip().upper()
     orders_qs = Order.objects.filter(restaurant=restaurant).select_related(
         'user', 'restaurant', 'deliveryman').prefetch_related('order_items__food_item')
     if customer_id:
         orders_qs = orders_qs.filter(user_id=customer_id)
+    valid_statuses = {k for k, _ in Order.STATUS_CHOICES}
+    if status and status in valid_statuses:
+        orders_qs = orders_qs.filter(status=status)
 
     data = []
 
@@ -394,21 +398,17 @@ def restaurant_orders_json_response(request, id):
         phone = None
 
         if user_obj:
-
             for attr in ('phone', 'phone_number', 'mobile', 'contact', 'telephone'):
                 phone = getattr(user_obj, attr, None)
                 if phone:
                     break
-
             if not phone and hasattr(user_obj, 'user_profile'):
                 profile = user_obj.user_profile
                 phone = getattr(profile, 'phone', None) or getattr(
                     profile, 'phone_number', None)
-
             if not phone and hasattr(user_obj, 'merchant_profile'):
                 merchant = user_obj.merchant_profile
                 phone = getattr(merchant, 'phone_number', None)
-
         phone = phone or None
 
         deliveryman_obj = getattr(order, 'deliveryman', None)
@@ -418,7 +418,6 @@ def restaurant_orders_json_response(request, id):
                 "id": deliveryman_obj.id,
                 "name": f"{getattr(deliveryman_obj, 'Firstname', '')} {getattr(deliveryman_obj, 'Lastname', '')}".strip(),
                 "email": getattr(deliveryman_obj, 'email', None),
-                # Add phone to Deliveryman model if needed
                 "phone": getattr(deliveryman_obj, 'phone', None),
             }
 
