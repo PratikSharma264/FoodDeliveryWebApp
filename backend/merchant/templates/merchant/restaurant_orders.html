@@ -2,6 +2,7 @@
 {% load static %}
 {% block styles %}
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
   <link rel="stylesheet" href="{% static 'css/restaurant_orders.css' %}" />
 {% endblock %}
 {% block headcontent %}
@@ -64,6 +65,7 @@
 {% endblock %}
 {% block scripts %}
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
   <script> 
     function getCookie(name) {

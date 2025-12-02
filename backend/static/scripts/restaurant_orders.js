@@ -22,14 +22,13 @@ function updateDeliverymanMarker(order_id) {
 
 
   if (!mapObj.deliverymanMarker) {
-    mapObj.deliverymanMarker = L.marker([lat, lng], { icon: redIcon })
+    mapObj.deliverymanMarker = L.marker([lat, lng])
       .addTo(mapObj.map)
       .bindPopup("Deliveryman");
+    updateRoutingPath(order_id);
   } else {
     mapObj.deliverymanMarker.setLatLng([lat, lng]);
   }
-
-  updateRoutingPath(order_id);
 }
 
 function updateRoutingPath(order_id) {
@@ -57,7 +56,10 @@ function updateRoutingPath(order_id) {
       L.latLng(customer.lat, customer.lng)
     ],
     lineOptions: {
-      styles: [{ color: "blue", weight: 5 }]
+      styles: [{ color: "red", weight: 5 }]
+    },
+    createMarker: function() {
+      return null;
     },
     addWaypoints: false,
     draggableWaypoints: false,
@@ -66,7 +68,6 @@ function updateRoutingPath(order_id) {
   }).addTo(mapObj.map);
 
   orderRoutes[order_id] = routeControl;
-
 }
 
 
@@ -192,8 +193,10 @@ async function getCurrentOrders(status = "ALL") {
               }
             </div>
           </div>
-          <div class="order-details">
-          <div><h4>Order Items:</h4>
+         <div class="order-details">
+          <div>
+          <div>
+          <h4>Order Items:</h4>
             <ul>
               ${order.order_items
                 .map(
@@ -205,13 +208,15 @@ async function getCurrentOrders(status = "ALL") {
                 )
                 .join("")}
             </ul>
+            </div>
+            <div>
             <h4>Customer Details:</h4>
             <p>Email: ${order.user.email}</p>
             <p>Phone: ${order.customer_details.phone}</p></div>
-            <div><h4>Delivery Location: (${order.latitude}, ${order.longitude})</h4>
-            <div id="${mapDivId}" style="height: 200px; width: 400px;"></div>
             </div>
-            
+            <div><h4>Delivery Location: (${order.latitude}, ${order.longitude})</h4>
+            <div id="${mapDivId}" style="height: 400px; width:70dvw;"></div>
+            </div>
           </div>
         `;
 
