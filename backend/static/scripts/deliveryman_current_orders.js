@@ -25,6 +25,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
   function startSendingLocation() {
             const currentOrderIds = currentDeliveries.map(d => d.order_id);
+            console.log("ids:",currentOrderIds)
             sendWSMessage("deliveryman_location", {
                 order_ids: currentOrderIds,
                 lat: delman_lat,

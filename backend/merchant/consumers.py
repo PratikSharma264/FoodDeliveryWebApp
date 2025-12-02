@@ -63,6 +63,7 @@ class ChatConsumer(WebsocketConsumer):
         print(
             f"Found {active_orders.count()} active orders for restaurant {restaurant_id}")
         for order in active_orders:
+            print(f"connecting res to group order_{order}")
             async_to_sync(self.channel_layer.group_add)(
                 f"order_{order}",
                 self.channel_name
@@ -447,6 +448,7 @@ class DeliverymanConsumer(WebsocketConsumer):
         print(
             f"Found {active_orders.count()} active orders for deliveryman {deliveryman_id}")
         for order in active_orders:
+            print(f"connecting del to group order_{order}")
             async_to_sync(self.channel_layer.group_add)(
                 f"order_{order}",
                 self.channel_name
@@ -857,14 +859,15 @@ class DeliverymanConsumer(WebsocketConsumer):
 
     # sandesh
     def handle_deliveryman_location(self, data):
-        order_ids = data.get("order_ids", [])
-        lat = data.get("lat")
-        lng = data.get("lng")
-        accuracy = data.get("accuracy")
+        actual_data = data.get("data")
+        order_ids = actual_data.get("order_ids")
+        lat = actual_data.get("lat")
+        lng = actual_data.get("lng")
+        accuracy = actual_data.get("accuracy")
 
         if not isinstance(order_ids, list):
             return
-
+        print("orderids received from del:",order_ids)
         print("delconhere")
         for order_id in order_ids:
             print(order_id)
@@ -878,6 +881,19 @@ class DeliverymanConsumer(WebsocketConsumer):
                     "accuracy": accuracy
                 }
             )
+
+
+    def deliveryman_location(self, event):
+        if(self.role == "deliveryman"):
+            return
+        self.send(text_data=json.dumps({
+            "type": "deliveryman_location",
+            "order_id": event["order_id"],
+            "lat": event["lat"],
+            "lng": event["lng"],
+            "accuracy": event["accuracy"],
+        }))
+
 
     def deliveryman_location_message(self, event):
         try:
