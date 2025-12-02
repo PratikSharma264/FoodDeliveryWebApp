@@ -1,30 +1,101 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const orderWrapper = document.querySelector("#current-order-wrapper");
+  const statusFilter = document.getElementById("order_status_select");
   const emptyOrder = document.querySelector("#emptyorder");
   const resid = document.querySelector(".resid").id;
   let orders = [];
+const orderMaps = {};  
+const orderRoutes = {};
 
-  async function getCurrentOrders() {
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/json/restaurant-orders-response/${resid}`
-      );
-      const { data } = await response.json();
-      console.log("response:", data);
-      data.forEach((item)=> orders.unshift(item));
-    } catch (err) {
-      console.error("error: ", err);
-      showError({ message: `${err?.message}` });
-    }
+
+function updateDeliverymanMarker(order_id) {
+  const mapObj = orderMaps[order_id];
+  if (!mapObj || !mapObj.map) return;
+
+  const order = orders.find(
+    (od) => parseInt(od.order_id) === parseInt(order_id)
+  );
+  if (!order || !order.deliverymanLocation) return;
+
+  const { lat, lng } = order.deliverymanLocation;
+
+
+  if (!mapObj.deliverymanMarker) {
+    mapObj.deliverymanMarker = L.marker([lat, lng], { icon: redIcon })
+      .addTo(mapObj.map)
+      .bindPopup("Deliveryman");
+  } else {
+    mapObj.deliverymanMarker.setLatLng([lat, lng]);
   }
-  // getCurrentOrders();
 
-  // setTimeout(()=>{
-  //     if(orders && orders.length>0){
-  //   renderOrders();
-  // }
-  // },1000);
+  updateRoutingPath(order_id);
+}
+
+function updateRoutingPath(order_id) {
+  const mapObj = orderMaps[order_id];
+  if (!mapObj || !mapObj.map) return;
+
+  const order = orders.find(
+    (od) => parseInt(od.order_id) === parseInt(order_id)
+  );
+  if (!order || !order.deliverymanLocation) return;
+
+  const deliveryman = order.deliverymanLocation;
+  const customer = {
+    lat: order.latitude,
+    lng: order.longitude,
+  };
+
+  if (orderRoutes[order_id]) {
+    mapObj.map.removeControl(orderRoutes[order_id]);
+  }
+
+  const routeControl = L.Routing.control({
+    waypoints: [
+      L.latLng(deliveryman.lat, deliveryman.lng),
+      L.latLng(customer.lat, customer.lng)
+    ],
+    lineOptions: {
+      styles: [{ color: "blue", weight: 5 }]
+    },
+    addWaypoints: false,
+    draggableWaypoints: false,
+    fitSelectedRoutes: true,
+    show: false
+  }).addTo(mapObj.map);
+
+  orderRoutes[order_id] = routeControl;
+
+}
+
+
+statusFilter.addEventListener("change", async () => {
+  const status = statusFilter.value;
+  await getCurrentOrders(status);
+  renderOrders();            
+});
+
+
+
+async function getCurrentOrders(status = "ALL") {
+  try {
+    let url = `http://127.0.0.1:8000/json/restaurant-orders-response/${resid}`;
+    if (status && status !== "ALL") {
+      url += `?status=${status}`;
+    }
+
+    const response = await fetch(url);
+    const { data } = await response.json();
+    console.log("response:", data);
+
+    orders = data;
+  } catch (err) {
+    console.error("error: ", err);
+    showError({ message: `${err?.message}` });
+  }
+}
+
 
   async function initOrders(){
     await getCurrentOrders();
@@ -47,12 +118,17 @@ document.addEventListener("DOMContentLoaded", () => {
               window.resetOrderCount();
             }
           }, 1000);
-               console.log("new message received");
-              console.log("New order received:", msg.data);
-              orders.unshift(...msg.data);
+            const filteredData = msg.data.filter(
+              (order) =>
+              statusFilter.value === "ALL" ||
+              order.status === statusFilter.value
+             );
+            if (filteredData.length) {
+              orders.unshift(...filteredData);
               orderWrapper.innerHTML = "";
               renderOrders();
-            } catch(err){
+            }
+          } catch(err){
               console.error("error:",err);
             }
           }
@@ -60,15 +136,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
       window.registerWSHandler("deliverymanLocationHandler", (msg) => {
        if (msg.type === "deliveryman_location") {
-        console.log("📍 Deliveryman location update:", msg.data);
+        const {order_id,lat,lng,accuracy} = msg;
+        if(!order_id || !lat || !lng || !accuracy){
+          return;
+        }
+        const order_data = orders.find(od => parseInt(od.order_id) === parseInt(order_id))
+        if (!order_data) return;
 
-        // msg.data contains:
-        // order_id, lat, lng, accuracy, deliveryman_id
-        
-        const { order_id, lat, lng, accuracy } = msg.data;
-
-        // OPTIONAL: Update the map marker for this order (if shown)
-        // updateDeliverymanMarker(order_id, lat, lng);
+        order_data.deliverymanLocation = { lat, lng, accuracy };
+        updateDeliverymanMarker(order_id);
     }
 });
 
@@ -153,7 +229,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 keyboard: false,
                 tap: false,
               }).setView([order.latitude, order.longitude], 15);
-
+              orderMaps[order.order_id] = {
+                map,
+                deliverymanMarker: null
+              };
               L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
                 maxZoom: 19,
                 attribution: "&copy; OpenStreetMap contributors",

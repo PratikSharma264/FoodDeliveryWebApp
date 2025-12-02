@@ -15,9 +15,21 @@
   <div id="container-body">
     <div id="current-order-container">
       <div id="currentorder-header">
-        <h3>Your received orders</h3>
-        <!--    later implement the filter based on product(add here filter
-            input)    -->
+        <div><h3>Your received orders</h3></div>
+        <div>
+          <form>
+            <div class="select-wrapper">
+              <select name="order_status" id="order_status_select">
+              <option value="ALL">All</option>
+              <option value="PENDING">Pending</option>
+              <option value="PROCESSING">Processing</option>
+              <option value="WAITING_FOR_DELIVERY">Waiting for Delivery</option>
+              <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+            </select>
+             <i class="fa-solid fa-square-caret-down"></i>
+            </div>
+          </form>
+        </div>
       </div>
       <div id="current-order-wrapper">
         <div id="emptyorder">

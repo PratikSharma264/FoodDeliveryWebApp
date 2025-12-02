@@ -40,13 +40,6 @@ function onMessage(evt) {
         setTimeout(() => { document.title = "Orders"; }, 2000);
     }
 
-    if(msg.type === 'deliveryman_location'){
-        console.log("msgoid:",msg.order_id);
-        console.log("msglat:",msg.lat);
-        console.log("msglng:",msg.lng);
-        console.log("msgacc:",msg.accuracy);
-    }
-
     Object.values(wsHandlers).forEach(handler => {
         try { handler(msg); } catch(e) { console.error("Handler error", e); }
     });
