@@ -8,6 +8,7 @@ from django.apps import apps
 from decimal import Decimal
 from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
+# from merchant.models import Order
 
 #sandesh
 class ClientConsumer(AsyncWebsocketConsumer):
@@ -52,6 +53,15 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = f"restaurant_{restaurant_id}"
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name, self.channel_name)
+        # get all the status order but stauts part not checked 
+        # active_orders = Order.objects.filter(
+        #     restaurant_id = restaurant_id,
+        # )
+        # for order in active_orders:
+        #     async_to_sync(self.channel_layer.group_add)(
+        #         f"order_{order.pk}",
+        #         self.channel_name
+        #     )
         self.accept()
         self.send(text_data=json.dumps(
             {"type": "status", "status": "connected"}))
@@ -477,7 +487,15 @@ class DeliverymanConsumer(WebsocketConsumer):
             self.group_name, self.channel_name)
         async_to_sync(self.channel_layer.group_add)(
             "deliverymen", self.channel_name)
-
+        #milyo ki nai check garne
+        # active_orders = Order.objects.filter(
+        #     deliveryman_id = deliveryman_id
+        # )
+        # for order in active_orders:
+        #     async_to_sync(self.channel_layer.group_add)(
+        #         f"order_{order.pk}",
+        #         self.channel_name
+        #     )
         self.accept()
         self.send(text_data=json.dumps({
             "type": "status",
