@@ -33,14 +33,6 @@
         </div>
       </div>
       <div id="current-order-wrapper">
-        <div id="emptyorder">
-          <div id="crossimg">
-            <img src="{% static 'images/cross.png' %}" alt="" />
-          </div>
-          <div>
-            <p>You haven't received any orders!</p>
-          </div>
-        </div>
         <!--    <div class="current-order-item">
               <div class="update-currentitems">
                 <i class="fa-solid fa-square-pen"></i>
@@ -60,6 +52,14 @@
               </div>
             </div>    -->
       </div>
+       <div id="emptyorder">
+          <div id="crossimg">
+            <img src="{% static 'images/cross.png' %}" alt="" />
+          </div>
+          <div>
+            <p>You don't have any orders!</p>
+          </div>
+        </div>
     </div>
   </div>
 {% endblock %}
@@ -83,6 +83,9 @@
   return cookieValue;
 }
 const csrftoken = getCookie("csrftoken");
+  </script>
+  <script>
+    const crossImg = "{% static 'images/cross.png' %}";
   </script>
   <script src="{% static 'scripts/restaurant_orders.js' %}" defer></script>
 {% endblock %}

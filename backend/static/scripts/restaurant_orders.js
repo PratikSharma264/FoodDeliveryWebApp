@@ -89,7 +89,7 @@ async function getCurrentOrders(status = "ALL") {
     const response = await fetch(url);
     const { data } = await response.json();
     console.log("response:", data);
-
+    orders = [];
     orders = data;
   } catch (err) {
     console.error("error: ", err);
@@ -154,13 +154,14 @@ async function getCurrentOrders(status = "ALL") {
   }
 
   function renderOrders() {
-    if (!orders.length) {
+    orderWrapper.innerHTML = "";
+    console.log(orders.length);
+    if (orders.length === 0) {
       emptyOrder.style.display = "flex";
       return;
     }
     emptyOrder.style.display = "none";
 
-    orderWrapper.innerHTML = "";
 
     orders.forEach((order) => {
       const orderCard = document.createElement("div");
