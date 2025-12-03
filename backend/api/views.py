@@ -1499,5 +1499,13 @@ def user_order_details_api(request, id):
         "deliveryman": deliveryman_info,
         "order_items": order_items_data,
     }
+    status_value = getattr(order, 'status', '').upper()
 
-    return Response({"success": True, "assigned": is_assigned, "order": order_data}, status=status.HTTP_200_OK)
+    status_progress = {
+        "PENDING": status_value in ["PENDING", "PROCESSING", "WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
+        "PROCESSING": status_value in ["PROCESSING", "WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
+        "WAITING_FOR_DELIVERY": status_value in ["WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
+        "OUT_FOR_DELIVERY": status_value == "OUT_FOR_DELIVERY"
+    }
+
+    return Response({"success": True, "assigned": is_assigned, "status_progress": status_progress, "order": order_data}, status=status.HTTP_200_OK)
