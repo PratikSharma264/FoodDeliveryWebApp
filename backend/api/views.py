@@ -1505,11 +1505,18 @@ def user_order_details_api(request, id):
     }
     status_value = getattr(order, 'status', '').upper()
 
-    status_progress = {
-        "PENDING": status_value in ["PENDING", "PROCESSING", "WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
-        "PROCESSING": status_value in ["PROCESSING", "WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
-        "WAITING_FOR_DELIVERY": status_value in ["WAITING_FOR_DELIVERY", "OUT_FOR_DELIVERY"],
-        "OUT_FOR_DELIVERY": status_value == "OUT_FOR_DELIVERY"
-    }
+    ordered_steps = [
+        "PENDING",
+        "PROCESSING",
+        "WAITING_FOR_DELIVERY",
+        "OUT_FOR_DELIVERY"
+    ]
+
+    status_progress = {step: False for step in ordered_steps}
+
+    if status_value in ordered_steps:
+        current_index = ordered_steps.index(status_value)
+        for i in range(0, current_index):
+            status_progress[ordered_steps[i]] = True
 
     return Response({"success": True, "assigned": is_assigned, "status_progress": status_progress, "order": order_data}, status=status.HTTP_200_OK)
