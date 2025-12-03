@@ -1461,6 +1461,9 @@ def user_order_details_api(request, id):
             if not phone_number and hasattr(deliveryman_user, 'merchant_profile'):
                 phone_number = getattr(
                     deliveryman_user.merchant_profile, 'phone_number', None)
+        status_obj = getattr(deliveryman_obj, 'status', None)
+        active_flag = getattr(status_obj, 'online',
+                              False) if status_obj is not None else False
 
         deliveryman_info = {
             "id": deliveryman_obj.id,
@@ -1468,6 +1471,7 @@ def user_order_details_api(request, id):
             "email": getattr(deliveryman_user, 'email', None) if deliveryman_user else None,
             "phone": phone_number or 'N/A',
             "vehicle": getattr(deliveryman_obj, 'Vehicle', 'N/A'),
+            "active_flag": active_flag,
         }
 
     # Order items with images
